@@ -1,0 +1,3 @@
+-I./include
+-x
+c++
