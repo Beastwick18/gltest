@@ -19,7 +19,7 @@ namespace MinecraftClone {
         
         // Create native glfw window
         w->glfwWindow = glfwCreateWindow(width, height, title, monitor, nullptr);
-        if(w->glfwWindow == NULL) {
+        if(w->glfwWindow == nullptr) {
             fprintf(stderr, "Fatal: Failed to create GLFW window [failure in %s on line %d]\n", __FILE__, __LINE__ - 2);
             glfwTerminate();
             return nullptr;

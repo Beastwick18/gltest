@@ -27,7 +27,6 @@ namespace MinecraftClone {
         }
         
         bool isKeyDown(int key) {
-            printf("%d\n", keysPressed[key]);
             return key >= 0 && key < GLFW_KEY_LAST && keysPressed[key];
         }
         

@@ -1,81 +1,123 @@
 #include "core.h"
 #include "core/input.h"
 #include "core/window.h"
+#include <fstream>
+#include <iostream>
+#include "shaders.h"
 
 using namespace MinecraftClone;
 
+GLint test;
+float count = 0;
+float l = 0;
+const float turnintPoint = 200.0f;
 const int windowWidth = 720, windowHeight = 720;
 const char *windowTitle = "Test Window 2: Electric Boogaloo";
 
 float vertices[] = {
-    -0.5f, 0.5f,  // Vertex 1, middle x top y
-    0.5f, -0.5f, // Vertex 2, left x bottom y
-    -0.5f, -0.5f // Vertex 3, right x bottom y
+    -1.0f, 2.0f,  // Vertex 1, middle x top y
+    1.0f, -2.0f, // Vertex 2, left x bottom y
+    -1.0f, -2.0f // Vertex 3, right x bottom y
 };
 
 float vertices2[] = {
-    -0.5f, 0.5f,  // Vertex 1, middle x top y
-    0.5f, -0.5f, // Vertex 2, left x bottom y
-    0.5f, 0.5f // Vertex 3, right x bottom y
+    -1.0f, 2.0f,  // Vertex 1, middle x top y
+    1.0f, -2.0f, // Vertex 2, left x bottom y
+    1.0f, 2.0f // Vertex 3, right x bottom y
 };
 
-const char *vertexSource = R"glsl(
-    #version 330 core
-    
-    in vec2 position;
-    
-    void main() {
-        gl_Position = vec4(position, 0.0, 2.0);
-    }
-)glsl";
+float lerp(float a, float b, float t) {
+    return a + t * (b-a);
+}
 
-const char *fragmentSource = R"glsl(
-    #version 330 core
+struct Shader {
+    GLuint program;
     
-    out vec4 outColor;
-    
-    void main() {
-        outColor = vec4(0.0, 1.0, 1.0, 1.0);
-    }
-)glsl";
-
-struct Triangle {
-    static void createTriangle(float *vertices) {
-        // Create a virtual buffer object and bind the vertices to it
-        GLuint vbo;
-        glGenBuffers(1, &vbo); // Generate 1 buffer
+    static Shader *createShader(const char *fragSource, const char *vertSource) {
+        Shader *s = new Shader;
         
-        // Create and compile vertex shader
-        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &vertexSource, nullptr);
-        glCompileShader(vertexShader);
+        GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertShader, 1, &vertSource, nullptr);
+        glCompileShader(vertShader);
+        
+        GLint result;
+        int logLength;
+        glGetShaderiv(vertShader, GL_COMPILE_STATUS, &result);
+        if(result == GL_FALSE) {
+            glGetShaderiv(vertShader, GL_INFO_LOG_LENGTH, &logLength);
+            std::vector<GLchar> vertShaderError((logLength > 1) ? logLength : 1);
+            glGetShaderInfoLog(vertShader, logLength, NULL, &vertShaderError[0]);
+            std::cout << &vertShaderError[0] << std::endl;
+        }
         
         // Create and compile fragment shader
-        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, 1, &fragmentSource, nullptr);
-        glCompileShader(fragmentShader);
+        GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragShader, 1, &fragSource, nullptr);
+        glCompileShader(fragShader);
+        
+        glGetShaderiv(fragShader, GL_COMPILE_STATUS, &result);
+        if(result == GL_FALSE) {
+            glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &logLength);
+            std::vector<GLchar> fragShaderError( (logLength > 1) ? logLength : 1 );
+            glGetShaderInfoLog(fragShader, logLength, NULL, &fragShaderError[0]);
+            std::cout << &fragShaderError[0] << std::endl;
+        }
         
         // Create shader program and attach vertex and fragment shader to it
-        GLuint shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
+        s->program = glCreateProgram();
+        glAttachShader(s->program, vertShader);
+        glAttachShader(s->program, fragShader);
         
-        // Bind the output of fragment shader to "outColor"
-        glBindFragDataLocation(shaderProgram, 0, "outColor");
+        glLinkProgram(s->program);
+        glDeleteShader(vertShader);
+        glDeleteShader(fragShader);
         
-        // Link the shader program and use it
-        glLinkProgram(shaderProgram);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-        
-        GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-        
-        GLuint vao;
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-
+        return s;
+    }
+    
+    static void freeShader(Shader *s) {
+        if(s != nullptr)
+            delete s;
     }
 };
+
+struct Triangle {
+    GLuint vbo, shaderProgram, vao;
+    
+    static Triangle *createTriangle(float *vertices, GLsizeiptr verticesSize, Shader *s) {
+        Triangle *t = new Triangle();
+        glGenBuffers(1, &t->vbo);
+        
+        t->shaderProgram = s->program;
+        glGenVertexArrays(1, &t->vao);
+        glBindVertexArray(t->vao);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, t->vbo);
+        glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_DYNAMIC_DRAW);
+        GLint posAttrib = glGetAttribLocation(t->shaderProgram, "position");
+        glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(posAttrib);
+        
+        // GLint fsPosAttrib = glad_glGetAttribLocation(t->shaderProgram, "fs_position");
+        // glVertexAttribPointer(fsPosAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        // glEnableVertexAttribArray(fsPosAttrib);
+        return t;
+    }
+    
+    static void freeTriangle(Triangle *t) {
+        if(t != nullptr)
+            delete t;
+    }
+    
+    void render() {
+        glUseProgram(shaderProgram);
+        glUniform1f(test, l);
+        
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+};
+
 
 
 int main() {
@@ -97,75 +139,50 @@ int main() {
         glfwTerminate();
         return -1;
     }
-    
-    // Create a virtual buffer object and bind the vertices to it
-    GLuint vbo;
-    glGenBuffers(1, &vbo); // Generate 1 buffer
-    
-    GLuint vbo2;
-    glGenBuffers(1, &vbo2); // Generate 1 buffer
-    
-    // Create and compile vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSource, nullptr);
-    glCompileShader(vertexShader);
-    
-    // Create and compile fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, nullptr);
-    glCompileShader(fragmentShader);
-    
-    // Create shader program and attach vertex and fragment shader to it
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    
     // Bind the output of fragment shader to "outColor"
-    glBindFragDataLocation(shaderProgram, 0, "outColor");
+    Shader *s = Shader::createShader(fragmentSource, vertexSource);
+    glBindFragDataLocation(s->program, 0, "outColor");
     
-    // Link the shader program and use it
-    glLinkProgram(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    Triangle *t1 = Triangle::createTriangle(vertices, sizeof(vertices), s);
+    Triangle *t2 = Triangle::createTriangle(vertices2, sizeof(vertices2), s);
     
     bool mouseAlreadyPressed = false;
+    bool keyAlreadyPressed = false;
+    bool up = true;
+    float a = 1;
+    float b = 0;
+    test = glGetUniformLocation(s->program, "test");
     while(!window->shouldClose()) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);  // To upload data to buffer, you have to make it active with glBindBuffer
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        count += (1/turnintPoint);
         
-        glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(posAttrib);
-        
-        glUseProgram(shaderProgram);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        
-        glBindBuffer(GL_ARRAY_BUFFER, vbo2); // To upload data to buffer, you have to make it active with glBindBuffer
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
-        
-        glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(posAttrib);
-        
-        glUseProgram(shaderProgram);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        l = lerp(a, b, count);
+        if(count >= 1) {
+            count = 0;
+            a = 1-a;
+            b = 1-b;
+        }
+        t1->render();
+        t2->render();
         
         bool mousePressed = Input::isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT);
         if(mousePressed && !mouseAlreadyPressed)
             printf("Click at %f, %f\n", Input::mouseX, Input::mouseY);
         mouseAlreadyPressed = mousePressed;
         
+        bool keyPressed = Input::isKeyDown(GLFW_KEY_ESCAPE);
+        if(keyPressed && !keyAlreadyPressed)
+            window->close();
+        keyAlreadyPressed = keyPressed;
+        
         glfwSwapBuffers(window->getGlfwWindow());
         glfwPollEvents();
     }
-    
+    Triangle::freeTriangle(t1);
+    Triangle::freeTriangle(t2);
+    Shader::freeShader(s);
     Window::freeWindow(window);
     glfwTerminate();
 }

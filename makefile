@@ -1,10 +1,10 @@
-CC = clang
-CPP = clang++
+CC = gcc
+CPP = g++
 BINDIR = bin
 SRCDIR = src
 OBJDIR = obj
 INCDIR = include
-CFLAGS = -x c++ -I./$(INCDIR) 
+CFLAGS = -g -x c++ -I./$(INCDIR) 
 LIBS = `pkg-config --static --libs glfw3`
 CPP_SRCS = $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/**/*.cpp)
 C_SRCS = $(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)
@@ -17,20 +17,20 @@ $(BINDIR)/$(TARGET): $(OBJS)
 	$(CPP) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	# Create parent directories for obj file
+	@# Create parent directories for obj file
 	mkdir -p "$(dir $@)"
 	
 	$(CPP) $(CFLAGS) -o $@ -c $<
 
 $(OBJDIR)/%.o: **/%.c
-	# Create parent directories for obj file
+	@# Create parent directories for obj file
 	mkdir -p "$(dir $@)"
 	
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	# Remove binaries
+	@# Remove binaries
 	rm -f $(BINDIR)/*.out
 	
-	# Remove object files
+	@# Remove object files
 	rm -rf obj/*.o obj/**/*.o
