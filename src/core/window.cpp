@@ -49,6 +49,8 @@ namespace MinecraftClone {
             glfwSetMouseButtonCallback(glfwWindow, Input::mouseButtonCallback);
             glfwSetCursorPosCallback(glfwWindow, Input::mouseCallback);
             glfwSetScrollCallback(glfwWindow, Input::mouseScrollCallback);
+        } else {
+            fprintf(stderr, "Non fatal: Cannot set callbacks, glfw window not created yet [line %d]\n", __LINE__);
         }
     }
     

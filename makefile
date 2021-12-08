@@ -11,16 +11,26 @@ C_SRCS = $(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(CPP_SRCS)) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(C_SRCS))
 TARGET = main.out
 
+.PHONY: clean
+
 $(BINDIR)/$(TARGET): $(OBJS)
 	$(CPP) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	# Create parent directories for obj file
+	mkdir -p "$(dir $@)"
+	
 	$(CPP) $(CFLAGS) -o $@ -c $<
 
 $(OBJDIR)/%.o: **/%.c
+	# Create parent directories for obj file
+	mkdir -p "$(dir $@)"
+	
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	rm -f $(BINDIR)/$(TARGET)
-	rm -rf obj/*.o
-	rm -rf obj/**/*.o
+	# Remove binaries
+	rm -f $(BINDIR)/*.out
+	
+	# Remove object files
+	rm -rf obj/*.o obj/**/*.o
