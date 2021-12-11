@@ -12,7 +12,7 @@ float count = 0;
 float l = 0;
 const float turnintPoint = 10.0f;
 int windowWidth = 720, windowHeight = 720;
-const char *windowTitle = "Test Window 2: Hold space to see something cool!";
+const char *windowTitle = "Test Window 2: Press space to see something cool!";
 bool fullscreen = false, vsync = true;
 double targetFramerate = 60.0;
 
@@ -50,7 +50,6 @@ struct Triangle {
         Triangle *t = new Triangle();
         glGenBuffers(1, &t->vbo);
         size_t verticesSize = sizeof(float) * numVertices * numDimensions;
-        printf("%ld\n%ld\n", sizeof(vertices2), verticesSize);
         t->numVertices = numVertices;
         
         glBindBuffer(GL_ARRAY_BUFFER, t->vbo);
@@ -175,11 +174,12 @@ int main(int argc, char **argv) {
         elapsedTime += deltaTime;
         tickCount++;
         
-        count += .5 * deltaTime * playAnimation;
+        if(playAnimation)
+            count += .5 * deltaTime;
         
         l = std::abs(std::sin(count));
-        // l = lerp(a, b, count);
-        if(count > 3.14) count = 0;
+        // reset once over 2pi
+        if(count > 2*3.14f) count = 0;
         
         bool mousePressed = Input::isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT);
         if(mousePressed && !mouseAlreadyPressed)
