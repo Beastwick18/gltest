@@ -23,9 +23,15 @@ $(BINDIR)/$(TARGET): $(OBJS)
 	$(CPP) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	@# Create parent directories for obj files
+	mkdir -p "$(dir $@)"
+	
 	$(CPP) $(CFLAGS) -o $@ -c $<
 
 $(OBJDIR)/%.o: **/%.c
+	@# Create parent directories for obj files
+	mkdir -p "$(dir $@)"
+	
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BINDIR):
