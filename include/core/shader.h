@@ -19,6 +19,8 @@ class Shader {
         
         GLint getUniformLocation(const char *name);
         
+        GLint getAttribLocation(const char *name);
+        
         // void setUniform1i(const char *name, GLint v1);
         // void setUniform2i(const char *name, GLint v1, GLint v2);
         // void setUniform3i(const char *name, GLint v1, GLint v2, GLint v3);

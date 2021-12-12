@@ -50,6 +50,7 @@ GLint Shader::getUniformLocation(const char *name) {
 }
 
 void Shader::freeShader(Shader *s) {
+    glDeleteShader(s->shaderProgram);
     if(s != nullptr)
         delete s;
 }
@@ -62,6 +63,10 @@ void Shader::enableVertexAttribArray(const char *name, GLint size, GLenum type, 
     GLint attrib = glGetAttribLocation(shaderProgram, name);
     glVertexAttribPointer(attrib, size, type, normalized, stride, pointer);
     glEnableVertexAttribArray(attrib);
+}
+
+GLint Shader::getAttribLocation(const char *name) {
+    return glGetAttribLocation(shaderProgram, name);
 }
 
 void Shader::bindFragDataLocation(GLuint colorNumber, const char *name) {

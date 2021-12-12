@@ -1,9 +1,13 @@
 #include "core.h"
+#include "core/VBO.h"
+#include "core/VAO.h"
+#include "core/EBO.h"
 #include "core/input.h"
 #include "core/window.h"
 #include "core/shader.h"
 #include "shaders.h"
 #include <cstring>
+#include <stb/stb_image.h>
 #include <cmath>
 
 using namespace MinecraftClone;
@@ -39,39 +43,68 @@ float square_vertices[] = {
     -2.0f, -2.0f, // bottom left point
 };
 
+float verticesSimple[] = {
+    //    Position   // Tex coords //
+    -1.0f,  1.0f, 0.0f, 0.0f, 0.0f, // Top left
+     1.0f,  1.0f, 0.0f, 1.0f, 0.0f, // Top right
+     1.0f, -1.0f, 0.0f, 1.0f, 1.0f, // Bottom right
+    -1.0f, -1.0f, 0.0f, 0.0f, 1.0f  // Bottom left
+};
+
+unsigned int indices[] = {
+    0, 1, 2, // Top triangle
+    0, 3, 2  // Bottom triangle
+};
+
 float lerp(float a, float b, float t) {
     return a + t * (b-a);
 }
 
+// Deprecated
 struct Triangle {
-    GLuint vbo, vao, numVertices;
+    GLuint vbo, vao, ebo, numVertices;
     
-    static Triangle *createTriangle(float *vertices, GLuint numVertices, GLuint numDimensions, Shader *s) {
+    static Triangle *createTriangle(float *vertices, unsigned int *indices, size_t numIndices, GLuint numVertices, GLuint numDimensions, Shader *s) {
         Triangle *t = new Triangle();
-        glGenBuffers(1, &t->vbo);
         size_t verticesSize = sizeof(float) * numVertices * numDimensions;
+        size_t indicesSize = sizeof(float) * numIndices;
         t->numVertices = numVertices;
         
-        glBindBuffer(GL_ARRAY_BUFFER, t->vbo);
-        glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_DYNAMIC_DRAW);
-        
         glGenVertexArrays(1, &t->vao);
+        glGenBuffers(1, &t->vbo);
+        glGenBuffers(1, &t->ebo);
+        
         glBindVertexArray(t->vao);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, t->vbo);
+        glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, t->ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, GL_STATIC_DRAW);
+        
         s->enableVertexAttribArray("position", 2, GL_FLOAT, GL_FALSE);
+        glEnableVertexAttribArray(0);
+        
+        // Unbind vbo and vao
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         
         return t;
     }
     
     static void freeTriangle(Triangle *t) {
+        glDeleteVertexArrays(1, &t->vao);
+        glDeleteBuffers(1, &t->vbo);
         if(t != nullptr)
             delete t;
     }
     
     void render() {
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, numVertices);
+        // glDrawArrays(GL_TRIANGLES, 0, numVertices);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
     }
 };
 
@@ -144,9 +177,46 @@ int main(int argc, char **argv) {
     Shader *s = Shader::createShader(fragmentSource, vertexSource);
     s->bindFragDataLocation(0, "outColor");
     
-    Triangle *square = Triangle::createTriangle(square_vertices, 6, 2, s);
+    // Triangle *square = Triangle::createTriangle(verticesSimple, indices, 6, 4, 2, s);
     // Triangle *t1 = Triangle::createTriangle(vertices, sizeof(vertices), s);
     // Triangle *t2 = Triangle::createTriangle(vertices2, sizeof(vertices2), s);
+    
+    VAO *vao = new VAO;
+    vao->bind();
+    // printf("%ld, %ld", sizeof(verticesSimple), sizeof(indices));
+    VBO *vbo = new VBO(verticesSimple, sizeof(verticesSimple));
+    EBO *ebo = new EBO(indices, sizeof(indices));
+    vao->linkAttrib(vbo, s->getAttribLocation("position"), 3, GL_FLOAT, 5 * sizeof(float), nullptr);
+    vao->linkAttrib(vbo, 1, 2, GL_FLOAT, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    
+    vao->unbind();
+    vbo->unbind();
+    ebo->unbind();
+    
+    int imageWidth, imageHeight, colorCh;
+    unsigned char *bytes = stbi_load("unnamed.png", &imageWidth, &imageHeight, &colorCh, 0);
+    printf("%d, %d\n", imageWidth, imageHeight);
+    
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    
+    stbi_image_free(bytes);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    GLuint tex0Uniform = s->getUniformLocation("tex0");
+    s->use();
+    glUniform1i(tex0Uniform, 0);
     
     bool mouseAlreadyPressed = false;
     bool keyAlreadyPressed = false;
@@ -206,7 +276,12 @@ int main(int argc, char **argv) {
             }
             s->use();
             glUniform1f(test, l);
-            square->render();
+            glBindTexture(GL_TEXTURE_2D, texture);
+            vao->bind();
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            vao->unbind();
+            
+            // square->render();
             // t1->render();
             // t2->render();
             
@@ -215,10 +290,14 @@ int main(int argc, char **argv) {
         }
         glfwPollEvents();
     }
-    Triangle::freeTriangle(square);
+    // Triangle::freeTriangle(square);
     // Triangle::freeTriangle(t1);
     // Triangle::freeTriangle(t2);
     Shader::freeShader(s);
     Window::freeWindow(window);
+    VBO::free(vbo);
+    VAO::free(vao);
+    EBO::free(ebo);
+    glDeleteTextures(1, &texture);
     glfwTerminate();
 }
