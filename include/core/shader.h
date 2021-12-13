@@ -8,8 +8,10 @@ class Shader {
         GLuint shaderProgram;
     
     public:
-        static Shader *createShader(const char *fragSource, const char *vertSource);
+        static Shader *createShader(std::string fragFilePath, std::string vertFilePath);
         static void freeShader(Shader *s);
+        
+        static std::string readFile(std::string filepath);
         
         void use();
         

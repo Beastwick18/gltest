@@ -9,6 +9,9 @@
 #include <cstring>
 #include <stb/stb_image.h>
 #include <cmath>
+#include <filesystem>
+#include <iostream>
+#include "core/Texture2D.h"
 
 using namespace MinecraftClone;
 
@@ -45,66 +48,74 @@ float square_vertices[] = {
 
 float verticesSimple[] = {
     //    Position   // Tex coords //
-    -1.0f,  1.0f, 0.0f, 0.0f, 0.0f, // Top left
-     1.0f,  1.0f, 0.0f, 1.0f, 0.0f, // Top right
-     1.0f, -1.0f, 0.0f, 1.0f, 1.0f, // Bottom right
-    -1.0f, -1.0f, 0.0f, 0.0f, 1.0f  // Bottom left
+    -1.0f,  0.5f, 0.0f, 0.0f, 0.0f, // Top left
+     0.0f,  0.5f, 0.0f, 1.0f, 0.0f, // Top right
+     0.0f, -0.5f, 0.0f, 1.0f, 1.0f, // Bottom right
+    -1.0f, -0.5f, 0.0f, 0.0f, 1.0f  // Bottom left
+};
+
+float verticesSimple2[] = {
+    //    Position   // Tex coords //
+     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, // Top left
+     1.0f,  0.5f, 0.0f, 1.0f, 0.0f, // Top right
+     1.0f, -0.5f, 0.0f, 1.0f, 1.0f, // Bottom right
+     0.0f, -0.5f, 0.0f, 0.0f, 1.0f  // Bottom left
 };
 
 unsigned int indices[] = {
     0, 1, 2, // Top triangle
-    0, 3, 2  // Bottom triangle
+    0, 2, 3  // Bottom triangle
 };
 
 float lerp(float a, float b, float t) {
     return a + t * (b-a);
 }
 
-// Deprecated
-struct Triangle {
-    GLuint vbo, vao, ebo, numVertices;
+struct Renderable {
+    VBO *vbo;
+    EBO *ebo;
+    VAO *vao;
+    GLuint vertexPropertyCount, vertexCount, indicesCount;
     
-    static Triangle *createTriangle(float *vertices, unsigned int *indices, size_t numIndices, GLuint numVertices, GLuint numDimensions, Shader *s) {
-        Triangle *t = new Triangle();
-        size_t verticesSize = sizeof(float) * numVertices * numDimensions;
-        size_t indicesSize = sizeof(float) * numIndices;
-        t->numVertices = numVertices;
-        
-        glGenVertexArrays(1, &t->vao);
-        glGenBuffers(1, &t->vbo);
-        glGenBuffers(1, &t->ebo);
-        
-        glBindVertexArray(t->vao);
-        
-        glBindBuffer(GL_ARRAY_BUFFER, t->vbo);
-        glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
-        
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, t->ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, GL_STATIC_DRAW);
-        
-        s->enableVertexAttribArray("position", 2, GL_FLOAT, GL_FALSE);
-        glEnableVertexAttribArray(0);
-        
-        // Unbind vbo and vao
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-        
-        return t;
+    Renderable(GLfloat *vertices, GLuint vertexPropertyCount, GLuint vertexCount, GLuint *indices, GLuint indicesCount) {
+        this->vertexPropertyCount = vertexPropertyCount;
+        this->vertexCount = vertexCount;
+        this->indicesCount = indicesCount;
+        vao = new VAO;
+        vao->bind();
+        vbo = new VBO(vertices, sizeof(GLfloat) * vertexCount * vertexPropertyCount);
+        ebo = new EBO(indices, indicesCount);
     }
     
-    static void freeTriangle(Triangle *t) {
-        glDeleteVertexArrays(1, &t->vao);
-        glDeleteBuffers(1, &t->vbo);
-        if(t != nullptr)
-            delete t;
+    void unbindAll() const {
+        vbo->unbind();
+        ebo->unbind();
+        vao->unbind();
+    }
+    
+    void linkAttrib(int layout, int start, GLuint end) {
+        if(end < start) {
+            fprintf(stderr, "Non fatal: Invalid range for attribute [in file %s line %d]\n", __FILE__, __LINE__);
+            return;
+        }
+        vao->bind();
+        vao->linkAttrib(vbo, layout, end-start, GL_FLOAT, vertexPropertyCount * sizeof(float), (void*)(start * sizeof(float)));
+        vao->unbind();
+    }
+    
+    static void free(Renderable *r) {
+        if(r != nullptr) {
+            VAO::free(r->vao);
+            VBO::free(r->vbo);
+            EBO::free(r->ebo);
+            delete r;
+        }
     }
     
     void render() {
-        glBindVertexArray(vao);
-        // glDrawArrays(GL_TRIANGLES, 0, numVertices);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
+        vao->bind();
+        glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
+        vao->unbind();
     }
 };
 
@@ -171,56 +182,37 @@ int main(int argc, char **argv) {
     if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         fprintf(stderr, "Fatal: Failed to init glad [failed in %s at line %d]\n", __FILE__, __LINE__ - 1);
         glfwTerminate();
+        Window::freeWindow(window);
         return -1;
     }
+    
     // Bind the output of fragment shader to "outColor"
-    Shader *s = Shader::createShader(fragmentSource, vertexSource);
+    Shader *s = Shader::createShader("shaders/fragment.frag", "shaders/vertex.vert");
     s->bindFragDataLocation(0, "outColor");
     
-    // Triangle *square = Triangle::createTriangle(verticesSimple, indices, 6, 4, 2, s);
-    // Triangle *t1 = Triangle::createTriangle(vertices, sizeof(vertices), s);
-    // Triangle *t2 = Triangle::createTriangle(vertices2, sizeof(vertices2), s);
+    Renderable *r = new Renderable(verticesSimple, 5, 4, indices, 6);
+    r->linkAttrib(s->getAttribLocation("position"), 0, 3); // Position
+    r->linkAttrib(s->getAttribLocation("aTex"), 3, 5); // Tex coords
+    r->unbindAll();
     
-    VAO *vao = new VAO;
-    vao->bind();
-    // printf("%ld, %ld", sizeof(verticesSimple), sizeof(indices));
-    VBO *vbo = new VBO(verticesSimple, sizeof(verticesSimple));
-    EBO *ebo = new EBO(indices, sizeof(indices));
-    vao->linkAttrib(vbo, s->getAttribLocation("position"), 3, GL_FLOAT, 5 * sizeof(float), nullptr);
-    vao->linkAttrib(vbo, 1, 2, GL_FLOAT, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    Renderable *r2 = new Renderable(verticesSimple2, 5, 4, indices, 6);
+    r2->linkAttrib(0, 0, 3); // Position
+    r2->linkAttrib(1, 3, 5); // Tex coords
+    r2->unbindAll();
     
-    vao->unbind();
-    vbo->unbind();
-    ebo->unbind();
-    
-    int imageWidth, imageHeight, colorCh;
-    unsigned char *bytes = stbi_load("unnamed.png", &imageWidth, &imageHeight, &colorCh, 0);
-    printf("%d, %d\n", imageWidth, imageHeight);
-    
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    
-    stbi_image_free(bytes);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    Texture2D *tex = Texture2D::loadFromImageFile("res/dirt.png", 0);
+    Texture2D *tex2 = Texture2D::loadFromImageFile("res/anime.png", 1);
+    Texture2D *tex3 = Texture2D::loadFromImageFile("res/pack.png", 0);
     
     GLuint tex0Uniform = s->getUniformLocation("tex0");
+    GLuint tex1Uniform = s->getUniformLocation("tex1");
     s->use();
-    glUniform1i(tex0Uniform, 0);
+    glUniform1i(tex0Uniform, tex->textureIndex);
+    glUniform1i(tex0Uniform, tex2->textureIndex);
     
     bool mouseAlreadyPressed = false;
     bool keyAlreadyPressed = false;
-    bool playAnimation = false;
+    bool playAnimation = true;
     bool up = true;
     float a = 1;
     float b = 0;
@@ -235,6 +227,7 @@ int main(int argc, char **argv) {
     double elapsedTime = 0;
     double tickCount = 0;
     double frameCount = 0;
+    int texImage = 0;
     while(!window->shouldClose()) {
         
         currentTime = glfwGetTime();
@@ -258,7 +251,8 @@ int main(int argc, char **argv) {
         
         bool keyPressed = Input::isKeyDown(GLFW_KEY_SPACE);
         if(keyPressed && !keyAlreadyPressed)
-            playAnimation = !playAnimation;
+            texImage = !texImage;
+            // playAnimation = !playAnimation;
         keyAlreadyPressed = keyPressed;
         
         if(Input::isKeyDown(GLFW_KEY_ESCAPE))
@@ -276,28 +270,41 @@ int main(int argc, char **argv) {
             }
             s->use();
             glUniform1f(test, l);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            vao->bind();
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-            vao->unbind();
             
-            // square->render();
-            // t1->render();
-            // t2->render();
+            
+            tex2->activate();
+            tex2->bind();
+            if(texImage == 0) {
+                tex->activate();
+                tex->bind();
+                r->render();
+                tex3->activate();
+                tex3->bind();
+                r2->render();
+            } else {
+                tex->activate();
+                tex->bind();
+                r2->render();
+                tex3->activate();
+                tex3->bind();
+                r->render();
+                // glUniform1i(texUniform, tex2->textureIndex);
+                // r->render(tex3);
+                // glUniform1i(texUniform, tex->textureIndex);
+                // r2->render(tex3);
+            }
             
             glfwSwapBuffers(window->getGlfwWindow());
             dtSum = 0;
         }
         glfwPollEvents();
     }
-    // Triangle::freeTriangle(square);
-    // Triangle::freeTriangle(t1);
-    // Triangle::freeTriangle(t2);
     Shader::freeShader(s);
     Window::freeWindow(window);
-    VBO::free(vbo);
-    VAO::free(vao);
-    EBO::free(ebo);
-    glDeleteTextures(1, &texture);
+    Renderable::free(r);
+    Renderable::free(r2);
+    Texture2D::free(tex2);
+    Texture2D::free(tex3);
+    Texture2D::free(tex);
     glfwTerminate();
 }

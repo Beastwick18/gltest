@@ -10,9 +10,9 @@ class VAO {
         
         VAO();
         
-        void linkAttrib(VBO *vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void *offset);
-        void bind();
-        void unbind();
+        void linkAttrib(const VBO *vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void *offset);
+        void bind() const;
+        void unbind() const;
         static void free(VAO *vao);
 };
 

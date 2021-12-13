@@ -1,16 +1,19 @@
 #include "core/shader.h"
+#include <fstream>
 
-Shader *Shader::createShader(const char *fragSource, const char *vertSource) {
+Shader *Shader::createShader(std::string fragFilePath, std::string vertFilePath) {
     Shader *s = new Shader;
-    
-    GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertShader, 1, &vertSource, nullptr);
-    glCompileShader(vertShader);
     
     GLint result;
     int logLength;
     
     // Create and compile vertex shader
+    GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
+    std::string vertString = readFile(vertFilePath);
+    const char *vertSource = vertString.c_str();
+    
+    glShaderSource(vertShader, 1, &vertSource, nullptr);
+    glCompileShader(vertShader);
     glGetShaderiv(vertShader, GL_COMPILE_STATUS, &result);
     if(result == GL_FALSE) {
         glGetShaderiv(vertShader, GL_INFO_LOG_LENGTH, &logLength);
@@ -21,6 +24,8 @@ Shader *Shader::createShader(const char *fragSource, const char *vertSource) {
     
     // Create and compile fragment shader
     GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    std::string fragString = readFile(fragFilePath).c_str();
+    const char *fragSource = fragString.c_str();
     glShaderSource(fragShader, 1, &fragSource, nullptr);
     glCompileShader(fragShader);
     
@@ -45,14 +50,26 @@ Shader *Shader::createShader(const char *fragSource, const char *vertSource) {
     return s;
 }
 
+std::string Shader::readFile(std::string filepath) {
+    std::ifstream in(filepath);
+    std::string line;
+    std::string out;
+    while(std::getline(in, line)) {
+        out += line + "\n";
+    }
+    in.close();
+    return out;
+}
+
 GLint Shader::getUniformLocation(const char *name) {
     return glGetUniformLocation(shaderProgram, name);
 }
 
 void Shader::freeShader(Shader *s) {
-    glDeleteShader(s->shaderProgram);
-    if(s != nullptr)
+    if(s != nullptr) {
+        glDeleteShader(s->shaderProgram);
         delete s;
+    }
 }
 
 void Shader::use() {
