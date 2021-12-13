@@ -8,22 +8,23 @@ class Shader {
         GLuint shaderProgram;
     
     public:
-        static Shader *createShader(std::string fragFilePath, std::string vertFilePath);
+        static Shader *createShader(const std::string &fragFilePath, const std::string &vertFilePath);
         static void freeShader(Shader *s);
         
-        static std::string readFile(std::string filepath);
+        static std::string readFile(const std::string &filepath);
         
-        void use();
+        void use() const;
         
-        void enableVertexAttribArray(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride = 0, const void *pointer = nullptr);
+        void enableVertexAttribArray(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride = 0, const void *pointer = nullptr) const;
         
-        void bindFragDataLocation(GLuint colorNumber, const char *name);
+        void bindFragDataLocation(GLuint colorNumber, const char *name) const;
         
-        GLint getUniformLocation(const char *name);
+        GLint getUniformLocation(const char *name) const;
         
-        GLint getAttribLocation(const char *name);
+        GLint getAttribLocation(const char *name) const;
         
-        // void setUniform1i(const char *name, GLint v1);
+        void setUniform1i(const char *name, const GLint v1);
+        void setUniform1i(const int location, const GLint v1);
         // void setUniform2i(const char *name, GLint v1, GLint v2);
         // void setUniform3i(const char *name, GLint v1, GLint v2, GLint v3);
         // void setUniform4i(const char *name, GLint v1, GLint v2, GLint v3, GLint v4);
@@ -43,7 +44,8 @@ class Shader {
         // void setUniform3uiv(const char *name, const GLfloat *value);
         // void setUniform4uiv(const char *name, const GLfloat *value);
         
-        // void setUniform1f(const char *name, GLfloat v1);
+        void setUniform1f(const char *name, GLfloat v1);
+        void setUniform1f(const int location, GLfloat v1);
         // void setUniform2f(const char *name, GLfloat v1, GLfloat v2);
         // void setUniform3f(const char *name, GLfloat v1, GLfloat v2, GLfloat v3);
         // void setUniform4f(const char *name, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4);

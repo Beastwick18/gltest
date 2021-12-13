@@ -2,7 +2,7 @@
 #include "core/input.h"
 
 namespace MinecraftClone {
-    Window *Window::createWindow(int width, int height, const char *title, bool fullscreen) {
+    Window *Window::createWindow(unsigned int width, unsigned int height, const std::string &title, bool fullscreen) {
         // Set glfw version to 4.6
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -10,15 +10,15 @@ namespace MinecraftClone {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         
         Window *w = new Window();
-        // Select monitor if fullscreen is on
-        GLFWmonitor *monitor = fullscreen ? glfwGetPrimaryMonitor() : nullptr;
-        
         w->width = width;
         w->height = height;
         w->title = title;
         
+        // Select monitor if fullscreen is on
+        GLFWmonitor *monitor = fullscreen ? glfwGetPrimaryMonitor() : nullptr;
+        
         // Create native glfw window
-        w->glfwWindow = glfwCreateWindow(width, height, title, monitor, nullptr);
+        w->glfwWindow = glfwCreateWindow(width, height, w->title.c_str(), monitor, nullptr);
         if(w->glfwWindow == nullptr) {
             fprintf(stderr, "Fatal: Failed to create GLFW window [failure in %s on line %d]\n", __FILE__, __LINE__ - 2);
             glfwTerminate();

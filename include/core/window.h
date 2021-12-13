@@ -7,10 +7,11 @@ namespace MinecraftClone {
     class Window {
         private:
             GLFWwindow *glfwWindow;
-            int width, height;
-            const char *title;
+            unsigned int width, height;
+            std::string title;
+            bool fullscreen;
         public:
-            static Window *createWindow(int width, int height, const char *title, bool fullscreen = false);
+            static Window *createWindow(unsigned int width, unsigned int height, const std::string &title, const bool fullscreen = false);
             static void freeWindow(Window *window);
             
             GLFWwindow *getGlfwWindow();

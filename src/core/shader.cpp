@@ -1,7 +1,7 @@
 #include "core/shader.h"
 #include <fstream>
 
-Shader *Shader::createShader(std::string fragFilePath, std::string vertFilePath) {
+Shader *Shader::createShader(const std::string &fragFilePath, const std::string &vertFilePath) {
     Shader *s = new Shader;
     
     GLint result;
@@ -50,7 +50,7 @@ Shader *Shader::createShader(std::string fragFilePath, std::string vertFilePath)
     return s;
 }
 
-std::string Shader::readFile(std::string filepath) {
+std::string Shader::readFile(const std::string &filepath) {
     std::ifstream in(filepath);
     std::string line;
     std::string out;
@@ -61,8 +61,11 @@ std::string Shader::readFile(std::string filepath) {
     return out;
 }
 
-GLint Shader::getUniformLocation(const char *name) {
-    return glGetUniformLocation(shaderProgram, name);
+GLint Shader::getUniformLocation(const char *name) const {
+    GLint location = glGetUniformLocation(shaderProgram, name);
+    if(location == -1)
+        fprintf(stderr, "Non fatal: Uniform %s does not exist\n", name);
+    return location;
 }
 
 void Shader::freeShader(Shader *s) {
@@ -72,20 +75,36 @@ void Shader::freeShader(Shader *s) {
     }
 }
 
-void Shader::use() {
+void Shader::use() const {
     glUseProgram(shaderProgram);
 }
 
-void Shader::enableVertexAttribArray(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) {
+void Shader::enableVertexAttribArray(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) const {
     GLint attrib = glGetAttribLocation(shaderProgram, name);
     glVertexAttribPointer(attrib, size, type, normalized, stride, pointer);
     glEnableVertexAttribArray(attrib);
 }
 
-GLint Shader::getAttribLocation(const char *name) {
+GLint Shader::getAttribLocation(const char *name) const {
     return glGetAttribLocation(shaderProgram, name);
 }
 
-void Shader::bindFragDataLocation(GLuint colorNumber, const char *name) {
+void Shader::bindFragDataLocation(GLuint colorNumber, const char *name) const {
     glBindFragDataLocation(shaderProgram, colorNumber, name);
+}
+
+void Shader::setUniform1i(const int location, const GLint value) {
+    glUniform1i(location, value);
+}
+
+void Shader::setUniform1i(const char *name, const GLint value) {
+    glUniform1i(getUniformLocation(name), value);
+}
+
+void Shader::setUniform1f(const char *name, const GLfloat value) {
+    glUniform1f(getUniformLocation(name), value);
+}
+
+void Shader::setUniform1f(const int location, const GLfloat value) {
+    glUniform1f(location, value);
 }

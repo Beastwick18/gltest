@@ -11,6 +11,17 @@ void VAO::linkAttrib(const VBO *vbo, GLuint layout, GLuint numComponents, GLenum
     vbo->unbind();
 }
 
+template<typename T>
+void VAO::pushAttrib(VBO *vbo, GLuint count, GLuint vertexPropCount) {
+    
+}
+
+template<>
+void VAO::pushAttrib<float>(VBO *vbo, GLuint count, GLuint vertexPropCount) {
+    linkAttrib(vbo, layoutCount++, count, GL_FLOAT, vertexPropCount * sizeof(float), (void *)(attribEnd*sizeof(float)));
+    attribEnd += count;
+}
+
 void VAO::bind() const {
     glBindVertexArray(ID);
 }

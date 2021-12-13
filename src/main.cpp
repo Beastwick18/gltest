@@ -11,7 +11,8 @@
 #include <cmath>
 #include <filesystem>
 #include <iostream>
-#include "core/Texture2D.h"
+#include "core/texture2D.h"
+#include "core/renderable.h"
 
 using namespace MinecraftClone;
 
@@ -23,43 +24,43 @@ const char *windowTitle = "Test Window 2: Press space to see something cool!";
 bool fullscreen = false, vsync = true;
 double targetFramerate = 60.0;
 
-float vertices[] = {
-    -2.0f, 2.0f,  // Vertex 1, middle x top y
-    2.0f, -2.0f, // Vertex 2, left x bottom y
-    -2.0f, -2.0f // Vertex 3, right x bottom y
-};
+// float vertices[] = {
+//     -2.0f, 2.0f,  // Vertex 1, middle x top y
+//     2.0f, -2.0f, // Vertex 2, left x bottom y
+//     -2.0f, -2.0f // Vertex 3, right x bottom y
+// };
 
-float vertices2[] = {
-    -2.0f, 2.0f,  // Vertex 1, middle x top y
-    2.0f, -2.0f, // Vertex 2, left x bottom y
-    2.0f, 2.0f // Vertex 3, right x bottom y
-};
-float square_vertices[] = {
-    // Triangle 1
-    -2.0f, 2.0f, // top left point
-    2.0f, -2.0f, // bottom right point
-    2.0f, 2.0f,  // top right point
+// float vertices2[] = {
+//     -2.0f, 2.0f,  // Vertex 1, middle x top y
+//     2.0f, -2.0f, // Vertex 2, left x bottom y
+//     2.0f, 2.0f // Vertex 3, right x bottom y
+// };
+// float square_vertices[] = {
+//     // Triangle 1
+//     -2.0f, 2.0f, // top left point
+//     2.0f, -2.0f, // bottom right point
+//     2.0f, 2.0f,  // top right point
     
-    // Triangle 2
-    -2.0f, 2.0f,  // top left point
-    2.0f, -2.0f, // bottom right point
-    -2.0f, -2.0f, // bottom left point
-};
+//     // Triangle 2
+//     -2.0f, 2.0f,  // top left point
+//     2.0f, -2.0f, // bottom right point
+//     -2.0f, -2.0f, // bottom left point
+// };
 
-float verticesSimple[] = {
-    //    Position   // Tex coords //
-    -1.0f,  0.5f, 0.0f, 0.0f, 0.0f, // Top left
-     0.0f,  0.5f, 0.0f, 1.0f, 0.0f, // Top right
-     0.0f, -0.5f, 0.0f, 1.0f, 1.0f, // Bottom right
-    -1.0f, -0.5f, 0.0f, 0.0f, 1.0f  // Bottom left
+float vertices[] = {
+     //   Position   // Tex coords //
+    -1.0f,  0.5f, 0.0f, 0.0f, 1.0f, // Top left
+     0.0f,  0.5f, 0.0f, 1.0f, 1.0f, // Top right
+     0.0f, -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right
+    -1.0f, -0.5f, 0.0f, 0.0f, 0.0f  // Bottom left
 };
 
 float verticesSimple2[] = {
-    //    Position   // Tex coords //
-     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, // Top left
-     1.0f,  0.5f, 0.0f, 1.0f, 0.0f, // Top right
-     1.0f, -0.5f, 0.0f, 1.0f, 1.0f, // Bottom right
-     0.0f, -0.5f, 0.0f, 0.0f, 1.0f  // Bottom left
+     //   Position   // Tex coords //
+     0.0f,  0.5f, 0.0f, 0.0f, 1.0f, // Top left
+     1.0f,  0.5f, 0.0f, 1.0f, 1.0f, // Top right
+     1.0f, -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right
+     0.0f, -0.5f, 0.0f, 0.0f, 0.0f  // Bottom left
 };
 
 unsigned int indices[] = {
@@ -70,55 +71,6 @@ unsigned int indices[] = {
 float lerp(float a, float b, float t) {
     return a + t * (b-a);
 }
-
-struct Renderable {
-    VBO *vbo;
-    EBO *ebo;
-    VAO *vao;
-    GLuint vertexPropertyCount, vertexCount, indicesCount;
-    
-    Renderable(GLfloat *vertices, GLuint vertexPropertyCount, GLuint vertexCount, GLuint *indices, GLuint indicesCount) {
-        this->vertexPropertyCount = vertexPropertyCount;
-        this->vertexCount = vertexCount;
-        this->indicesCount = indicesCount;
-        vao = new VAO;
-        vao->bind();
-        vbo = new VBO(vertices, sizeof(GLfloat) * vertexCount * vertexPropertyCount);
-        ebo = new EBO(indices, indicesCount);
-    }
-    
-    void unbindAll() const {
-        vbo->unbind();
-        ebo->unbind();
-        vao->unbind();
-    }
-    
-    void linkAttrib(int layout, int start, GLuint end) {
-        if(end < start) {
-            fprintf(stderr, "Non fatal: Invalid range for attribute [in file %s line %d]\n", __FILE__, __LINE__);
-            return;
-        }
-        vao->bind();
-        vao->linkAttrib(vbo, layout, end-start, GL_FLOAT, vertexPropertyCount * sizeof(float), (void*)(start * sizeof(float)));
-        vao->unbind();
-    }
-    
-    static void free(Renderable *r) {
-        if(r != nullptr) {
-            VAO::free(r->vao);
-            VBO::free(r->vbo);
-            EBO::free(r->ebo);
-            delete r;
-        }
-    }
-    
-    void render() {
-        vao->bind();
-        glDrawElements(GL_TRIANGLES, indicesCount, GL_UNSIGNED_INT, 0);
-        vao->unbind();
-    }
-};
-
 void readArguments(int argc, char **argv) {
     for(int i = 0; i < argc; i++) {
         char *str = argv[i];
@@ -186,29 +138,35 @@ int main(int argc, char **argv) {
         return -1;
     }
     
+    // Setup blending for textures that contain transparency
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    
     // Bind the output of fragment shader to "outColor"
     Shader *s = Shader::createShader("shaders/fragment.frag", "shaders/vertex.vert");
     s->bindFragDataLocation(0, "outColor");
     
-    Renderable *r = new Renderable(verticesSimple, 5, 4, indices, 6);
-    r->linkAttrib(s->getAttribLocation("position"), 0, 3); // Position
-    r->linkAttrib(s->getAttribLocation("aTex"), 3, 5); // Tex coords
+    Renderable *r = new Renderable(vertices, 5, 4, indices, 6);
+    r->pushAttrib<float>(3); // Position
+    r->pushAttrib<float>(2); // Tex coords
     r->unbindAll();
     
     Renderable *r2 = new Renderable(verticesSimple2, 5, 4, indices, 6);
-    r2->linkAttrib(0, 0, 3); // Position
-    r2->linkAttrib(1, 3, 5); // Tex coords
+    r2->pushAttrib<float>(3); // Position
+    r2->pushAttrib<float>(2); // Tex coords
     r2->unbindAll();
     
-    Texture2D *tex = Texture2D::loadFromImageFile("res/dirt.png", 0);
-    Texture2D *tex2 = Texture2D::loadFromImageFile("res/anime.png", 1);
-    Texture2D *tex3 = Texture2D::loadFromImageFile("res/pack.png", 0);
+    Texture2D *tex = Texture2D::loadFromImageFile("res/smile.png");
+    Texture2D *tex2 = Texture2D::loadFromImageFile("res/anime.png");
+    Texture2D *tex3 = Texture2D::loadFromImageFile("res/pack.png");
+    
+    GLint test = s->getUniformLocation("test");
     
     GLuint tex0Uniform = s->getUniformLocation("tex0");
     GLuint tex1Uniform = s->getUniformLocation("tex1");
     s->use();
-    glUniform1i(tex0Uniform, tex->textureIndex);
-    glUniform1i(tex0Uniform, tex2->textureIndex);
+    s->setUniform1i("tex0", 0);
+    s->setUniform1i("tex1", 1);
     
     bool mouseAlreadyPressed = false;
     bool keyAlreadyPressed = false;
@@ -216,8 +174,7 @@ int main(int argc, char **argv) {
     bool up = true;
     float a = 1;
     float b = 0;
-    
-    GLint test = s->getUniformLocation("test");
+    int texImage = 0;
     
     double timestep = 1.0/targetFramerate;
     double currentTime = glfwGetTime();
@@ -227,9 +184,7 @@ int main(int argc, char **argv) {
     double elapsedTime = 0;
     double tickCount = 0;
     double frameCount = 0;
-    int texImage = 0;
     while(!window->shouldClose()) {
-        
         currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
@@ -252,7 +207,6 @@ int main(int argc, char **argv) {
         bool keyPressed = Input::isKeyDown(GLFW_KEY_SPACE);
         if(keyPressed && !keyAlreadyPressed)
             texImage = !texImage;
-            // playAnimation = !playAnimation;
         keyAlreadyPressed = keyPressed;
         
         if(Input::isKeyDown(GLFW_KEY_ESCAPE))
@@ -269,29 +223,16 @@ int main(int argc, char **argv) {
                 frameCount = 0;
             }
             s->use();
-            glUniform1f(test, l);
+            s->setUniform1f(test, l);
             
-            
-            tex2->activate();
-            tex2->bind();
+            // Bind tex2 to GL_TEXTURE1
+            tex2->bind(1);
             if(texImage == 0) {
-                tex->activate();
-                tex->bind();
-                r->render();
-                tex3->activate();
-                tex3->bind();
-                r2->render();
+                r->render(tex);
+                r2->render(tex3);
             } else {
-                tex->activate();
-                tex->bind();
-                r2->render();
-                tex3->activate();
-                tex3->bind();
-                r->render();
-                // glUniform1i(texUniform, tex2->textureIndex);
-                // r->render(tex3);
-                // glUniform1i(texUniform, tex->textureIndex);
-                // r2->render(tex3);
+                r->render(tex3);
+                r2->render(tex);
             }
             
             glfwSwapBuffers(window->getGlfwWindow());
@@ -299,12 +240,16 @@ int main(int argc, char **argv) {
         }
         glfwPollEvents();
     }
+    
     Shader::freeShader(s);
     Window::freeWindow(window);
     Renderable::free(r);
     Renderable::free(r2);
+    Texture2D::free(tex);
     Texture2D::free(tex2);
     Texture2D::free(tex3);
-    Texture2D::free(tex);
+    
     glfwTerminate();
+    
+    return 0;
 }
