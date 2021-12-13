@@ -1,3 +1,6 @@
+#include <cmath>
+#include <cstring>
+#include <iostream>
 #include "core.h"
 #include "core/VBO.h"
 #include "core/VAO.h"
@@ -5,21 +8,15 @@
 #include "core/input.h"
 #include "core/window.h"
 #include "core/shader.h"
-#include "shaders.h"
-#include <cstring>
-#include <stb/stb_image.h>
-#include <cmath>
-#include <filesystem>
-#include <iostream>
 #include "core/texture2D.h"
 #include "core/renderable.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 using namespace MinecraftClone;
 
-float count = 0;
-float l = 0;
-const float turnintPoint = 10.0f;
-int windowWidth = 720, windowHeight = 720;
+int windowWidth = 960, windowHeight = 720;
 const char *windowTitle = "Test Window 2: Press space to see something cool!";
 bool fullscreen = false, vsync = true;
 double targetFramerate = 60.0;
@@ -49,18 +46,18 @@ double targetFramerate = 60.0;
 
 float vertices[] = {
      //   Position   // Tex coords //
-    -1.0f,  0.5f, 0.0f, 0.0f, 1.0f, // Top left
-     0.0f,  0.5f, 0.0f, 1.0f, 1.0f, // Top right
-     0.0f, -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right
-    -1.0f, -0.5f, 0.0f, 0.0f, 0.0f  // Bottom left
+    -1.0f,  0.5f, 1.0f, 0.0f, 1.0f, // Top left
+     0.0f,  0.5f, 1.0f, 1.0f, 1.0f, // Top right
+     0.0f, -0.5f, 1.0f, 1.0f, 0.0f, // Bottom right
+    -1.0f, -0.5f, 1.0f, 0.0f, 0.0f  // Bottom left
 };
 
 float verticesSimple2[] = {
      //   Position   // Tex coords //
-     0.0f,  0.5f, 0.0f, 0.0f, 1.0f, // Top left
-     1.0f,  0.5f, 0.0f, 1.0f, 1.0f, // Top right
-     1.0f, -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right
-     0.0f, -0.5f, 0.0f, 0.0f, 0.0f  // Bottom left
+     0.0f,  0.5f, 1.0f, 0.0f, 1.0f, // Top left
+     1.0f,  0.5f, 1.0f, 1.0f, 1.0f, // Top right
+     1.0f, -0.5f, 1.0f, 1.0f, 0.0f, // Bottom right
+     0.0f, -0.5f, 1.0f, 0.0f, 0.0f  // Bottom left
 };
 
 unsigned int indices[] = {
@@ -140,40 +137,56 @@ int main(int argc, char **argv) {
     
     // Setup blending for textures that contain transparency
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
     glEnable(GL_BLEND);
     
     // Bind the output of fragment shader to "outColor"
     Shader *s = Shader::createShader("shaders/fragment.frag", "shaders/vertex.vert");
     s->bindFragDataLocation(0, "outColor");
     
+    
     Renderable *r = new Renderable(vertices, 5, 4, indices, 6);
     r->pushAttrib<float>(3); // Position
     r->pushAttrib<float>(2); // Tex coords
     r->unbindAll();
     
-    Renderable *r2 = new Renderable(verticesSimple2, 5, 4, indices, 6);
-    r2->pushAttrib<float>(3); // Position
-    r2->pushAttrib<float>(2); // Tex coords
-    r2->unbindAll();
+    // Renderable *r2 = new Renderable(verticesSimple2, 5, 4, indices, 6);
+    // r2->pushAttrib<float>(3); // Position
+    // r2->pushAttrib<float>(2); // Tex coords
+    // r2->unbindAll();
     
     Texture2D *tex = Texture2D::loadFromImageFile("res/smile.png");
     Texture2D *tex2 = Texture2D::loadFromImageFile("res/anime.png");
     Texture2D *tex3 = Texture2D::loadFromImageFile("res/pack.png");
     
     GLint test = s->getUniformLocation("test");
+    GLint mvpUniform = s->getUniformLocation("MVP");
     
-    GLuint tex0Uniform = s->getUniformLocation("tex0");
-    GLuint tex1Uniform = s->getUniformLocation("tex1");
+    // Create the projection matrix for 4:3 aspect ratio
+    float projWidth = 1.0f;
+    float projHeight = (projWidth * windowHeight)/windowWidth;
+    glm::mat4 proj = glm::ortho(-projWidth, projWidth, -projHeight, projHeight, -1.0f, 1.0f);
+    // Translate view matrix -.2f
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-.2f, 0, 0));
+    // Translate the model by .5, .5
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(.5f, .5f, 0));
+    
+    glm::mat4 mvp = proj * view * model;
+    
+    // Initialize some uniforms
     s->use();
+    s->setUniformMat4f(mvpUniform, mvp);
     s->setUniform1i("tex0", 0);
     s->setUniform1i("tex1", 1);
     
+    float l = 0;
     bool mouseAlreadyPressed = false;
     bool keyAlreadyPressed = false;
     bool playAnimation = true;
     bool up = true;
     float a = 1;
     float b = 0;
+    float count = 0;
     int texImage = 0;
     
     double timestep = 1.0/targetFramerate;
@@ -212,6 +225,7 @@ int main(int argc, char **argv) {
         if(Input::isKeyDown(GLFW_KEY_ESCAPE))
             window->close();
         
+        
         if(dtSum >= timestep) {
             frameCount++;
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -222,17 +236,40 @@ int main(int argc, char **argv) {
                 tickCount = 0;
                 frameCount = 0;
             }
+            
+            
+            if(Input::isKeyDown(GLFW_KEY_W)) {
+                view = glm::translate(view, glm::vec3(0, -.01f, 0));
+            }
+            if(Input::isKeyDown(GLFW_KEY_A)) {
+                view = glm::translate(view, glm::vec3(.01f, 0, 0));
+            }
+            if(Input::isKeyDown(GLFW_KEY_S)) {
+                view = glm::translate(view, glm::vec3(0, .01f, 0));
+            }
+            if(Input::isKeyDown(GLFW_KEY_D)) {
+                view = glm::translate(view, glm::vec3(-.01f, 0, 0));
+            }
+            mvp = proj * view * model;
+            
             s->use();
             s->setUniform1f(test, l);
+            s->setUniformMat4f(mvpUniform, mvp);
+            
+            // r->render(tex);
             
             // Bind tex2 to GL_TEXTURE1
             tex2->bind(1);
             if(texImage == 0) {
                 r->render(tex);
-                r2->render(tex3);
+                // Render again, but 1 unit to the right
+                s->setUniformMat4f(mvpUniform, proj * model * glm::translate(view, glm::vec3(1.0f, 0, 0)));
+                r->render(tex3);
             } else {
                 r->render(tex3);
-                r2->render(tex);
+                // Render again, but 1 unit to the right
+                s->setUniformMat4f(mvpUniform, proj * model * glm::translate(view, glm::vec3(1.0f, 0, 0)));
+                r->render(tex);
             }
             
             glfwSwapBuffers(window->getGlfwWindow());
@@ -244,7 +281,7 @@ int main(int argc, char **argv) {
     Shader::freeShader(s);
     Window::freeWindow(window);
     Renderable::free(r);
-    Renderable::free(r2);
+    // Renderable::free(r2);
     Texture2D::free(tex);
     Texture2D::free(tex2);
     Texture2D::free(tex3);

@@ -6,12 +6,14 @@ in vec2 texCoord;
 
 uniform sampler2D tex0;
 uniform sampler2D tex1;
+
 uniform float test;
 
 void main() {
     float lerpX = test * texCoord.x;
     float lerpY = test * texCoord.y;
     // Mix texture 0 and texture 1 together
+    // outColor = texture(tex0, texCoord);
     outColor = mix(texture(tex0, texCoord), texture(tex1, texCoord), .5);
     // Mix in some cool colors
     outColor = mix(outColor, mix(mix(vec4(test, 1-(test), 0, 1.0), vec4(0, test, 1-(test), 1.0), lerpX), vec4(1-(test), 0, test, 1.0), lerpY), .5);

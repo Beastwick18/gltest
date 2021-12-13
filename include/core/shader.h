@@ -2,6 +2,7 @@
 #define MINCRAFT_CLONE_SHADER_H
 
 #include "core.h"
+#include "glm/glm.hpp"
 
 class Shader {
     private:
@@ -57,7 +58,8 @@ class Shader {
         
         // void setUniformMatrix2fv(const char *name, const GLfloat *value);
         // void setUniformMatrix3fv(const char *name, const GLfloat *value);
-        // void setUniformMatrix4fv(const char *name, const GLfloat *value);
+        void setUniformMat4f(const char *name, const glm::mat4 &mat);
+        void setUniformMat4f(const int location, const glm::mat4 &mat);
         
         // void setUniformMatrix2x3fv(const char *name, const GLfloat *value);
         // void setUniformMatrix3x2fv(const char *name, const GLfloat *value);
