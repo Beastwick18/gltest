@@ -1,6 +1,6 @@
 #include "core/renderer.h"
 
-void Renderer::render(const VAO *vao, const EBO *ebo, const Shader *s) {
+void Renderer::render(const VAO *vao, const EBO *ebo, const Shader *s) const {
     s->use();
     vao->bind();
     ebo->bind();

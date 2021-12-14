@@ -8,7 +8,7 @@
 
 class Renderer {
     public:
-        void render(const VAO *vao, const EBO *ebo, const Shader *s);
+        void render(const VAO *vao, const EBO *ebo, const Shader *s) const;
 };
 
 #endif

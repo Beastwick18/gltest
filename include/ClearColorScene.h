@@ -2,11 +2,11 @@
 
 class ClearColorScene : public Scene {
     public:
-        ClearColorScene();
+        ClearColorScene(MinecraftClone::Window *window);
         ~ClearColorScene();
         
-        void update(float deltaTime) override;
-        void render() override;
+        void update() override;
+        void render(const Renderer &r) override;
         void guiRender() override;
     private:
         float clearColor[4];

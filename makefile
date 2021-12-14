@@ -3,10 +3,11 @@ CPP = g++
 BINDIR = bin
 SRCDIR = src
 OBJDIR = obj
-INCDIR = include
-CFLAGS = -x c++ -std=c++17 -I./$(INCDIR) -I./include/imgui
-DFLAGS = -g -x c++ -I./$(INCDIR)
-RFLAGS = -O3 -x c++ -I./$(INCDIR)
+INCDIRS = include include/imgui
+INCLUDE = $(addprefix -I./,$(INCDIRS))
+CFLAGS = -x c++ -std=c++17 $(INCLUDE)
+DFLAGS = -g -x c++ $(INCLUDE)
+RFLAGS = -O3 -x c++ $(INCLUDE)
 LIBS = `pkg-config --static --libs glfw3`
 CPP_SRCS = $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/**/*.cpp)
 C_SRCS = $(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)
@@ -17,7 +18,7 @@ RELEASETARGET = release
 
 .PHONY: clean
 
-all: $(BINDIR) $(BINDIR)/$(TARGET) $(SRCDIR) $(OBJDIR) $(INCDIR)
+all: $(BINDIR) $(BINDIR)/$(TARGET) $(SRCDIR) $(OBJDIR) $(INCDIRS)
 
 $(BINDIR)/$(TARGET): $(OBJS)
 	$(CPP) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
@@ -46,11 +47,13 @@ $(INCDIR):
 $(SRCDIR):
 	mkdir $@
 
-debug: clean $(BINDIR) $(OBJDIR) $(OBJS)
-	$(CPP) -o $(BINDIR)/$(DEBUGTARGET) $(OBJS) $(DFLAGS) $(LIBS)
+debug: $(BINDIR)/$(DEBUGTARGET)
+$(BINDIR)/$(DEBUGTARGET): clean $(BINDIR) $(OBJDIR) $(OBJS)
+	$(CPP) -o $@ $(OBJS) $(DFLAGS) $(LIBS)
 
-release: clean $(BINDIR) $(OBJDIR) $(OBJS)
-	$(CPP) -o $(BINDIR)/$(RELEASETARGET) $(OBJS) $(RFLAGS) $(LIBS)
+release: clean $(BINDIR)/$(RELEASETARGET)
+$(BINDIR)/$(RELEASETARGET): $(BINDIR) $(OBJDIR) $(OBJS)
+	$(CPP) -o $@ $(OBJS) $(RFLAGS) $(LIBS)
 
 clean:
 	@# Remove binaries
