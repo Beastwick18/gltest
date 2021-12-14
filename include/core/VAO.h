@@ -3,6 +3,7 @@
 
 #include "core.h"
 #include "core/VBO.h"
+#include "core/VBlayout.h"
 
 class VAO {
     public:
@@ -12,9 +13,10 @@ class VAO {
         VAO();
         
         void linkAttrib(const VBO *vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void *offset);
+        void addBuffer(const VBO *vbo, const VBlayout *layout);
         
-        template<typename T>
-        void pushAttrib(VBO *vbo, GLuint count, GLuint vertexPropCount);
+        // template<typename T>
+        // void pushAttrib(VBO *vbo, GLuint count, GLuint vertexPropCount);
         
         void bind() const;
         void unbind() const;

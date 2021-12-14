@@ -4,7 +4,7 @@ BINDIR = bin
 SRCDIR = src
 OBJDIR = obj
 INCDIR = include
-CFLAGS = -x c++ -std=c++17 -I./$(INCDIR)
+CFLAGS = -x c++ -std=c++17 -I./$(INCDIR) -I./include/imgui
 DFLAGS = -g -x c++ -I./$(INCDIR)
 RFLAGS = -O3 -x c++ -I./$(INCDIR)
 LIBS = `pkg-config --static --libs glfw3`

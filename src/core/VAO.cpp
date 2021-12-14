@@ -11,16 +11,29 @@ void VAO::linkAttrib(const VBO *vbo, GLuint layout, GLuint numComponents, GLenum
     vbo->unbind();
 }
 
-template<typename T>
-void VAO::pushAttrib(VBO *vbo, GLuint count, GLuint vertexPropCount) {
-    
+void VAO::addBuffer(const VBO *vbo, const VBlayout *layout) {
+    vbo->bind();
+    int i = 0;
+    unsigned int offset = 0;
+    for(const auto &e : layout->getElements()) {
+        printf("%d, %d, %d, %d\n", i, e.count, layout->getStride(), offset);
+        glVertexAttribPointer(i, e.count, e.type, e.normalized, layout->getStride(), reinterpret_cast<void *>(offset));
+        offset += e.count * VBelement::getSize(e.type);
+        glEnableVertexAttribArray(i++);
+    }
+    vbo->unbind();
 }
 
-template<>
-void VAO::pushAttrib<float>(VBO *vbo, GLuint count, GLuint vertexPropCount) {
-    linkAttrib(vbo, layoutCount++, count, GL_FLOAT, vertexPropCount * sizeof(float), (void *)(attribEnd*sizeof(float)));
-    attribEnd += count;
-}
+// template<typename T>
+// void VAO::pushAttrib(VBO *vbo, GLuint count, GLuint vertexPropCount) {
+    
+// }
+
+// template<>
+// void VAO::pushAttrib<float>(VBO *vbo, GLuint count, GLuint vertexPropCount) {
+//     linkAttrib(vbo, layoutCount++, count, GL_FLOAT, vertexPropCount * sizeof(float), (void *)(attribEnd*sizeof(float)));
+//     attribEnd += count;
+// }
 
 void VAO::bind() const {
     glBindVertexArray(ID);

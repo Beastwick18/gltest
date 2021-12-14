@@ -10,6 +10,10 @@
 #include "core/shader.h"
 #include "core/texture2D.h"
 #include "core/renderable.h"
+#include "core/renderer.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -46,10 +50,10 @@ double targetFramerate = 60.0;
 
 float vertices[] = {
      //   Position   // Tex coords //
-    -1.0f,  0.5f, 1.0f, 0.0f, 1.0f, // Top left
-     0.0f,  0.5f, 1.0f, 1.0f, 1.0f, // Top right
-     0.0f, -0.5f, 1.0f, 1.0f, 0.0f, // Bottom right
-    -1.0f, -0.5f, 1.0f, 0.0f, 0.0f  // Bottom left
+     0.0f,  0.5f, 1.0f, 0.0f, 1.0f, // Top left
+     1.0f,  0.5f, 1.0f, 1.0f, 1.0f, // Top right
+     1.0f, -0.5f, 1.0f, 1.0f, 0.0f, // Bottom right
+     0.0f, -0.5f, 1.0f, 0.0f, 0.0f  // Bottom left
 };
 
 float verticesSimple2[] = {
@@ -145,15 +149,32 @@ int main(int argc, char **argv) {
     s->bindFragDataLocation(0, "outColor");
     
     
-    Renderable *r = new Renderable(vertices, 5, 4, indices, 6);
-    r->pushAttrib<float>(3); // Position
-    r->pushAttrib<float>(2); // Tex coords
-    r->unbindAll();
+    // Renderable *r = new Renderable(vertices, 5, 4, indices, 6);
+    // r->pushAttrib<float>(3); // Position
+    // r->pushAttrib<float>(2); // Tex coords
+    // r->unbindAll();
+    
+    VAO *vao = new VAO;
+    vao->bind();
+    VBO *vbo = new VBO(vertices, sizeof(vertices));
+    VBlayout *layout = new VBlayout;
+    layout->push<float>(3);
+    layout->push<float>(2);
+    vao->addBuffer(vbo, layout);
+    
+    EBO *ebo = new EBO(indices, 6);
     
     // Renderable *r2 = new Renderable(verticesSimple2, 5, 4, indices, 6);
     // r2->pushAttrib<float>(3); // Position
     // r2->pushAttrib<float>(2); // Tex coords
     // r2->unbindAll();
+    
+    Renderer renderer;
+    
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window->getGlfwWindow(), true);
+    ImGui_ImplOpenGL3_Init("#version 130");
     
     Texture2D *tex = Texture2D::loadFromImageFile("res/smile.png");
     Texture2D *tex2 = Texture2D::loadFromImageFile("res/anime.png");
@@ -163,13 +184,13 @@ int main(int argc, char **argv) {
     GLint mvpUniform = s->getUniformLocation("MVP");
     
     // Create the projection matrix for 4:3 aspect ratio
-    float projWidth = 1.0f;
+    float projWidth = 5.0f;
     float projHeight = (projWidth * windowHeight)/windowWidth;
     glm::mat4 proj = glm::ortho(-projWidth, projWidth, -projHeight, projHeight, -1.0f, 1.0f);
     // Translate view matrix -.2f
-    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-.2f, 0, 0));
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
     // Translate the model by .5, .5
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(.5f, .5f, 0));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, .5f, 0));
     
     glm::mat4 mvp = proj * view * model;
     
@@ -197,13 +218,21 @@ int main(int argc, char **argv) {
     double elapsedTime = 0;
     double tickCount = 0;
     double frameCount = 0;
+    
+    bool show_demo_window = true;
+    bool show_another_window = false;
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    
+    float moveSpeed = .1f;
     while(!window->shouldClose()) {
+        glfwPollEvents();
         currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
         dtSum += deltaTime;
         elapsedTime += deltaTime;
         tickCount++;
+        
         
         if(playAnimation)
             count += .5 * deltaTime;
@@ -225,7 +254,6 @@ int main(int argc, char **argv) {
         if(Input::isKeyDown(GLFW_KEY_ESCAPE))
             window->close();
         
-        
         if(dtSum >= timestep) {
             frameCount++;
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -239,16 +267,16 @@ int main(int argc, char **argv) {
             
             
             if(Input::isKeyDown(GLFW_KEY_W)) {
-                view = glm::translate(view, glm::vec3(0, -.01f, 0));
+                view = glm::translate(view, glm::vec3(0, -moveSpeed, 0));
             }
             if(Input::isKeyDown(GLFW_KEY_A)) {
-                view = glm::translate(view, glm::vec3(.01f, 0, 0));
+                view = glm::translate(view, glm::vec3(moveSpeed, 0, 0));
             }
             if(Input::isKeyDown(GLFW_KEY_S)) {
-                view = glm::translate(view, glm::vec3(0, .01f, 0));
+                view = glm::translate(view, glm::vec3(0, moveSpeed, 0));
             }
             if(Input::isKeyDown(GLFW_KEY_D)) {
-                view = glm::translate(view, glm::vec3(-.01f, 0, 0));
+                view = glm::translate(view, glm::vec3(-moveSpeed, 0, 0));
             }
             mvp = proj * view * model;
             
@@ -256,35 +284,69 @@ int main(int argc, char **argv) {
             s->setUniform1f(test, l);
             s->setUniformMat4f(mvpUniform, mvp);
             
-            // r->render(tex);
-            
-            // Bind tex2 to GL_TEXTURE1
-            tex2->bind(1);
-            if(texImage == 0) {
-                r->render(tex);
-                // Render again, but 1 unit to the right
-                s->setUniformMat4f(mvpUniform, proj * model * glm::translate(view, glm::vec3(1.0f, 0, 0)));
-                r->render(tex3);
-            } else {
-                r->render(tex3);
-                // Render again, but 1 unit to the right
-                s->setUniformMat4f(mvpUniform, proj * model * glm::translate(view, glm::vec3(1.0f, 0, 0)));
-                r->render(tex);
+            int start = -projWidth;
+            for(int i = 0; i < 10; i++) {
+                
+                s->setUniformMat4f(mvpUniform, proj * model * glm::translate(view, glm::vec3(start, 0, 0)));
+                renderer.render(vao, ebo, s);
+                start += 1;
             }
             
-            glfwSwapBuffers(window->getGlfwWindow());
+            // r->render(tex);
+            
+            tex3->bind();
+            tex2->bind(1);
+            renderer.render(vao, ebo, s);
+            
+            // Bind tex2 to GL_TEXTURE1
+            // tex2->bind(1);
+            // if(texImage == 0) {
+            //     r->render(tex);
+            //     // Render again, but 1 unit to the right
+            //     s->setUniformMat4f(mvpUniform, proj * model * glm::translate(view, glm::vec3(1.0f, 0, 0)));
+            //     r->render(tex3);
+            // } else {
+            //     r->render(tex3);
+            //     // Render again, but 1 unit to the right
+            //     s->setUniformMat4f(mvpUniform, proj * model * glm::translate(view, glm::vec3(1.0f, 0, 0)));
+            //     r->render(tex);
+            // }
+            
+            
+            
             dtSum = 0;
         }
-        glfwPollEvents();
+        
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        
+        {
+            static float f = 0.0f;
+
+            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::End();
+        }
+        
+        ImGui::Render();
+        ImGui::EndFrame();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window->getGlfwWindow());
     }
     
     Shader::freeShader(s);
     Window::freeWindow(window);
-    Renderable::free(r);
+    // Renderable::free(r);
     // Renderable::free(r2);
     Texture2D::free(tex);
     Texture2D::free(tex2);
     Texture2D::free(tex3);
+    
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     
     glfwTerminate();
     

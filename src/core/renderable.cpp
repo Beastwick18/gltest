@@ -24,7 +24,8 @@ void Renderable::pushAttrib(GLuint count) {
 template <>
 void Renderable::pushAttrib<float>(GLuint count) {
     vao->bind();
-    vao->pushAttrib<float>(vbo, count, vertexPropertyCount);
+    // vao->pushAttrib<float>(vbo, count, vertexPropertyCount);
+    
     vao->unbind();
 }
 
