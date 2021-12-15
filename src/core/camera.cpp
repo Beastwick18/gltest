@@ -68,7 +68,7 @@ void Camera::update() {
     }
     
     if(!jumping) {
-        if(Input::isKeyDown(GLFW_KEY_A) || Input::isKeyDown(GLFW_KEY_S))
+        if((Input::isKeyDown(GLFW_KEY_A) && !Input::isKeyDown(GLFW_KEY_W)) || (Input::isKeyDown(GLFW_KEY_S) && !Input::isKeyDown(GLFW_KEY_D)))
             something -= .2;
         if(Input::isKeyDown(GLFW_KEY_W) || Input::isKeyDown(GLFW_KEY_D))
             something += .2;

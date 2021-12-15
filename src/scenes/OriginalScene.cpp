@@ -185,17 +185,23 @@ void OriginalScene::render(const Renderer &renderer) {
     float time = glfwGetTime();
     int w = 20, l = 20, h = 5;
     float y = -1;
-    // for(int y = 0; y < h; y++)
+    for(int y = 0; y < h; y++)
     for(int x = 0; x < w; x++) {
         for(int z = 0; z < l; z++) {
             // float yoff = sin(time*3 + 0.5f*(float)i);
             float yoff = 0;
-            if(((x+z) & 1) == 0)
+            if(((x+z+y) & 1) == 0)
                 tex3->bind();
             else
                 tex->bind();
             s->setUniformMat4f(mvpUniform, camera->getProjection() * camera->getView() * glm::translate(model, glm::vec3(x, y, z)) );
             // renderer.render(vao, ebo, s);
+            
+            
+            
+            // TODO: Figure out batch rendering, (combining vertices into one vbo)
+            
+            
             
             s->use();
             vao->bind();
@@ -203,27 +209,27 @@ void OriginalScene::render(const Renderer &renderer) {
             // glDrawElements(GL_TRIANGLES, ebo->getCount(), GL_UNSIGNED_INT, (void*)(0 * sizeof(float)));
             
             // Front
-            tex->bind();
+            // tex->bind();
             if(z == l-1)
                 glDrawElements(GL_TRIANGLES, ebo->getCount()-30, GL_UNSIGNED_INT, (void*)(0 * sizeof(float)));
             // Top
-            tex3->bind();
-            // if(y == h-1)
+            // tex3->bind();
+            if(y == h-1)
                 glDrawElements(GL_TRIANGLES, ebo->getCount()-30, GL_UNSIGNED_INT, (void*)(6 * sizeof(float)));
             // Left
-            tex->bind();
+            // tex->bind();
             if(x == 0)
                 glDrawElements(GL_TRIANGLES, ebo->getCount()-30, GL_UNSIGNED_INT, (void*)(12 * sizeof(float)));
             // Right
-            tex3->bind();
+            // tex3->bind();
             if(x == w-1)
                 glDrawElements(GL_TRIANGLES, ebo->getCount()-30, GL_UNSIGNED_INT, (void*)(18 * sizeof(float)));
             // Bottom
-            tex->bind();
-            // if(y == 0)
+            // tex->bind();
+            if(y == 0)
                 glDrawElements(GL_TRIANGLES, ebo->getCount()-30, GL_UNSIGNED_INT, (void*)(24 * sizeof(float)));
             // Back
-            tex3->bind();
+            // tex3->bind();
             if(z == 0)
                 glDrawElements(GL_TRIANGLES, ebo->getCount()-30, GL_UNSIGNED_INT, (void*)(30 * sizeof(float)));
             start += 1;
