@@ -3,9 +3,12 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "core/input.h"
+
+using namespace MinecraftClone;
 
 ClearColorScene::ClearColorScene(MinecraftClone::Window *window) : Scene(window), clearColor{0.1f, 0.3f, 0.8f, 1.0f} {
-    
+    Input::enableCursor();
 }
 
 ClearColorScene::~ClearColorScene() {

@@ -9,10 +9,10 @@ class Shader {
         GLuint shaderProgram;
     
     public:
-        static Shader *createShader(const std::string &fragFilePath, const std::string &vertFilePath);
+        static Shader *createShader(const std::string &shaderPath);
         static void freeShader(Shader *s);
         
-        static std::string readFile(const std::string &filepath);
+        static std::pair<std::string, std::string> readFile(const std::string &filepath);
         
         void use() const;
         

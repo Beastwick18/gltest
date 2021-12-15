@@ -109,13 +109,13 @@ int main(int argc, char **argv) {
     double dtSum = 0;
     
     {
-    OriginalScene originalScene(window);
-    ClearColorScene clearScene(window);
-    QuadScene quadScene(window);
+    // OriginalScene originalScene(window);
+    // ClearColorScene clearScene(window);
+    // QuadScene quadScene(window);
     
-    int currentScene = 0;
-    int nextScene = 0;
-    Scene *scenes[] = { &originalScene, &clearScene, &quadScene };
+    int currentScene = 1;
+    Scene *scene = new OriginalScene(window);
+    Scene *nextScene = nullptr;
     
     while(!window->shouldClose()) {
         currentTime = glfwGetTime();
@@ -124,17 +124,20 @@ int main(int argc, char **argv) {
         deltaTime += dt / timestep;
         lastTime = currentTime;
         
-        currentScene = nextScene;
-        nextScene = currentScene;
+        if(nextScene != nullptr) {
+            delete scene;
+            scene = nextScene;
+            nextScene = nullptr;
+        }
         
         
         if(dtSum >= framestep) {
             frameCount++;
-            scenes[currentScene]->render(renderer);
+            scene->render(renderer);
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            scenes[currentScene]->guiRender();
+            scene->guiRender();
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             glfwSwapBuffers(window->getGlfwWindow());
@@ -144,20 +147,23 @@ int main(int argc, char **argv) {
         while(deltaTime >= 1) {
             tickCount++;
             
+            scene->update();
+            
             if(Input::isKeyDown(GLFW_KEY_ESCAPE))
                 window->close();
             
-            if(Input::isKeyDown(GLFW_KEY_1)) {
-                nextScene = 0;
+            if(Input::isKeyDown(GLFW_KEY_1) && currentScene != 1) {
+                nextScene = new OriginalScene(window);
+                currentScene = 1;
             }
-            if(Input::isKeyDown(GLFW_KEY_2)) {
-                nextScene = 1;
+            if(Input::isKeyDown(GLFW_KEY_2) && currentScene != 2) {
+                nextScene = new ClearColorScene(window);
+                currentScene = 2;
             }
-            if(Input::isKeyDown(GLFW_KEY_3)) {
-                nextScene = 2;
+            if(Input::isKeyDown(GLFW_KEY_3) && currentScene != 3) {
+                nextScene = new QuadScene(window);
+                currentScene = 3;
             }
-            
-            scenes[currentScene]->update();
             
             deltaTime--;
         }

@@ -8,6 +8,7 @@
 #include "core/VBO.h"
 #include "core/EBO.h"
 #include "core/texture2D.h"
+#include "core/camera.h"
 
 class OriginalScene : public Scene {
     public:
@@ -24,7 +25,7 @@ class OriginalScene : public Scene {
         bool mouseAlreadyPressed = false;
         bool keyAlreadyPressed = false;
         int texImage = 0;
-        glm::mat4 view, mvp, proj, model;
+        glm::mat4 model;
         float moveSpeed = 0;
         Shader *s;
         float test;
@@ -35,9 +36,9 @@ class OriginalScene : public Scene {
         EBO *ebo;
         Texture2D *tex, *tex2, *tex3;
         MinecraftClone::Window *window;
-        
-        float camX, camY, camZ;
-        float rotX, rotY;
+        Camera *camera;
+        bool wiremesh;
+        bool wiremeshToggle;
 };
 
 #endif

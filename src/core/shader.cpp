@@ -1,15 +1,17 @@
 #include "core/shader.h"
 #include <fstream>
 
-Shader *Shader::createShader(const std::string &fragFilePath, const std::string &vertFilePath) {
+Shader *Shader::createShader(const std::string &shaderPath) {
     Shader *s = new Shader;
     
     GLint result;
     int logLength;
     
+    const auto &shaderString = readFile(shaderPath);
+    
     // Create and compile vertex shader
     GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
-    std::string vertString = readFile(vertFilePath);
+    std::string vertString = shaderString.first;
     const char *vertSource = vertString.c_str();
     
     glShaderSource(vertShader, 1, &vertSource, nullptr);
@@ -24,7 +26,7 @@ Shader *Shader::createShader(const std::string &fragFilePath, const std::string 
     
     // Create and compile fragment shader
     GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    std::string fragString = readFile(fragFilePath).c_str();
+    std::string fragString = shaderString.second;
     const char *fragSource = fragString.c_str();
     glShaderSource(fragShader, 1, &fragSource, nullptr);
     glCompileShader(fragShader);
@@ -49,13 +51,27 @@ Shader *Shader::createShader(const std::string &fragFilePath, const std::string 
     
     return s;
 }
-
-std::string Shader::readFile(const std::string &filepath) {
+std::pair<std::string, std::string> Shader::readFile(const std::string &filepath) {
     std::ifstream in(filepath);
     std::string line;
-    std::string out;
+    std::pair<std::string, std::string> out;
+    int currentShader = -1;
     while(std::getline(in, line)) {
-        out += line + "\n";
+        if(line == "#type vertex") {
+            currentShader = 0;
+            continue;
+        } else if(line == "#type fragment") {
+            currentShader = 1;
+            continue;
+        }
+        if(currentShader == 0) {
+            out.first += line + "\n";
+        } else if(currentShader == 1) {
+            out.second += line + "\n";
+        } else {
+            fprintf(stderr, "Bad shader formatting\n");
+            return out;
+        }
     }
     in.close();
     return out;

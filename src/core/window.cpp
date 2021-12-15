@@ -49,6 +49,7 @@ namespace MinecraftClone {
             glfwSetMouseButtonCallback(glfwWindow, Input::mouseButtonCallback);
             glfwSetCursorPosCallback(glfwWindow, Input::mouseCallback);
             glfwSetScrollCallback(glfwWindow, Input::mouseScrollCallback);
+            Input::window = this;
         } else {
             fprintf(stderr, "Non fatal: Cannot set callbacks, glfw window not created yet [line %d]\n", __LINE__);
         }
@@ -60,5 +61,21 @@ namespace MinecraftClone {
     
     GLFWwindow *Window::getGlfwWindow() {
         return glfwWindow;
+    }
+    
+    void Window::setFullscreen(bool fullscreen) {
+        if(this->fullscreen == fullscreen)
+            return;
+        
+        GLFWmonitor *primMonitor = glfwGetPrimaryMonitor();
+        GLFWmonitor *monitor = fullscreen ? primMonitor : nullptr;
+        const GLFWvidmode *v = glfwGetVideoMode(primMonitor);
+        int x, y, mw, mh;
+        glfwGetMonitorWorkarea(primMonitor, &x, &y, &mw, &mh);
+        if(!fullscreen)
+            glfwSetWindowMonitor(glfwWindow, monitor, x+(mw - width) / 2, y+(mh - height) / 2, width, height, v->refreshRate);
+        
+        glfwSetWindowMonitor(glfwWindow, monitor, 0, 0, v->width, v->height, v->refreshRate);
+        this->fullscreen = fullscreen;
     }
 }
