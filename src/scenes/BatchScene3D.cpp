@@ -4,7 +4,6 @@
 
 using namespace MinecraftClone;
 
-bool wiremeshToggle = false, wiremesh = false;
 BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Input::disableCursor();
     
@@ -44,7 +43,7 @@ void BatchScene3D::createAllVertices() {
     float bottomx = 128.f/512.f;
     float bottomy = 416.f/512.f;
     
-    int w = 250, l = 30, h = 30;
+    int w = 320, l = 320, h = 30;
     for(int y = 0; y < h; y++) {
         for(int x = 0; x < w; x++) {
             for(int z = 0; z < l; z++) {
@@ -171,6 +170,21 @@ bool BatchScene3D::drawVertexArray(Vertex *array, const int size) {
     return false;
 }
 
+bool BatchScene3D::drawQuad(glm::vec3 position, glm::vec2 texCoords) {
+    Vertex p1{ position, texCoords };
+    Vertex p2;
+    Vertex p3;
+    Vertex p4;
+    if(batches.size() > 0) {
+        
+    }
+    
+    return false;
+}
+
+// TODO: make a cube generator that takes a position + textures and creates all
+// the proper vertices
+
 double drawTime = 0, flushTime = 0;
 int frames = 0;
 void BatchScene3D::render(const Renderer &r) {
@@ -182,7 +196,10 @@ void BatchScene3D::render(const Renderer &r) {
     frames++;
     double drawStart = glfwGetTime();
     for(auto &q : quads) {
-        drawVertexArray(q.vertices, 6);
+        glm::vec3 diff = glm::abs(CameraConfig::cameraPos - q.vertices[0].position);
+        if(diff.x < 50 && diff.z < 50) {
+            drawVertexArray(q.vertices, 6);
+        }
     }
     drawTime += glfwGetTime() - drawStart;
     
@@ -252,5 +269,6 @@ void BatchScene3D::update(double deltaTime) {
             glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
         else
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        wiremesh = wiremeshToggle;
     }
 }

@@ -10,6 +10,11 @@ struct Quad {
     Vertex vertices[6];
 };
 
+struct Block {
+    glm::vec3 position;
+    Quad faces[6];
+};
+
 class BatchScene3D : public Scene {
     public:
         BatchScene3D(MinecraftClone::Window *window);
@@ -17,6 +22,7 @@ class BatchScene3D : public Scene {
         void createAllVertices();
         
         bool drawVertexArray(Vertex *array, const int size);
+        bool drawQuad(glm::vec3 position, glm::vec2 texCoords);
         
         void render(const Renderer &r) override;
         void guiRender() override;
@@ -30,6 +36,7 @@ class BatchScene3D : public Scene {
         VBlayout layout;
         
         std::vector<Quad> quads;
+        bool wiremeshToggle = false, wiremesh = false;
         
         GLint vpUniform;
         GLint modelUniform;
