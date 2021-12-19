@@ -1,22 +1,14 @@
-#include "ClearColorScene.h"
+#include "scenes/ClearColorScene.h"
 #include "core.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
-#include "core/input.h"
+#include "input/input.h"
 
 using namespace MinecraftClone;
 
-ClearColorScene::ClearColorScene(MinecraftClone::Window *window) : Scene(window), clearColor{0.1f, 0.3f, 0.8f, 1.0f} {
+ClearColorScene::ClearColorScene(MinecraftClone::Window *window) : clearColor{0.1f, 0.3f, 0.8f, 1.0f} {
     Input::enableCursor();
-}
-
-ClearColorScene::~ClearColorScene() {
-    
-}
-
-void ClearColorScene::update() {
-    
 }
 
 void ClearColorScene::render(const Renderer &renderer) {

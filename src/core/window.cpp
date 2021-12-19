@@ -1,5 +1,5 @@
 #include "core/window.h"
-#include "core/input.h"
+#include "input/input.h"
 
 namespace MinecraftClone {
     Window *Window::createWindow(unsigned int width, unsigned int height, const std::string &title, bool fullscreen) {
@@ -77,5 +77,10 @@ namespace MinecraftClone {
         
         glfwSetWindowMonitor(glfwWindow, monitor, 0, 0, v->width, v->height, v->refreshRate);
         this->fullscreen = fullscreen;
+    }
+    
+    void Window::resize(unsigned int width, unsigned int height) {
+        this->width = width;
+        this->height = height;
     }
 }

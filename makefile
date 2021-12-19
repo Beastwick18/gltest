@@ -1,33 +1,37 @@
+# This is the worlds greatest makefile
+
 CC = gcc
-CPP = g++
+CXX = g++
 BINDIR = bin
 SRCDIR = src
 OBJDIR = obj
 INCDIRS = include include/imgui
 INCLUDE = $(addprefix -I./,$(INCDIRS))
+CXXFLAGS = -x c++ -std=c++17 $(INCLUDE)
 CFLAGS = -x c++ -std=c++17 $(INCLUDE)
-DFLAGS = -g -x c++ $(INCLUDE)
-RFLAGS = -O3 -x c++ $(INCLUDE)
 LIBS = `pkg-config --static --libs glfw3`
-CPP_SRCS = $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/**/*.cpp)
+CXX_SRCS = $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/**/*.cpp)
 C_SRCS = $(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)
-OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(CPP_SRCS)) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(C_SRCS))
+OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(CXX_SRCS)) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(C_SRCS))
+DEPS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.d,$(CXX_SRCS)) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.d,$(C_SRCS))
 TARGET = main
 DEBUGTARGET = debug
 RELEASETARGET = release
 
-.PHONY: clean
+.PHONY: all clean debug release
 
 all: $(BINDIR) $(BINDIR)/$(TARGET) $(SRCDIR) $(OBJDIR) $(INCDIRS)
 
 $(BINDIR)/$(TARGET): $(OBJS)
-	$(CPP) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
+	$(CXX) -o $@ $(OBJS) $(CXXFLAGS) $(LIBS)
+
+-include $(DEPS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@# Create parent directories for obj files
 	mkdir -p "$(dir $@)"
 	
-	$(CPP) $(CFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -MMD -MP -o $@ -c $<
 
 $(OBJDIR)/%.o: **/%.c
 	@# Create parent directories for obj files
@@ -47,13 +51,16 @@ $(INCDIR):
 $(SRCDIR):
 	mkdir $@
 
-debug: $(BINDIR)/$(DEBUGTARGET)
-$(BINDIR)/$(DEBUGTARGET): clean $(BINDIR) $(OBJDIR) $(OBJS)
-	$(CPP) -o $@ $(OBJS) $(DFLAGS) $(LIBS)
+debug: CXXFLAGS += -g
+debug: clean $(BINDIR)/$(DEBUGTARGET)
+$(BINDIR)/$(DEBUGTARGET): $(BINDIR) $(OBJDIR) $(OBJS)
+	$(CXX) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
 
+release: CXXFLAGS+=-O3
 release: clean $(BINDIR)/$(RELEASETARGET)
 $(BINDIR)/$(RELEASETARGET): $(BINDIR) $(OBJDIR) $(OBJS)
-	$(CPP) -o $@ $(OBJS) $(RFLAGS) $(LIBS)
+	$(CXX) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
+
 
 clean:
 	@# Remove binaries
@@ -61,3 +68,5 @@ clean:
 	
 	@# Remove object files
 	rm -rf obj/*.o obj/**/*.o
+	@# Remove dependency files
+	rm -rf obj/*.d obj/**/*.d

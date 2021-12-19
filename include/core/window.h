@@ -20,6 +20,7 @@ namespace MinecraftClone {
             bool shouldClose();
             
             void setFullscreen(bool fullscreen);
+            void resize(unsigned int width, unsigned int height);
             
             inline unsigned int getWidth() const {return width;}
             inline unsigned int getHeight() const {return height;}

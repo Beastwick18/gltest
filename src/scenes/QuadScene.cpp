@@ -1,9 +1,9 @@
-#include "QuadScene.h"
-#include "core/input.h"
+#include "scenes/QuadScene.h"
+#include "input/input.h"
 
 using namespace MinecraftClone;
 
-QuadScene::QuadScene(MinecraftClone::Window *window) : Scene(window) {
+QuadScene::QuadScene(MinecraftClone::Window *window) {
     Input::enableCursor();
     float vertices[] = {
         -0.5f,  0.5f, // Top left
@@ -18,13 +18,13 @@ QuadScene::QuadScene(MinecraftClone::Window *window) : Scene(window) {
     
     vao = new VAO;
     vao->bind();
-    vbo = new VBO(vertices, sizeof(vertices));
+    vbo = new VBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
     VBlayout layout;
     layout.push<float>(2); // Push position
-    vao->addBuffer(vbo, &layout);
+    vao->addBuffer(vbo, layout);
     ebo = new EBO(indices, 6);
     
-    s = Shader::createShader("shaders/quad.glsl");
+    s = Shader::createShader("assets/shaders/quad.glsl");
     s->bindFragDataLocation(0, "outColor");
 }
 
