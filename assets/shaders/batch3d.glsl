@@ -4,6 +4,8 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 aTex;
 
+// uniform vec3 chunkPosition; // take in chunk position. "position" would then be relative to the chunk position
+
 out vec2 texCoord;
 
 uniform mat4 model;

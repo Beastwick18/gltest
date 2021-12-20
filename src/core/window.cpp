@@ -1,5 +1,6 @@
 #include "core/window.h"
 #include "input/input.h"
+#include <iostream>
 
 namespace MinecraftClone {
     Window *Window::createWindow(unsigned int width, unsigned int height, const std::string &title, bool fullscreen) {
@@ -8,6 +9,9 @@ namespace MinecraftClone {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         // Ensure we don't use deprecated methods
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        
+        // Catch glfw errors
+        glfwSetErrorCallback(error_callback);
         
         Window *w = new Window();
         w->width = width;
@@ -28,6 +32,12 @@ namespace MinecraftClone {
         glfwMakeContextCurrent(w->glfwWindow);
         
         return w;
+    }
+    
+    void Window::error_callback( int error, const char *msg ) {
+        std::string s;
+        s = " [" + std::to_string(error) + "] " + msg + '\n';
+        std::cerr << s << std::endl;
     }
     
     void Window::freeWindow(Window *window) {
@@ -56,7 +66,7 @@ namespace MinecraftClone {
     }
     
     bool Window::shouldClose() {
-        return glfwWindowShouldClose(glfwWindow);
+        return glfwWindow != nullptr && glfwWindowShouldClose(glfwWindow);
     }
     
     GLFWwindow *Window::getGlfwWindow() {
@@ -64,7 +74,7 @@ namespace MinecraftClone {
     }
     
     void Window::setFullscreen(bool fullscreen) {
-        if(this->fullscreen == fullscreen)
+        if(this->fullscreen == fullscreen || glfwWindow == nullptr)
             return;
         
         GLFWmonitor *primMonitor = glfwGetPrimaryMonitor();

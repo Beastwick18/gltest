@@ -10,6 +10,7 @@
 #include "scenes/QuadScene.h"
 #include "scenes/BatchRendering2DScene.h"
 #include "scenes/BatchScene3D.h"
+#include "utils/DebugStats.h"
 
 using namespace MinecraftClone;
 
@@ -135,12 +136,16 @@ int main(int argc, char **argv) {
         if(dtSum >= 5) {
             printf("FPS: %f, TPS: %f\n", (float)framesCount/5, (float)updateCount / 5);
             printf("Render: %f, Update: %f, GUI: %f\n", 1000*renderTime / framesCount, 1000*updateTime / updateCount, 1000*guiTime / framesCount);
+            printf("Num Batches: %u, Draw: %f, Flush: %f\n", DebugStats::batchCount, 1000*DebugStats::drawTime/framesCount, 1000*DebugStats::flushTime/framesCount);
+            printf("Tri Count: %u\n", DebugStats::triCount);
             renderTime = 0;
             updateTime = 0;
             guiTime = 0;
             framesCount = 0;
             updateCount = 0;
             dtSum = 0;
+            DebugStats::drawTime = 0;
+            DebugStats::flushTime = 0;
         }
         
         dtSum2 += deltaTime;

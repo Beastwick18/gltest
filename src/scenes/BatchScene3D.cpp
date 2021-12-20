@@ -1,6 +1,7 @@
 #include "scenes/BatchScene3D.h"
 #include "imgui/imgui.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "utils/DebugStats.h"
 
 using namespace MinecraftClone;
 
@@ -43,7 +44,7 @@ void BatchScene3D::createAllVertices() {
     float bottomx = 128.f/512.f;
     float bottomy = 416.f/512.f;
     
-    int w = 320, l = 320, h = 30;
+    int w = 100, l = 100, h = 100;
     for(int y = 0; y < h; y++) {
         for(int x = 0; x < w; x++) {
             for(int z = 0; z < l; z++) {
@@ -147,8 +148,7 @@ bool BatchScene3D::drawVertexArray(Vertex *array, const int size) {
     if(batches.size() > 0) {
         for(auto &b : batches) {
             if(b.hasRoomFor(size)) {
-                for(int i = 0; i < size; i++)
-                    b.addVertex(array[i]);
+                b.addVertices(array, size);
                 return true;
             }
         }
@@ -159,12 +159,9 @@ bool BatchScene3D::drawVertexArray(Vertex *array, const int size) {
     newBatch.init(layout);
     batches.push_back(newBatch);
     
-    for(auto &b : batches) {
-        if(b.hasRoomFor(size)) {
-            for(int i = 0; i < size; i++)
-                b.addVertex(array[i]);
-            return true;
-        }
+    if(newBatch.hasRoomFor(size)) {
+        newBatch.addVertices(array, size);
+        return true;
     }
     fprintf(stderr, "Vertex array too big\n");
     return false;
@@ -185,23 +182,18 @@ bool BatchScene3D::drawQuad(glm::vec3 position, glm::vec2 texCoords) {
 // TODO: make a cube generator that takes a position + textures and creates all
 // the proper vertices
 
-double drawTime = 0, flushTime = 0;
-int frames = 0;
 void BatchScene3D::render(const Renderer &r) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    float time = glfwGetTime();
-    
-    frames++;
     double drawStart = glfwGetTime();
     for(auto &q : quads) {
-        glm::vec3 diff = glm::abs(CameraConfig::cameraPos - q.vertices[0].position);
-        if(diff.x < 50 && diff.z < 50) {
+        // glm::vec3 diff = glm::abs(CameraConfig::cameraPos - q.vertices[0].position);
+        // if(diff.x < 50 && diff.z < 50) {
             drawVertexArray(q.vertices, 6);
-        }
+        // }
     }
-    drawTime += glfwGetTime() - drawStart;
+    DebugStats::drawTime += glfwGetTime() - drawStart;
     
     double flushStart = glfwGetTime();
     if(batches.size() > 0) {
@@ -210,12 +202,12 @@ void BatchScene3D::render(const Renderer &r) {
         for(auto &b : batches)
             b.flush();
     }
-    flushTime += glfwGetTime() - flushStart;
+    DebugStats::flushTime += glfwGetTime() - flushStart;
 }
 
 void BatchScene3D::guiRender() {
-    ImGui::Begin("Camera Settings");                          // Create a window called "Hello, world!" and append into it.
-    ImGui::SliderFloat("FOV", &CameraConfig::fov, 1.0f, 120.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+    ImGui::Begin("Camera Settings");
+    ImGui::SliderFloat("FOV", &CameraConfig::fov, 1.0f, 120.0f);
     ImGui::SliderFloat("Mouse Sensitivity", &CameraConfig::mouseSensitivity, 0.0f, 10.0f);
     ImGui::SliderFloat("Bobbing Height", &CameraConfig::bobbingHeight, 0.0f, 1.0f);
     ImGui::SliderFloat("Bobbing Speed", &CameraConfig::bobbingSpeed, 0.0f, 20.0f);
@@ -246,8 +238,6 @@ void BatchScene3D::update(double deltaTime) {
     
     elapsed += deltaTime;
     if(elapsed >= 5) {
-        printf("Num Batches: %lu, Draw: %f, Flush: %f\n", batches.size(), 1000*drawTime/frames, 1000*flushTime/frames);
-        printf("Tri Count: %lu\n", quads.size()*2);
         elapsed = 0;
     }
     
@@ -271,4 +261,6 @@ void BatchScene3D::update(double deltaTime) {
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         wiremesh = wiremeshToggle;
     }
+    DebugStats::triCount = quads.size() * 2;
+    DebugStats::batchCount = batches.size();
 }

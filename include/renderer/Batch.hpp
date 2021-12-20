@@ -55,6 +55,14 @@ class Batch {
             numVertices++;
         }
         
+        bool addVertices(const T *arr, GLsizeiptr size) {
+            if(vertices == nullptr || !hasRoomFor(size)) return false;
+            
+            std::copy(arr, arr+size, vertices+numVertices);
+            numVertices += size;
+            return true;
+        }
+        
         void flush() {
             vbo->bind();
             // Only send the part of the buffer that has been used
