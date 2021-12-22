@@ -51,15 +51,17 @@ $(INCDIR):
 $(SRCDIR):
 	mkdir $@
 
-debug: CXXFLAGS += -g
+debug: CXXFLAGS+=-g
+debug: CFLAGS+=-g
 debug: clean $(BINDIR)/$(DEBUGTARGET)
 $(BINDIR)/$(DEBUGTARGET): $(BINDIR) $(OBJDIR) $(OBJS)
-	$(CXX) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
+	$(CXX) -o $@ $(OBJS) $(CXXFLAGS) $(LIBS)
 
 release: CXXFLAGS+=-O3
+release: CFLAGS+=-O3
 release: clean $(BINDIR)/$(RELEASETARGET)
 $(BINDIR)/$(RELEASETARGET): $(BINDIR) $(OBJDIR) $(OBJS)
-	$(CXX) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
+	$(CXX) -o $@ $(OBJS) $(CXXFLAGS) $(LIBS)
 
 
 clean:

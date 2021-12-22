@@ -31,13 +31,13 @@ BatchRendering2DScene::~BatchRendering2DScene() {
 }
 
 Vertex staticVertices[6] = {
-    { {0.0f, 1.0f, 0.0f}, {128.f/512.f, 464.f/512.f} },
-    { {0.0f, 0.0f, 0.0f}, {128.f/512.f, 448.f/512.f} },
-    { {1.0f, 0.0f, 0.0f}, {144.f/512.f, 448.f/512.f} },
+    { {0.0f, 1.0f, 0.0f}, glm::vec3(0), {128.f/512.f, 464.f/512.f} },
+    { {0.0f, 0.0f, 0.0f}, glm::vec3(0), {128.f/512.f, 448.f/512.f} },
+    { {1.0f, 0.0f, 0.0f}, glm::vec3(0), {144.f/512.f, 448.f/512.f} },
     
-    { {0.0f, 1.0f, 0.0f}, {128.f/512.f, 464.f/512.f} },
-    { {1.0f, 0.0f, 0.0f}, {144.f/512.f, 448.f/512.f} },
-    { {1.0f, 1.0f, 0.0f}, {144.f/512.f, 464.f/512.f} },
+    { {0.0f, 1.0f, 0.0f}, glm::vec3(0), {128.f/512.f, 464.f/512.f} },
+    { {1.0f, 0.0f, 0.0f}, glm::vec3(0), {144.f/512.f, 448.f/512.f} },
+    { {1.0f, 1.0f, 0.0f}, glm::vec3(0), {144.f/512.f, 464.f/512.f} },
 };
 
 void BatchRendering2DScene::render(const Renderer &r) {
@@ -47,13 +47,13 @@ void BatchRendering2DScene::render(const Renderer &r) {
     
     
     Vertex movingVertices[6] = {
-        { {xOffset-1, yOffset+1, 0.0f}, {128.f/512.f, 464.f/512.f} },
-        { {xOffset-1, yOffset,   0.0f}, {128.f/512.f, 448.f/512.f} },
-        { {xOffset+0, yOffset,   0.0f}, {144.f/512.f, 448.f/512.f} },
-                                                                   
-        { {xOffset-1, yOffset+1, 0.0f}, {128.f/512.f, 464.f/512.f} },
-        { {xOffset,   yOffset,   0.0f}, {144.f/512.f, 448.f/512.f} },
-        { {xOffset,   yOffset+1, 0.0f}, {144.f/512.f, 464.f/512.f} },
+        { {xOffset-1, yOffset+1, 0.0f},glm::vec3(0),  {128.f/512.f, 464.f/512.f} },
+        { {xOffset-1, yOffset,   0.0f},glm::vec3(0),  {128.f/512.f, 448.f/512.f} },
+        { {xOffset+0, yOffset,   0.0f},glm::vec3(0),  {144.f/512.f, 448.f/512.f} },
+                                                     
+        { {xOffset-1, yOffset+1, 0.0f},glm::vec3(0),  {128.f/512.f, 464.f/512.f} },
+        { {xOffset,   yOffset,   0.0f},glm::vec3(0),  {144.f/512.f, 448.f/512.f} },
+        { {xOffset,   yOffset+1, 0.0f},glm::vec3(0),  {144.f/512.f, 464.f/512.f} },
     };
     
     tex->bind();

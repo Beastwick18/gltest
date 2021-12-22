@@ -15,6 +15,7 @@ namespace CameraConfig {
     extern float fov, fovMax, fovMin;
     extern float mouseSensitivity;
     extern float cameraSpeed, lerpSpeed;
+    extern float climbSpeed;
     extern bool noclip;
     
     // Set the fov (in degrees)
@@ -33,6 +34,7 @@ class Camera {
         void update(double deltaTime);
         glm::mat4 getView();
         glm::mat4 getProjection();
+        void recalculateProjection();
         
         static void free(Camera *c);
     private:

@@ -106,7 +106,6 @@ int main(int argc, char **argv) {
     double targetFps = 1.0/targetFramerate;
     double lastTime = glfwGetTime();
     double dtSum = 0;
-    double dtSum2 = 0;
     int framesCount = 0, updateCount = 0;
     
     double updateTime = 0, renderTime = 0, guiTime = 0;
@@ -127,30 +126,14 @@ int main(int argc, char **argv) {
         
         updateCount++;
         
-        glfwPollEvents();
+        window->pollEvents();
         double updateStart = glfwGetTime();
         scene->update(deltaTime);
         updateTime += glfwGetTime() - updateStart;
         
         dtSum += deltaTime;
-        if(dtSum >= 5) {
-            printf("FPS: %f, TPS: %f\n", (float)framesCount/5, (float)updateCount / 5);
-            printf("Render: %f, Update: %f, GUI: %f\n", 1000*renderTime / framesCount, 1000*updateTime / updateCount, 1000*guiTime / framesCount);
-            printf("Num Batches: %u, Draw: %f, Flush: %f\n", DebugStats::batchCount, 1000*DebugStats::drawTime/framesCount, 1000*DebugStats::flushTime/framesCount);
-            printf("Tri Count: %u\n", DebugStats::triCount);
-            renderTime = 0;
-            updateTime = 0;
-            guiTime = 0;
-            framesCount = 0;
-            updateCount = 0;
-            dtSum = 0;
-            DebugStats::drawTime = 0;
-            DebugStats::flushTime = 0;
-        }
-        
-        dtSum2 += deltaTime;
-        if(dtSum2 >= targetFps) {
-            framesCount++;
+        if(dtSum >= targetFps) {
+            framesCount = 1;
             double renderStart = glfwGetTime();
             scene->render(renderer);
             double renderEnd = glfwGetTime();
@@ -162,10 +145,27 @@ int main(int argc, char **argv) {
             scene->guiRender();
             double guiEnd = glfwGetTime();
             guiTime += guiEnd - guiStart;
+            
+            ImGui::Begin("Debug stats");
+            // ImGui::Text("FPS: %f, TPS: %f\n", (float)framesCount, (float)updateCount);
+            ImGui::Text("Render: %f, Update: %f, GUI: %f\n", 1000*renderTime / framesCount, 1000*updateTime / updateCount, 1000*guiTime / framesCount);
+            ImGui::Text("Num Batches: %u, Draw: %f, Flush: %f\n", DebugStats::batchCount, 1000*DebugStats::drawTime/framesCount, 1000*DebugStats::flushTime/framesCount);
+            ImGui::Text("Tri Count: %u\n", DebugStats::triCount);
+            ImGui::Text("%.1f FPS (%.3f ms/frame) ", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
+            
+            renderTime = 0;
+            updateTime = 0;
+            updateCount = 0;
+            guiTime = 0;
+            DebugStats::drawTime = 0;
+            DebugStats::flushTime = 0;
+            ImGui::End();
+            
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            glfwSwapBuffers(window->getGlfwWindow());
-            dtSum2 = 0;
+            
+            window->swapBuffers();
+            dtSum = 0;
         }
         
         if(Input::isKeyBeginDown(GLFW_KEY_ESCAPE))

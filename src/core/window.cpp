@@ -73,6 +73,14 @@ namespace MinecraftClone {
         return glfwWindow;
     }
     
+    void Window::swapBuffers() {
+        glfwSwapBuffers(glfwWindow);
+    }
+    
+    void Window::pollEvents() {
+        glfwPollEvents();
+    }
+    
     void Window::setFullscreen(bool fullscreen) {
         if(this->fullscreen == fullscreen || glfwWindow == nullptr)
             return;

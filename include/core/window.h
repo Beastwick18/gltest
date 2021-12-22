@@ -19,6 +19,8 @@ namespace MinecraftClone {
             void close();
             void setCallbacks();
             bool shouldClose();
+            void swapBuffers();
+            void pollEvents();
             
             void setFullscreen(bool fullscreen);
             void resize(unsigned int width, unsigned int height);

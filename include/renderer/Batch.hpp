@@ -9,6 +9,7 @@
 
 struct Vertex {
     glm::vec3 position;
+    glm::vec3 normal;
     glm::vec2 texCoords;
     // float textureIndex;
 };
@@ -28,36 +29,26 @@ class Batch {
         ~Batch() {}
         
         void init(const VBlayout &layout) {
-            // Give us 4 MB of space
             maxVertices = (verticesInKilobytes * 1024)/sizeof(T);
-            verticesSize = sizeof(T) * maxVertices;
             vertices = (T*)calloc(maxVertices, sizeof(T));
             
             vao = new VAO;
             vao->bind();
-            vbo = new VBO(verticesSize);
+            vbo = new VBO(sizeof(T) * maxVertices);
             vao->addBuffer(vbo, layout);
+            vbo->bind();
             
             numVertices = 0;
         }
         
-        void addVertex(const T t) {
-            if(vertices == nullptr || numVertices >= maxVertices-1) {
-                fprintf(stderr, "Non fatal: No more space in batch to add vertex\n");
-                return;
-            }
-            if(numVertices < 0) {
-                fprintf(stderr, "Non fatal: Invalid vertex number\n");
-                return;
-            }
-            // printf("maxVertices: %d, numVertices: %d, vsize: %d\n", maxVertices, numVertices, verticesSize);
-            vertices[numVertices] = t;
-            numVertices++;
+        bool addVertex(const T &t) {
+            if(hasRoomFor(1) || vertices == nullptr) return false;
+            vertices[numVertices++] = t;
+            return true;
         }
         
-        bool addVertices(const T *arr, GLsizeiptr size) {
-            if(vertices == nullptr || !hasRoomFor(size)) return false;
-            
+        bool addVertices(const T *arr, const GLsizeiptr size) {
+            if(!hasRoomFor(size) || vertices == nullptr) return false;
             std::copy(arr, arr+size, vertices+numVertices);
             numVertices += size;
             return true;
@@ -67,7 +58,6 @@ class Batch {
             vbo->bind();
             // Only send the part of the buffer that has been used
             glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(T), vertices, GL_DYNAMIC_DRAW);
-            // glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_DYNAMIC_DRAW);
             vao->bind();
             glDrawArrays(GL_TRIANGLES, 0, numVertices);
             numVertices = 0;
@@ -86,17 +76,18 @@ class Batch {
             return numVertices == maxVertices-1;
         }
         
-        bool hasRoomFor(int vertices) {
+        bool hasRoomFor(const int vertices) const {
             return numVertices+vertices < maxVertices;
         }
         
         unsigned int numVertices = 0;
     private:
-        // 4 MB of vertices
-        static constexpr size_t verticesInKilobytes = 4096;
+        // 2 MB of vertices
+        // static constexpr size_t verticesInKilobytes = 4096-1024*3;
+        static constexpr size_t verticesInKilobytes = 1024;
+        // static constexpr size_t verticesInKilobytes = 512;
         size_t maxVertices;
         T* vertices = nullptr;
-        GLsizeiptr verticesSize = 0;
         VBO *vbo = nullptr;
         VAO *vao = nullptr;
 };

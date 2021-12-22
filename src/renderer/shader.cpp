@@ -1,80 +1,87 @@
 #include "renderer/shader.h"
 #include <fstream>
+#include <optional>
 
-Shader *Shader::createShader(const std::string &shaderPath) {
+Shader *Shader::createShader(const char *shaderPath) {
     Shader *s = new Shader;
     
-    GLint result;
-    int logLength;
+    const auto source = readFile(shaderPath);
+    if(!source)
+        return nullptr;
+    const auto [vertexSource, fragmentSource] = *source;
     
-    const auto &shaderString = readFile(shaderPath);
+    // Create and compile vertex and fragment shader
+    auto vertShader = compileShader(vertexSource.c_str(), GL_VERTEX_SHADER);
+    auto fragShader = compileShader(fragmentSource.c_str(), GL_FRAGMENT_SHADER);
     
-    // Create and compile vertex shader
-    GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
-    std::string vertString = shaderString.first;
-    const char *vertSource = vertString.c_str();
-    
-    glShaderSource(vertShader, 1, &vertSource, nullptr);
-    glCompileShader(vertShader);
-    glGetShaderiv(vertShader, GL_COMPILE_STATUS, &result);
-    if(result == GL_FALSE) {
-        glGetShaderiv(vertShader, GL_INFO_LOG_LENGTH, &logLength);
-        std::vector<GLchar> vertShaderError((logLength > 1) ? logLength : 1);
-        glGetShaderInfoLog(vertShader, logLength, NULL, &vertShaderError[0]);
-        fprintf(stderr, "Non fatal: %s\n", &vertShaderError[0]);
-    }
-    
-    // Create and compile fragment shader
-    GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    std::string fragString = shaderString.second;
-    const char *fragSource = fragString.c_str();
-    glShaderSource(fragShader, 1, &fragSource, nullptr);
-    glCompileShader(fragShader);
-    
-    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &result);
-    if(result == GL_FALSE) {
-        glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &logLength);
-        std::vector<GLchar> fragShaderError( (logLength > 1) ? logLength : 1 );
-        glGetShaderInfoLog(fragShader, logLength, NULL, &fragShaderError[0]);
-        fprintf(stderr, "%s\n", &fragShaderError[0]);
-    }
+    if(!vertShader || !fragShader)
+        return nullptr;
     
     // Create shader program and attach vertex and fragment shader to it
     s->shaderProgram = glCreateProgram();
-    glAttachShader(s->shaderProgram, vertShader);
-    glAttachShader(s->shaderProgram, fragShader);
+    s->attachShader(vertShader.value());
+    s->attachShader(fragShader.value());
     
-    glLinkProgram(s->shaderProgram);
+    s->link();
     // Vertex and fragment are already attached to program, so we can delete them.
-    glDeleteShader(vertShader);
-    glDeleteShader(fragShader);
+    glDeleteShader(vertShader.value());
+    glDeleteShader(fragShader.value());
     
     return s;
 }
-std::pair<std::string, std::string> Shader::readFile(const std::string &filepath) {
+
+std::optional<GLuint> Shader::compileShader(const char *source, GLenum type) {
+    GLuint shader = glCreateShader(type);
+    
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+    
+    GLint result;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
+    if(result == GL_FALSE) {
+        GLint logLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+        std::vector<GLchar> fragShaderError( (logLength > 1) ? logLength : 1 );
+        glGetShaderInfoLog(shader, logLength, NULL, &fragShaderError[0]);
+        fprintf(stderr, "%s\n", &fragShaderError[0]);
+        glDeleteShader(shader);
+        return {};
+    }
+    return shader;
+}
+
+std::optional<std::pair<std::string, std::string>> Shader::readFile(const char *filepath) {
     std::ifstream in(filepath);
+    
+    if(!in) return {};
+    
     std::string line;
-    std::pair<std::string, std::string> out;
-    int currentShader = -1;
+    std::string vertexSource;
+    std::string fragmentSource;
+    int currentShader = 0;
     while(std::getline(in, line)) {
         if(line == "#type vertex") {
-            currentShader = 0;
+            currentShader = GL_VERTEX_SHADER;
             continue;
         } else if(line == "#type fragment") {
-            currentShader = 1;
+            currentShader = GL_FRAGMENT_SHADER;
             continue;
         }
-        if(currentShader == 0) {
-            out.first += line + "\n";
-        } else if(currentShader == 1) {
-            out.second += line + "\n";
-        } else {
+        if(currentShader == GL_VERTEX_SHADER)
+            vertexSource += line + "\n";
+        else if(currentShader == GL_FRAGMENT_SHADER)
+            fragmentSource += line + "\n";
+        else {
             fprintf(stderr, "Bad shader formatting\n");
-            return out;
+            continue;
         }
     }
     in.close();
-    return out;
+    return std::pair{ vertexSource, fragmentSource };
+}
+
+void Shader::attachShader(GLint shader) const {
+    glAttachShader(shaderProgram, shader);
 }
 
 GLint Shader::getUniformLocation(const char *name) const {
@@ -95,6 +102,10 @@ void Shader::use() const {
     glUseProgram(shaderProgram);
 }
 
+void Shader::link() const {
+    glLinkProgram(shaderProgram);
+}
+
 void Shader::enableVertexAttribArray(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) const {
     GLint attrib = glGetAttribLocation(shaderProgram, name);
     glVertexAttribPointer(attrib, size, type, normalized, stride, pointer);
@@ -105,30 +116,30 @@ GLint Shader::getAttribLocation(const char *name) const {
     return glGetAttribLocation(shaderProgram, name);
 }
 
-void Shader::bindFragDataLocation(GLuint colorNumber, const char *name) const {
+void Shader::bindFragDataLocation(const GLuint colorNumber, const char *name) const {
     glBindFragDataLocation(shaderProgram, colorNumber, name);
 }
 
-void Shader::setUniform1i(const int location, const GLint value) {
+void Shader::setUniform1i(const int location, const GLint value) const {
     glUniform1i(location, value);
 }
 
-void Shader::setUniform1i(const char *name, const GLint value) {
+void Shader::setUniform1i(const char *name, const GLint value) const {
     glUniform1i(getUniformLocation(name), value);
 }
 
-void Shader::setUniform1f(const char *name, const GLfloat value) {
+void Shader::setUniform1f(const char *name, const GLfloat value) const {
     glUniform1f(getUniformLocation(name), value);
 }
 
-void Shader::setUniform1f(const int location, const GLfloat value) {
+void Shader::setUniform1f(const int location, const GLfloat value) const {
     glUniform1f(location, value);
 }
 
-void Shader::setUniformMat4f(const char *name, const glm::mat4 &mat) {
+void Shader::setUniformMat4f(const char *name, const glm::mat4 &mat) const {
     glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
 }
 
-void Shader::setUniformMat4f(const int location, const glm::mat4 &mat) {
+void Shader::setUniformMat4f(const int location, const glm::mat4 &mat) const {
     glUniformMatrix4fv(location, 1, GL_FALSE, &mat[0][0]);
 }

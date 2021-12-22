@@ -18,12 +18,12 @@ Texture2D::Texture2D(const unsigned char *bytes, unsigned int imageWidth, unsign
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-Texture2D *Texture2D::loadFromImageFile(const std::string &imagePath, const GLenum internalFormat,
+Texture2D *Texture2D::loadFromImageFile(const char *imagePath, const GLenum internalFormat,
                                         const GLenum filter, const GLenum repeat) {
     int imageWidth, imageHeight, imageChannels;
     GLenum format = 0;
     stbi_set_flip_vertically_on_load(1);
-    unsigned char *bytes = stbi_load(imagePath.c_str(), &imageWidth, &imageHeight, &imageChannels, 0);
+    unsigned char *bytes = stbi_load(imagePath, &imageWidth, &imageHeight, &imageChannels, 0);
     if(imageChannels == 3)
         format = GL_RGB;
     else if(imageChannels == 4)

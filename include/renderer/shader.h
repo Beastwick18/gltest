@@ -3,29 +3,35 @@
 
 #include "core.h"
 #include "glm/glm.hpp"
+#include <optional>
 
 class Shader {
     private:
         GLuint shaderProgram;
-    
+        
+        static std::optional<GLuint> compileShader(const char *source, GLenum type);
+        
     public:
-        static Shader *createShader(const std::string &shaderPath);
+        static Shader *createShader(const char *shaderPath);
         static void freeShader(Shader *s);
         
-        static std::pair<std::string, std::string> readFile(const std::string &filepath);
+        static std::optional<std::pair<std::string, std::string>> readFile(const char *filepath);
         
         void use() const;
+        void link() const;
+        
+        void attachShader(GLint shader) const;
         
         void enableVertexAttribArray(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride = 0, const void *pointer = nullptr) const;
         
-        void bindFragDataLocation(GLuint colorNumber, const char *name) const;
+        void bindFragDataLocation(const GLuint colorNumber, const char *name) const;
         
         GLint getUniformLocation(const char *name) const;
         
         GLint getAttribLocation(const char *name) const;
         
-        void setUniform1i(const char *name, const GLint v1);
-        void setUniform1i(const int location, const GLint v1);
+        void setUniform1i(const char *name, const GLint v1) const;
+        void setUniform1i(const int location, const GLint v1) const;
         // void setUniform2i(const char *name, GLint v1, GLint v2);
         // void setUniform3i(const char *name, GLint v1, GLint v2, GLint v3);
         // void setUniform4i(const char *name, GLint v1, GLint v2, GLint v3, GLint v4);
@@ -45,8 +51,8 @@ class Shader {
         // void setUniform3uiv(const char *name, const GLfloat *value);
         // void setUniform4uiv(const char *name, const GLfloat *value);
         
-        void setUniform1f(const char *name, GLfloat v1);
-        void setUniform1f(const int location, GLfloat v1);
+        void setUniform1f(const char *name, GLfloat v1) const;
+        void setUniform1f(const int location, GLfloat v1) const;
         // void setUniform2f(const char *name, GLfloat v1, GLfloat v2);
         // void setUniform3f(const char *name, GLfloat v1, GLfloat v2, GLfloat v3);
         // void setUniform4f(const char *name, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4);
@@ -58,8 +64,8 @@ class Shader {
         
         // void setUniformMatrix2fv(const char *name, const GLfloat *value);
         // void setUniformMatrix3fv(const char *name, const GLfloat *value);
-        void setUniformMat4f(const char *name, const glm::mat4 &mat);
-        void setUniformMat4f(const int location, const glm::mat4 &mat);
+        void setUniformMat4f(const char *name, const glm::mat4 &mat) const;
+        void setUniformMat4f(const int location, const glm::mat4 &mat) const;
         
         // void setUniformMatrix2x3fv(const char *name, const GLfloat *value);
         // void setUniformMatrix3x2fv(const char *name, const GLfloat *value);
