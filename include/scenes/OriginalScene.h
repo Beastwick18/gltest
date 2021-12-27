@@ -16,7 +16,7 @@ class OriginalScene : public Scene {
         ~OriginalScene();
         
         void update(double deltaTime) override;
-        void render(const Renderer &r) override;
+        void render() override;
         void guiRender() override;
     private:
         // float count = 0;

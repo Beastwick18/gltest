@@ -161,7 +161,7 @@ void OriginalScene::update(double deltaTime) {
     camera->update(deltaTime);
 }
 
-void OriginalScene::render(const Renderer &renderer) {
+void OriginalScene::render() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     s->setUniformMat4f(vpUniform, camera->getProjection() * camera->getView());

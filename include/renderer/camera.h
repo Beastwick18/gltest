@@ -32,8 +32,8 @@ class Camera {
         Camera(MinecraftClone::Window *window);
         
         void update(double deltaTime);
-        glm::mat4 getView();
-        glm::mat4 getProjection();
+        glm::mat4 getView() const;
+        glm::mat4 getProjection() const;
         void recalculateProjection();
         
         static void free(Camera *c);

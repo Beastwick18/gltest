@@ -3,6 +3,8 @@
 
 Texture2D::Texture2D(const unsigned char *bytes, unsigned int imageWidth, unsigned int imageHeight, const GLenum format,
                      const GLenum internalFormat, const GLenum filter, const GLenum repeat) {
+    this->imageWidth = imageWidth;
+    this->imageHeight = imageHeight;
     glGenTextures(1, &ID);
     glBindTexture(GL_TEXTURE_2D, ID);
     

@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
     glBlendEquation(GL_FUNC_ADD);
     glEnable(GL_BLEND);
     
-    Renderer renderer;
+    Renderer::init();
     
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
@@ -106,9 +106,6 @@ int main(int argc, char **argv) {
     double targetFps = 1.0/targetFramerate;
     double lastTime = glfwGetTime();
     double dtSum = 0;
-    int framesCount = 0, updateCount = 0;
-    
-    double updateTime = 0, renderTime = 0, guiTime = 0;
     
     while(!window->shouldClose()) {
         double currentTime = glfwGetTime();
@@ -124,42 +121,30 @@ int main(int argc, char **argv) {
         
         // frameCount++;
         
-        updateCount++;
+        DebugStats::updateCount++;
         
         window->pollEvents();
         double updateStart = glfwGetTime();
         scene->update(deltaTime);
-        updateTime += glfwGetTime() - updateStart;
+        Renderer::update(deltaTime);
+        DebugStats::updateTime += glfwGetTime() - updateStart;
         
         dtSum += deltaTime;
         if(dtSum >= targetFps) {
-            framesCount = 1;
             double renderStart = glfwGetTime();
-            scene->render(renderer);
-            double renderEnd = glfwGetTime();
-            renderTime += renderEnd - renderStart;
+            scene->render();
+            Renderer::render();
+            DebugStats::renderTime += glfwGetTime() - renderStart;
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
             double guiStart = glfwGetTime();
             scene->guiRender();
             double guiEnd = glfwGetTime();
-            guiTime += guiEnd - guiStart;
+            DebugStats::guiTime += guiEnd - guiStart;
             
-            ImGui::Begin("Debug stats");
-            // ImGui::Text("FPS: %f, TPS: %f\n", (float)framesCount, (float)updateCount);
-            ImGui::Text("Render: %f, Update: %f, GUI: %f\n", 1000*renderTime / framesCount, 1000*updateTime / updateCount, 1000*guiTime / framesCount);
-            ImGui::Text("Num Batches: %u, Draw: %f, Flush: %f\n", DebugStats::batchCount, 1000*DebugStats::drawTime/framesCount, 1000*DebugStats::flushTime/framesCount);
-            ImGui::Text("Tri Count: %u\n", DebugStats::triCount);
-            ImGui::Text("%.1f FPS (%.3f ms/frame) ", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
             
-            renderTime = 0;
-            updateTime = 0;
-            updateCount = 0;
-            guiTime = 0;
-            DebugStats::drawTime = 0;
-            DebugStats::flushTime = 0;
-            ImGui::End();
+            // ImGui::End();
             
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -207,16 +192,16 @@ int main(int argc, char **argv) {
             glViewport(0, 0, display_w, display_h);
         }
         Input::reset();
-        
+        DebugStats::reset();
     }
     if(scene != nullptr)
         delete scene;
     if(nextScene != nullptr)
         delete nextScene;
     
-    
     }
     
+    Renderer::free();
     Window::freeWindow(window);
     
     ImGui_ImplOpenGL3_Shutdown();

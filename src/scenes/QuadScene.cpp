@@ -25,7 +25,6 @@ QuadScene::QuadScene(MinecraftClone::Window *window) {
     ebo = new EBO(indices, 6);
     
     s = Shader::createShader("assets/shaders/quad.glsl");
-    s->bindFragDataLocation(0, "outColor");
 }
 
 QuadScene::~QuadScene() {
@@ -35,10 +34,10 @@ QuadScene::~QuadScene() {
     EBO::free(ebo);
 }
 
-void QuadScene::render(const Renderer &r) {
+void QuadScene::render() {
     glDisable(GL_DEPTH_TEST);
     glClearColor(0,0,0,1);
     glClear(GL_COLOR_BUFFER_BIT);
     
-    r.render(vao, ebo, s);
+    // r.render(vao, ebo, s);
 }

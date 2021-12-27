@@ -10,7 +10,7 @@ class QuadScene : public Scene {
         QuadScene(MinecraftClone::Window *window);
         ~QuadScene() override;
         
-        void render(const Renderer &r) override;
+        void render() override;
     private:
         VBO *vbo;
         VAO *vao;

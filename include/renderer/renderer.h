@@ -7,15 +7,20 @@
 #include "renderer/shader.h"
 #include "renderer/Batch.hpp"
 
-class Renderer {
-    public:
-        void render(const VAO *vao, const EBO *ebo, const Shader *s) const;
-        // void drawCube(float x, float y, float z, ) {
-            
-        // }
-        
-    private:
-        std::vector<Batch<Vertex>> batches;
+struct Quad {
+    Vertex vertices[6];
 };
+
+namespace Renderer {
+        
+        void init();
+        void free();
+        void setCamera(const Camera *cameraPtr);
+        void renderMesh(const Vertex *mesh, const size_t size);
+        void renderTransparentMesh(const Vertex *mesh, const size_t size);
+        void render();
+        void update(double deltaTime);
+        
+}
 
 #endif

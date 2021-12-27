@@ -1,6 +1,7 @@
 #ifndef BATCH_SCENE_3D_H
 #define BATCH_SCENE_3D_H
 
+#include "renderer/spriteSheet.h"
 #include "scenes/scene.h"
 #include "core/window.h"
 #include "renderer/Batch.hpp"
@@ -8,57 +9,55 @@
 #include "renderer/Frustum.h"
 #include <mutex>
 #include <future>
+#include "world/Chunk.h"
+#include <functional>
+// struct Block {
+//     glm::vec3 position;
+//     Quad faces[6];
+// };
 
-struct Quad {
-    Vertex vertices[6];
-};
-
-struct Block {
-    glm::vec3 position;
-    Quad faces[6];
-};
-
-struct ChunkMesh {
-    int chunkX, chunkZ;
-    // Vertex *v;
-    std::vector<Vertex> v;
-    // int size;
-};
+// struct ChunkMesh {
+//     int chunkX, chunkZ;
+//     // Vertex *v;
+//     std::vector<Vertex> v;
+//     // int size;
+// };
 
 class BatchScene3D : public Scene {
     public:
         BatchScene3D(MinecraftClone::Window *window);
         ~BatchScene3D() override;
-        static void createAllVertices(std::vector<ChunkMesh> *meshes, int startx, int startz, int chunkW, int chunkL);
-        static Quad generateQuad(Vertex v0, Vertex v1, Vertex v2, Vertex v3);
-        static void generateCube(std::vector<Quad>& quads, float x, float y, float z, TexCoords topTex, TexCoords bottomTex, TexCoords sideTex, bool top, bool bottom, bool left, bool right, bool front, bool back);
-        static void generateMesh(std::vector<Quad> quads);
+        // static void createAllVertices(std::vector<ChunkMesh> *meshes, const Texture2D *block_atlas, int startx, int startz, int chunkW, int chunkL);
+        // static Quad generateQuad(Vertex v0, Vertex v1, Vertex v2, Vertex v3);
+        // static void generateCube(std::vector<Quad>& quads, float x, float y, float z, TexCoords topTex, TexCoords bottomTex, TexCoords sideTex, bool top, bool bottom, bool left, bool right, bool front, bool back);
+        // static void generateMesh(std::vector<Quad> quads);
         
-        static float getNoise(float x, float z);
         bool drawVertexArray(const Vertex *array, const int size);
-        bool drawCube(glm::vec3 position, glm::vec2 texCoords);
+        bool drawTransparentVertexArray(const Vertex *array, const int size);
         
-        void render(const Renderer &r) override;
+        void render() override;
         void guiRender() override;
         void update(double deltaTime) override;
         
     private:
         MinecraftClone::Window *window;
-        std::vector<Batch<Vertex>> batches;
-        Texture2D *block_atlas;
-        Shader *s;
+        // Batch<Vertex> regularBatch;
+        // Batch<Vertex> transparentBatch;
+        SpriteSheet *block_atlas;
+        // Shader *s, *wavey;
         Camera *c;
         Frustum *f;
         VBlayout layout;
         
-        // std::vector<Quad> quads;
-        // Vertex *mesh;
-        std::vector<ChunkMesh> meshes;
-        std::vector<std::future<void>> meshFutures;
-        bool wiremeshToggle = false, wiremesh = false;
+        glm::mat4 test;
         
-        GLint vpUniform;
-        GLint modelUniform;
+        std::vector<std::future<void>> meshFutures;
+        bool wiremeshToggle = false, wiremesh = false, showGui = false;
+        
+        // float wave;
+        // GLint waveUniform;
+        // GLint vpUniform, wVpUniform;
+        // GLint modelUniform, wModelUniform;
 };
 
 #endif

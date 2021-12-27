@@ -12,7 +12,7 @@ class BatchRendering2DScene : public Scene {
         BatchRendering2DScene(MinecraftClone::Window *window);
         ~BatchRendering2DScene() override;
         
-        void render(const Renderer &r) override;
+        void render() override;
         void guiRender() override;
     private:
         float xOffset, yOffset;

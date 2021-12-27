@@ -4,13 +4,54 @@
 #include "world/Chunk.h"
 #include "glm/gtc/noise.hpp"
 #include "renderer/texture2D.h"
+#include "renderer/renderer.h"
+#include "utils/DebugStats.h"
+#include "world/World.h"
+#include "glm/gtc/random.hpp"
 
-Chunk::Chunk(int x, int y) : pos(x,y) {
+Chunk::Chunk(int xx, int yy) : pos(xx*chunkW,yy*chunkL) {
+    for(int y = 0; y < chunkH; y++)
+        for(int x = 0; x < chunkW; x++)
+            for(int z = 0; z < chunkL; z++)
+                blocks[y][x][z] = 0;
     status = ChunkStatus::EMPTY;
 }
 
 Chunk::~Chunk() {
     
+}
+
+void Chunk::show() {
+    if(status == ChunkStatus::HIDDEN) {
+        status = ChunkStatus::SHOWING;
+    }
+}
+void Chunk::hide() {
+    if(status == ChunkStatus::SHOWING) {
+        status = ChunkStatus::HIDDEN;
+    }
+}
+
+BlockID Chunk::getBlock(int x, int y, int z) {
+    if(x > chunkW-1 || z > chunkL-1 || y > chunkH-1 || x < 0 || y < 0 || z < 0)
+        return Blocks::nullBlockID;
+    
+    return blocks[y][x][z];
+}
+
+void Chunk::addBlock(BlockID id, int x, int y, int z) {
+    if(x < 0 || x >= chunkW || y < 0 || y >= chunkH || z < 0 || z >= chunkL)
+        return;
+    if(blocks[y][x][z] && !Blocks::getBlockFromID(blocks[y][x][z]).liquid)
+        return;
+    printf("Added... %d %d %d\n", x, y, z);
+    blocks[y][x][z] = id;
+}
+
+void Chunk::removeBlock(int x, int y, int z) {
+    if(x < 0 || x >= chunkW || y < 0 || y >= chunkH || z < 0 || z >= chunkL)
+        return;
+    blocks[y][x][z] = Blocks::airBlockID;
 }
 
 float Chunk::getNoise(float x, float z) {
@@ -27,59 +68,187 @@ float Chunk::getNoise(float x, float z) {
 }
 
 void Chunk::generateChunk() {
+    status = ChunkStatus::BUILDING;
+    for(int x = 0; x < chunkW; x++) {
+        for(int z = 0; z < chunkL; z++) {
+            int height = getNoise(pos.x + x, pos.y + z)+70;
+            float stoneHeight = (float)height / 1.15f;
+            bool tree = glm::linearRand(0.f, 1.f) > .99f;
+            for(int y = 0; y < height; y++) {
+                if(y < stoneHeight-1) {
+                    blocks[y][x][z] = 3;
+                } else if(y < height-1) {
+                    blocks[y][x][z] = 2;
+                } else {
+                    if(y < 81) {
+                        blocks[y][x][z] = 6;
+                        if(y < 80) {
+                            for(int w = y+1; w < 80; w++) {
+                                blocks[w][x][z] = 7;
+                            }
+                        }
+                    } else
+                        blocks[y][x][z] = 1;
+                }
+            }
+            if(tree && height-1 >= 81 && x > 1 && x < chunkW-2 && z > 1 && z < chunkL-2) {
+                if(blocks[height-1][x][z] == 1)
+                    blocks[height-1][x][z] = 2;
+                for(int y = height; y < height+6; y++) {
+                    blocks[y][x][z] = 4;
+                }
+                blocks[height+6][x][z] = 5;
+                
+                blocks[height+6][x-1][z] = 5;
+                blocks[height+6][x+1][z] = 5;
+                
+                blocks[height+6][x][z-1] = 5;
+                blocks[height+6][x][z+1] = 5;
+                
+                blocks[height+5][x-1][z] = 5;
+                blocks[height+5][x+1][z] = 5;
+                
+                blocks[height+5][x-1][z+1] = 5;
+                blocks[height+5][x][z+1] = 5;
+                blocks[height+5][x+1][z+1] = 5;
+                
+                blocks[height+5][x-1][z-1] = 5;
+                blocks[height+5][x][z-1] = 5;
+                blocks[height+5][x+1][z-1] = 5;
+                
+                for(int yy=height+3; yy < height+5; yy++)
+                    for(int xx=x-2; xx < x+3; xx++)
+                        for(int zz = z-2; zz < z+3; zz++)
+                            if(xx != x || zz != z)
+                                blocks[yy][xx][zz] = 5;
+            }
+        }
+    }
+    status = ChunkStatus::HIDDEN;
+}
+
+void Chunk::generateQuadMesh(std::vector<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
+    newMesh.push_back(v0);
+    newMesh.push_back(v1);
+    newMesh.push_back(v2);
+    newMesh.push_back(v2);
+    newMesh.push_back(v3);
+    newMesh.push_back(v0);
+}
+
+void Chunk::generateCubeMesh(std::vector<Vertex> &newMesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back) {
+    if(front) {
+        generateQuadMesh(newMesh,
+            { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h} },
+            { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y} },
+            { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y} },
+            { {x+1, y+1, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h} }
+        );
+        DebugStats::triCount += 1;
+    }
     
+    if(right) {
+        generateQuadMesh(newMesh,
+            { {x+1, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h} },
+            { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y} },
+            { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y} },
+            { {x+1, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h} }
+        );
+        DebugStats::triCount += 1;
+    }
+    
+    if(back) {
+        generateQuadMesh(newMesh,
+                { {x,   y+1, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h} },
+                { {x+1, y+1, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h} },
+                { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y} },
+                { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y} }
+        );
+        DebugStats::triCount += 1;
+    }
+    
+    if(left) {
+        generateQuadMesh(newMesh,
+                { {x, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h} },
+                { {x, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h} },
+                { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y} },
+                { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y} }
+        );
+        DebugStats::triCount += 1;
+    }
+    
+    if(top) {
+        generateQuadMesh(newMesh,
+                { {x+1, y+1, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y} },
+                { {x,   y+1, z},   {0, 1, 0}, {tex.top.x, tex.top.y} },
+                { {x,   y+1, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h} },
+                { {x+1, y+1, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h} }
+        );
+        DebugStats::triCount += 1;
+    }
+    
+    if(bottom) {
+        generateQuadMesh(newMesh,
+                { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h} },
+                { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y} },
+                { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y} },
+                { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h} }
+        );
+        DebugStats::triCount += 1;
+    }
 }
 
 void Chunk::rebuildMesh() {
-    // TexCoords grass { 1.f/32.f, 21.f/32.f, 1.f/32.f, 1.f/32.f };
-    // TexCoords grassTop { 4.f/32.f, 21.f/32.f, 1.f/32.f, 1.f/32.f };
-    // TexCoords dirt { 8.f/32.f, 26.f/32.f, 1.f/32.f, 1.f/32.f };
-    // TexCoords grassBottom = dirt;
-    // TexCoords stone { 19.f/32.f, 25.f/32.f, 1.f/32.f, 1.f/32.f };
+    // if(status != ChunkStatus::HIDDEN) return;
+    status = ChunkStatus::MESHING;
+    AdjChunks chunks = World::getAdjacentChunks(pos);
+    mesh.v.clear();
+    transparentMesh.v.clear();
+    for(int y = 0; y < chunkH; y++) {
+        for(int x = 0; x < chunkW; x++) {
+            for(int z = 0; z < chunkL; z++) {
+                BlockID id = blocks[y][x][z];
+                if(id == Blocks::airBlockID || id == Blocks::nullBlockID) {
+                    continue;
+                }
+                
+                Block b = Blocks::getBlockFromID(blocks[y][x][z]);
+                
+                
+                if(b.transparent) {
+                    bool top = y == chunkH-1 ? false : blocks[y+1][x][z];
+                    bool bottom = y == 0 ? true : blocks[y-1][x][z];
+                    bool left = x == 0 ? !chunks.left || chunks.left->blocks[y][chunkW-1][z]: blocks[y][x-1][z];
+                    bool right = x == chunkW-1 ? !chunks.right || chunks.right->blocks[y][0][z]: blocks[y][x+1][z];
+                    bool front = z == chunkL-1 ? !chunks.front || chunks.front->blocks[y][x][0]: blocks[y][x][z+1];
+                    bool back = z == 0 ? !chunks.back || chunks.back->blocks[y][x][chunkL-1]: blocks[y][x][z-1];
+                    if(b.liquid) {
+                        generateCubeMesh(transparentMesh.v, pos.x + x, y-.1, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                    }else
+                        generateCubeMesh(transparentMesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                } else {
+                    bool top = y == chunkH-1 ? false : !Blocks::getBlockFromID(blocks[y+1][x][z]).transparent;
+                    bool bottom = y == 0 ? true : !Blocks::getBlockFromID(blocks[y-1][x][z]).transparent;
+                    bool left = x == 0 ? !chunks.left || !Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : !Blocks::getBlockFromID(blocks[y][x-1][z]).transparent;
+                    bool right = x == chunkW-1 ? !chunks.right || !Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : !Blocks::getBlockFromID(blocks[y][x+1][z]).transparent;
+                    bool front = z == chunkL-1 ? !chunks.front || !Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : !Blocks::getBlockFromID(blocks[y][x][z+1]).transparent;
+                    bool back = z == 0 ? !chunks.back || !Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : !Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
+                    generateCubeMesh(mesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                }
+            }
+        }
+    }
     
-    // int w = pos.x + chunkW, l = pos.y +chunkL, height;
-    // for(int x = pos.x; x < w; x++) {
-    //     for(int z = pos.y; z < l; z++) {
-    //         height = getNoise(x, z)+10;
-    //         float heightLeft = getNoise(x+1, z)+10;
-    //         float heightRight = getNoise(x-1, z)+10;
-    //         float heightFront = getNoise(x, z+1)+10;
-    //         float heightBack = getNoise(x, z-1)+10;
-    //         float stoneHeight = (getNoise(x, z)+10) / 1.15f;
-    //         for(int y = 0; y < height; y++) {
-    //             if(y < stoneHeight-1) {
-    //                 generateCube(quads,
-    //                         x, y, z, stone, stone, stone, 
-    //                         y == height-1, false, heightLeft < y+1, heightRight < y+1,
-    //                         heightFront < y+1, heightBack < y+1
-    //                 );
-    //             } else if(y < height-1) {
-    //                 generateCube(quads,
-    //                         x, y, z, dirt, dirt, dirt,
-    //                         y == height-1, false, heightLeft < y+1, heightRight < y+1,
-    //                         heightFront < y+1, heightBack < y+1
-    //                 );
-    //             } else {
-    //                 generateCube(quads,
-    //                         x, y, z, grassTop, dirt, grass, 
-    //                         y == height-1, false, heightLeft < y+1, heightRight < y+1,
-    //                         heightFront < y+1, heightBack < y+1
-    //                 );
-    //             }
-    //         }
-    //     }
-    // }
-    
-    // ChunkMesh mesh;
-    // // mesh.size = quads.size() * 6;
-    // // mesh.v = (Vertex *)calloc(mesh.size, sizeof(Vertex));
-    // // mesh.v.push_back(
-    // mesh.chunkX = (float)startx/16.f;
-    // mesh.chunkZ = (float)startz/16.f;
-    // for(const auto &q : quads)
-    //     for(const auto &v : q.vertices)
-    //         mesh.v.push_back(v);
-    // std::lock_guard<std::mutex> lock(BatchScene3D::meshesMutex);
-    // meshes->push_back(mesh);
-    // DebugStats::triCount += quads.size() * 3;
+    status = ChunkStatus::SHOWING;
 }
+bool Chunk::operator<(const Chunk& other) const {
+    if(status == ChunkStatus::HIDDEN) return false;
+    if(other.status == ChunkStatus::HIDDEN) return true;
+    auto cpos = glm::vec2(CameraConfig::cameraPos.x, CameraConfig::cameraPos.z);
+    auto fpos = glm::vec2((float)this->pos.x, (float)this->pos.y) - cpos;
+    auto ofpos = glm::vec2((float)other.pos.x, (float)other.pos.y) - cpos;
+    return glm::dot(fpos, fpos) < glm::dot(ofpos, ofpos);
+}
+
+// TODO: Maybe create maxNonAir, which contains the max y value of the chunk that contains a non air block. This could be used to not render chunks that only have blocks below the cameras pov
+// Or maybe just split the chunk into 32x32x32 sub-chunks;

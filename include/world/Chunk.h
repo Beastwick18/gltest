@@ -2,34 +2,55 @@
 #define MINECRAFT_CLONE_CHUNK_H
 
 #include "renderer/Batch.hpp"
+#include "world/Block.h"
+#include "renderer/renderer.h"
 
 enum class ChunkStatus {
     EMPTY,
-    BUILT,
-    BUILDING
+    BUILDING,
+    HIDDEN,
+    MESHING,
+    SHOWING
 };
-
-typedef unsigned char BlockID;
 
 struct ChunkMesh {
     std::vector<Vertex> v;
 };
 
 class Chunk {
-    Chunk(int x, int y);
+public:
+    Chunk(int x, int z);
     ~Chunk();
+    
+    void generateQuadMesh(std::vector<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
+    void generateCubeMesh(std::vector<Vertex> &newMesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back);
     void generateChunk();
     void rebuildMesh();
+    BlockID getBlock(int x, int y, int z);
+    void addBlock(BlockID id, int x, int y, int z);
+    void removeBlock(int x, int y, int z);
+    void show();
+    void hide();
+    bool operator<(const Chunk& other) const;
     static float getNoise(float x, float z);
-    inline ChunkMesh getMesh() { return mesh; }
-    inline glm::vec2 getPos() { return pos; }
-    inline ChunkStatus getStatus() { return status; }
-private:
+    inline const ChunkMesh& getMesh() const { return mesh; }
+    inline const ChunkMesh& getTransparentMesh() const { return transparentMesh; }
+    inline glm::ivec2 getPos() const { return pos; }
+    inline ChunkStatus getStatus() const { return status; }
     static const int chunkW = 16, chunkL = 16, chunkH = 256;
+private:
     glm::ivec2 pos;
     ChunkMesh mesh;
+    ChunkMesh transparentMesh;
     ChunkStatus status;
     BlockID blocks[chunkH][chunkW][chunkL];
+};
+
+struct AdjChunks {
+    Chunk *left;
+    Chunk *right;
+    Chunk *front;
+    Chunk *back;
 };
 
 #endif

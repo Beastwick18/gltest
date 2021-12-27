@@ -8,7 +8,7 @@ class Scene {
         virtual ~Scene() {}
         
         virtual void update(double deltaTime) {}
-        virtual void render(const Renderer &r) {}
+        virtual void render() {}
         virtual void guiRender() {}
 };
 

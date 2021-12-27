@@ -6,6 +6,7 @@
 #include "core.h"
 #include "renderer/VAO.h"
 #include "input/input.h"
+#include "utils/DebugStats.h"
 
 struct Vertex {
     glm::vec3 position;
@@ -39,6 +40,7 @@ class Batch {
             vbo->bind();
             
             numVertices = 0;
+            vertexSize = sizeof(T);
         }
         
         bool addVertex(const T &t) {
@@ -55,11 +57,13 @@ class Batch {
         }
         
         void flush() {
+            if(numVertices == 0) return;
             vbo->bind();
             // Only send the part of the buffer that has been used
-            glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(T), vertices, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, numVertices * vertexSize, vertices, GL_DYNAMIC_DRAW);
             vao->bind();
             glDrawArrays(GL_TRIANGLES, 0, numVertices);
+            DebugStats::drawCalls++;
             numVertices = 0;
         }
         
@@ -80,13 +84,18 @@ class Batch {
             return numVertices+vertices < maxVertices;
         }
         
+        bool isEmpty() const {
+            return numVertices == 0;
+        }
+        
         unsigned int numVertices = 0;
     private:
-        // 2 MB of vertices
-        // static constexpr size_t verticesInKilobytes = 4096-1024*3;
+        // static constexpr size_t verticesInKilobytes = 1024*3;
         static constexpr size_t verticesInKilobytes = 1024;
         // static constexpr size_t verticesInKilobytes = 512;
+        // static constexpr size_t verticesInKilobytes = 4096;
         size_t maxVertices;
+        size_t vertexSize;
         T* vertices = nullptr;
         VBO *vbo = nullptr;
         VAO *vao = nullptr;

@@ -11,7 +11,7 @@ ClearColorScene::ClearColorScene(MinecraftClone::Window *window) : clearColor{0.
     Input::enableCursor();
 }
 
-void ClearColorScene::render(const Renderer &renderer) {
+void ClearColorScene::render() {
     glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
     glClear(GL_COLOR_BUFFER_BIT);
 }

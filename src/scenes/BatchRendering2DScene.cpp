@@ -40,7 +40,7 @@ Vertex staticVertices[6] = {
     { {1.0f, 1.0f, 0.0f}, glm::vec3(0), {144.f/512.f, 464.f/512.f} },
 };
 
-void BatchRendering2DScene::render(const Renderer &r) {
+void BatchRendering2DScene::render() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     s->use();
