@@ -8,6 +8,7 @@
 
 using namespace MinecraftClone;
 
+BlockTexture highlight;
 BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Input::disableCursor();
     
@@ -46,6 +47,7 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     TexCoords sand = block_atlas->getSubTexture(18, 27);
     TexCoords water = block_atlas->getSubTexture(20, 19);
     TexCoords lava = block_atlas->getSubTexture(8, 19);
+    TexCoords square = block_atlas->getSubTexture(30, 13, 2, 2);
     
     BlockTexture grassTex{ grassTop, dirt, grass, grass, grass, grass };
     BlockTexture dirtTex{ dirt, dirt, dirt, dirt, dirt, dirt };
@@ -55,6 +57,7 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     BlockTexture sandTex{ sand, sand, sand, sand, sand, sand };
     BlockTexture waterTex{ water, water, water, water, water, water };
     BlockTexture lavaTex{ lava, lava, lava, lava, lava, lava };
+    highlight = { square, square, square, square, square, square };
     
     Blocks::blocks[0] = Block{ "air", {}, 0, true, false};
     Blocks::blocks[1] = Block{ "grass", grassTex, 1, false, false };
@@ -112,11 +115,16 @@ bool BatchScene3D::drawTransparentVertexArray(const Vertex *array, const int siz
     return false;
 }
 
+bool lookingAtBlock = false;
+int side = -1; // 0=top, 1=bottom, 2=left, 3=right, 4=front, 5=back
+glm::vec3 lookingAt;
 void BatchScene3D::render() {
     glClearColor(0.35f, 0.52f, 0.95f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+    
     double drawStart = glfwGetTime();
+    // glDisable(GL_DEPTH_TEST);
     for(const auto &c : World::chunks) {
         if(c.getStatus() == ChunkStatus::SHOWING) {
             // continue;
@@ -141,6 +149,18 @@ void BatchScene3D::render() {
         }
     }
     DebugStats::drawTime += glfwGetTime() - drawStart;
+    
+    Renderer::render();
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    if(lookingAtBlock) {
+        std::vector<Vertex> mesh;
+        Chunk::generateCubeMesh(mesh, lookingAt.x, lookingAt.y, lookingAt.z, highlight, true, true, true, true, true, true);
+        Renderer::renderMesh(mesh.data(), mesh.size());
+        Renderer::flushRegularBatch();
+    }
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
 }
 
 void BatchScene3D::guiRender() {
@@ -219,15 +239,17 @@ void BatchScene3D::update(double deltaTime) {
         float z = pos.z;
         World::removeBlock(x, y, z);
     }
-    // if(Input::isKeyBeginDown(GLFW_KEY_V)) {
-    //     for(auto &c : World::chunks) {
-    //         c.rebuildMesh();
-    //     }
-    // }
     
     // Make player stand on terrain
-    auto pos = glm::floor(CameraConfig::cameraPos);
-    CameraConfig::ground = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
+    auto pos = glm::floor(CameraConfig::cameraPos - glm::vec3(-.4, 1, -.4));
+    auto pos2 = glm::floor(CameraConfig::cameraPos - glm::vec3(.4f, 1, -.4f));
+    auto pos3 = glm::floor(CameraConfig::cameraPos - glm::vec3(.4f, 1, .4f));
+    auto pos4 = glm::floor(CameraConfig::cameraPos - glm::vec3(-.4f, 1, .4f));
+    auto ground = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
+    auto ground1 = ceil(Chunk::getNoise(pos2.x, pos2.z))+70.7;
+    auto ground2 = ceil(Chunk::getNoise(pos3.x, pos3.z))+70.7;
+    auto ground3 = ceil(Chunk::getNoise(pos4.x, pos4.z))+70.7;
+    CameraConfig::ground = glm::max(glm::max(ground, ground1), glm::max(ground2, ground3));
     
     if(Input::isKeyBeginDown(GLFW_KEY_TAB)) {
         if(Input::cursorEnabled)
@@ -249,5 +271,61 @@ void BatchScene3D::update(double deltaTime) {
             glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
         else
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    }
+    
+    if(lookingAtBlock) {
+        if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_LEFT))
+            World::removeBlock(lookingAt.x, lookingAt.y, lookingAt.z);
+        else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+            if(side == 0)
+                World::addBlock(4, lookingAt.x, lookingAt.y+1, lookingAt.z);
+            else if(side == 1)
+                World::addBlock(4, lookingAt.x, lookingAt.y-1, lookingAt.z);
+            else if(side == 2)
+                World::addBlock(4, lookingAt.x, lookingAt.y, lookingAt.z+1);
+            else if(side == 3)
+                World::addBlock(4, lookingAt.x, lookingAt.y, lookingAt.z-1);
+            else if(side == 4)
+                World::addBlock(4, lookingAt.x-1, lookingAt.y, lookingAt.z);
+            else if(side == 5)
+                World::addBlock(4, lookingAt.x+1, lookingAt.y, lookingAt.z);
+        }
+    }
+    // Ray casting i guess
+    auto startPos = CameraConfig::cameraPos;
+    auto dir = CameraConfig::cameraFront;
+    lookingAtBlock = false;
+    side = -1;
+    for(auto dir = CameraConfig::cameraFront; glm::length(dir) < 6.f; dir = dir + .005f * dir) {
+        glm::vec3 blockPos  {startPos.x + dir.x * 1, startPos.y + dir.y * 1, startPos.z + dir.z * 1};
+        auto newBlockPos = glm::floor(blockPos);
+        if(auto block = World::getBlock(newBlockPos.x, newBlockPos.y, newBlockPos.z); block && !Blocks::getBlockFromID(block).liquid) {
+            lookingAt = newBlockPos;
+            lookingAtBlock = true;
+            
+            float distRight = blockPos.z - glm::floor(blockPos.z);
+            float distLeft = 1-distRight;
+            float distBottom = blockPos.y - glm::floor(blockPos.y);
+            float distTop = 1-distBottom;
+            float distFront = blockPos.x - glm::floor(blockPos.x);
+            float distBack = 1-distFront;
+            
+            float min = glm::min(glm::min(distTop, distBottom), glm::min(glm::min(distLeft, distRight), glm::min(distFront, distBack)));
+            // printf("Min %f\n", min);
+            if(min == distTop)
+                side = 0;
+            else if(min == distBottom)
+                side = 1;
+            else if(min == distLeft)
+                side = 2;
+            else if(min == distRight)
+                side = 3;
+            else if(min == distFront)
+                side = 4;
+            else
+                side = 5;
+            
+            break;
+        }
     }
 }

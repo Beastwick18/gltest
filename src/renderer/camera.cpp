@@ -105,18 +105,36 @@ void Camera::update(double deltaTime) {
         }
         verticalSpeed -= (float)deltaTime * CameraConfig::gravity * CameraConfig::cameraUp;
         
+        
+        
+        // auto pos = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
+        // auto pos2 = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
+        // auto pos3 = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
+        // auto pos4 = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
+        // CameraConfig::ground = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
+        // CameraConfig::ground = World::getBlock(
+        // if(auto block = World::getBlock(pos.x, pos.y, pos.z); block && !Blocks::getBlockFromID(block).liquid) {
         glm::vec3 speed = verticalSpeed + forwardSpeed + sidewaysSpeed;
-        
-        CameraConfig::cameraPos += (float) deltaTime *(speed);
-        
         if(CameraConfig::cameraPos.y <= CameraConfig::ground) {
+            // CameraConfig::cameraPos.y = pos.y+2.7;
             verticalSpeed = glm::vec3(0);
             CameraConfig::cameraPos.y = glm::lerp(CameraConfig::cameraPos.y, CameraConfig::ground, (float)deltaTime*CameraConfig::climbSpeed);
+            
             if(glm::abs(CameraConfig::cameraPos.y - CameraConfig::ground) < .01f) {
                 CameraConfig::cameraPos.y = CameraConfig::ground;
             }
             jumping = false;
         }
+        
+        // pos = glm::floor(CameraConfig::cameraPos + glm::vec3(.5, 0, 0));
+        // if(auto block = World::getBlock(pos.x, pos.y, pos.z); speed.x > 0 && block && !Blocks::getBlockFromID(block).liquid) {
+        //     speed.x = 0;
+        // }
+        // pos = glm::floor(CameraConfig::cameraPos + glm::vec3(1, -1.7, 0));
+        // if(auto block = World::getBlock(pos.x, pos.y, pos.z); speed.x > 0 && block && !Blocks::getBlockFromID(block).liquid) {
+        //     speed.x = 0;
+        // }
+        CameraConfig::cameraPos += (float) deltaTime *(speed);
     }
     
     auto newPos = CameraConfig::cameraPos;

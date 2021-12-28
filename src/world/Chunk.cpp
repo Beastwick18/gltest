@@ -67,6 +67,10 @@ float Chunk::getNoise(float x, float z) {
     return h;
 }
 
+float caveTest(float x, float y, float z) {
+    return (1.f+glm::simplex(glm::vec3(x,y,z)))/2.f;
+}
+
 void Chunk::generateChunk() {
     status = ChunkStatus::BUILDING;
     for(int x = 0; x < chunkW; x++) {
@@ -75,48 +79,45 @@ void Chunk::generateChunk() {
             float stoneHeight = (float)height / 1.15f;
             bool tree = glm::linearRand(0.f, 1.f) > .99f;
             for(int y = 0; y < height; y++) {
-                if(y < stoneHeight-1) {
+                if(y < stoneHeight-1)
                     blocks[y][x][z] = 3;
-                } else if(y < height-1) {
+                else if(y < height-1)
                     blocks[y][x][z] = 2;
-                } else {
-                    if(y < 81) {
-                        blocks[y][x][z] = 6;
-                        if(y < 80) {
-                            for(int w = y+1; w < 80; w++) {
-                                blocks[w][x][z] = 7;
-                            }
-                        }
-                    } else
-                        blocks[y][x][z] = 1;
-                }
+                else if(y < 81) {
+                    blocks[y][x][z] = 6;
+                    if(y < 80)
+                        for(int w = y+1; w < 80; w++)
+                            blocks[w][x][z] = 7;
+                } else
+                    blocks[y][x][z] = 1;
             }
             if(tree && height-1 >= 81 && x > 1 && x < chunkW-2 && z > 1 && z < chunkL-2) {
+                int treeHeight = glm::linearRand(4, 7);
                 if(blocks[height-1][x][z] == 1)
                     blocks[height-1][x][z] = 2;
-                for(int y = height; y < height+6; y++) {
+                for(int y = height; y < height+treeHeight; y++) {
                     blocks[y][x][z] = 4;
                 }
-                blocks[height+6][x][z] = 5;
+                blocks[height+treeHeight][x][z] = 5;
                 
-                blocks[height+6][x-1][z] = 5;
-                blocks[height+6][x+1][z] = 5;
+                blocks[height+treeHeight][x-1][z] = 5;
+                blocks[height+treeHeight][x+1][z] = 5;
                 
-                blocks[height+6][x][z-1] = 5;
-                blocks[height+6][x][z+1] = 5;
+                blocks[height+treeHeight][x][z-1] = 5;
+                blocks[height+treeHeight][x][z+1] = 5;
                 
-                blocks[height+5][x-1][z] = 5;
-                blocks[height+5][x+1][z] = 5;
+                blocks[height+treeHeight-1][x-1][z] = 5;
+                blocks[height+treeHeight-1][x+1][z] = 5;
                 
-                blocks[height+5][x-1][z+1] = 5;
-                blocks[height+5][x][z+1] = 5;
-                blocks[height+5][x+1][z+1] = 5;
+                blocks[height+treeHeight-1][x-1][z+1] = 5;
+                blocks[height+treeHeight-1][x][z+1] = 5;
+                blocks[height+treeHeight-1][x+1][z+1] = 5;
                 
-                blocks[height+5][x-1][z-1] = 5;
-                blocks[height+5][x][z-1] = 5;
-                blocks[height+5][x+1][z-1] = 5;
+                blocks[height+treeHeight-1][x-1][z-1] = 5;
+                blocks[height+treeHeight-1][x][z-1] = 5;
+                blocks[height+treeHeight-1][x+1][z-1] = 5;
                 
-                for(int yy=height+3; yy < height+5; yy++)
+                for(int yy=height+treeHeight-3; yy < height+treeHeight-1; yy++)
                     for(int xx=x-2; xx < x+3; xx++)
                         for(int zz = z-2; zz < z+3; zz++)
                             if(xx != x || zz != z)

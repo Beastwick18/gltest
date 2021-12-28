@@ -19,6 +19,8 @@ namespace Renderer {
         void renderMesh(const Vertex *mesh, const size_t size);
         void renderTransparentMesh(const Vertex *mesh, const size_t size);
         void render();
+        void flushRegularBatch();
+        void flushTransparentBatch();
         void update(double deltaTime);
         
 }

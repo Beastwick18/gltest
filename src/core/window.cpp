@@ -95,6 +95,9 @@ namespace MinecraftClone {
         
         glfwSetWindowMonitor(glfwWindow, monitor, 0, 0, v->width, v->height, v->refreshRate);
         this->fullscreen = fullscreen;
+        this->width = v->width;
+        this->height = v->height;
+        glViewport(0, 0, width, height);
     }
     
     void Window::resize(unsigned int width, unsigned int height) {

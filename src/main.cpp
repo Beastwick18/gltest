@@ -93,6 +93,19 @@ int main(int argc, char **argv) {
     
     Renderer::init();
     
+    
+    
+    VAO *vao = new VAO;
+    vao->bind();
+    VBO *vbo = new VBO(16*sizeof(float));
+    VBlayout layout;
+    layout.push<float>(2); // Push position
+    vao->addBuffer(vbo, layout);
+    EBO *ebo = new EBO(12);
+    ebo->bind();
+    
+    Shader *qs = Shader::createShader("assets/shaders/quad.glsl");
+    
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window->getGlfwWindow(), false);
@@ -134,6 +147,41 @@ int main(int argc, char **argv) {
             double renderStart = glfwGetTime();
             scene->render();
             Renderer::render();
+            glClear(GL_DEPTH_BUFFER_BIT);
+            qs->use();
+            
+            float ratio = (float)window->getWidth()/(float)window->getHeight();
+            float x = 14.f/ window->getWidth();
+            float y = 2.f/  window->getHeight();
+            float x2 = 2.f/ window->getWidth();
+            float y2 = 14.f/window->getHeight();
+            float vertices[] = {
+                -x,  y, // Top left
+                 x,  y, // Top right
+                 x, -y, // Bottom right
+                -x, -y,  // Bottom left
+                -x2,  y2, // Top left
+                 x2,  y2, // Top right
+                 x2, -y2, // Bottom right
+                -x2, -y2  // Bottom left
+            };
+            unsigned int indices[] = {
+                0, 2, 1,
+                2, 0, 3,
+                4, 6, 5,
+                6, 4, 7
+            };
+            
+            vao->bind();
+            ebo->bind();
+            glDrawElements(GL_TRIANGLES, ebo->getCount(), GL_UNSIGNED_INT, nullptr);
+            
+            vbo->bind();
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+            ebo->bind();
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
+            glDrawArrays(GL_ARRAY_BUFFER, 0, 8);
+            
             DebugStats::renderTime += glfwGetTime() - renderStart;
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -142,7 +190,6 @@ int main(int argc, char **argv) {
             scene->guiRender();
             double guiEnd = glfwGetTime();
             DebugStats::guiTime += guiEnd - guiStart;
-            
             
             // ImGui::End();
             
@@ -203,6 +250,11 @@ int main(int argc, char **argv) {
     
     Renderer::free();
     Window::freeWindow(window);
+    
+    VAO::free(vao);
+    VBO::free(vbo);
+    EBO::free(ebo);
+    Shader::freeShader(qs);
     
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

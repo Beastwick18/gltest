@@ -8,6 +8,7 @@ class EBO {
         GLuint ID, count;
         
         EBO(const GLuint *indices, const GLuint count);
+        EBO(const GLuint count);
         
         void bind() const;
         void unbind() const;

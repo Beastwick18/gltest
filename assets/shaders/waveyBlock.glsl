@@ -17,7 +17,7 @@ uniform float waveOffset;
 float waveHeight = .06;
 
 void main() {
-    float height = position.y + waveHeight*sin(position.x + position.z + waveOffset);
+    float height = position.y; //+ waveHeight*sin(position.x + position.z + waveOffset);
     gl_Position = viewProj * model * vec4(position.x, height, position.z, 1.0);
     texCoord = aTex;
     normal = aNormal;
