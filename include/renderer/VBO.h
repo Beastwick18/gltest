@@ -9,12 +9,11 @@ class VBO {
         size_t size;
         VBO(const GLfloat *vertices, const GLsizeiptr size, const GLenum drawType);
         VBO(const GLsizeiptr size);
+        
         void bind() const;
-        
-        // template<typename T>
-        // void bind(T *vertices) const;
-        
         void unbind() const;
+        void setData(const void *data, const GLsizeiptr size) const;
+        
         static void free(VBO *vbo);
 };
 

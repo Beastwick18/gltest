@@ -8,6 +8,7 @@
 enum class ChunkStatus {
     EMPTY,
     BUILDING,
+    BUILT,
     HIDDEN,
     MESHING,
     SHOWING
@@ -37,7 +38,8 @@ public:
     inline const ChunkMesh& getTransparentMesh() const { return transparentMesh; }
     inline glm::ivec2 getPos() const { return pos; }
     inline ChunkStatus getStatus() const { return status; }
-    static const int chunkW = 16, chunkL = 16, chunkH = 256;
+    static const int chunkW = 32, chunkL = 32, chunkH = 150;
+    // static const int chunkW = 16, chunkL = 16, chunkH = 256;
 private:
     glm::ivec2 pos;
     ChunkMesh mesh;

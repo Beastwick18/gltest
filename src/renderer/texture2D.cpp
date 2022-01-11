@@ -5,19 +5,25 @@ Texture2D::Texture2D(const unsigned char *bytes, unsigned int imageWidth, unsign
                      const GLenum internalFormat, const GLenum filter, const GLenum repeat) {
     this->imageWidth = imageWidth;
     this->imageHeight = imageHeight;
-    glGenTextures(1, &ID);
-    glBindTexture(GL_TEXTURE_2D, ID);
+    // glGenTextures(1, &ID);
+    // glBindTexture(GL_TEXTURE_2D, ID);
+    glCreateTextures(GL_TEXTURE_2D, 1, &ID);
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+    glTextureParameteri(ID, GL_TEXTURE_MIN_FILTER, filter);
+    glTextureParameteri(ID, GL_TEXTURE_MAG_FILTER, filter);
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat);
+    glTextureParameteri(ID, GL_TEXTURE_WRAP_S, repeat);
+    glTextureParameteri(ID, GL_TEXTURE_WRAP_T, repeat);
     
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, imageWidth, imageHeight, 0, format, GL_UNSIGNED_BYTE, bytes);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    // glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, imageWidth, imageHeight, 0, format, GL_UNSIGNED_BYTE, bytes);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+    glTextureStorage2D(ID, 1, internalFormat, imageWidth, imageHeight);
+    glTextureSubImage2D(ID, 0, 0, 0, imageWidth, imageHeight, format, GL_UNSIGNED_BYTE, bytes);
+    glGenerateTextureMipmap(ID);
     
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 Texture2D *Texture2D::loadFromImageFile(const char *imagePath, const GLenum internalFormat,
@@ -40,8 +46,7 @@ Texture2D *Texture2D::loadFromImageFile(const char *imagePath, const GLenum inte
 }
 
 void Texture2D::bind(const unsigned int index) const {
-    glActiveTexture(index + GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, ID);
+    glBindTextureUnit(index, ID);
 }
 
 void Texture2D::unbind() const {

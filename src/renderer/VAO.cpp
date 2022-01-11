@@ -1,52 +1,26 @@
 #include "renderer/VAO.h"
 
 VAO::VAO() {
-    glGenVertexArrays(1, &ID);
+    glCreateVertexArrays(1, &ID);
 }
 
 void VAO::linkAttrib(const VBO *vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void *offset) {
-    vbo->bind();
+    glVertexArrayAttribBinding(ID, layout, 0);
     glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
-    glEnableVertexAttribArray(layout);
-    vbo->unbind();
+    glEnableVertexArrayAttrib(ID, layout);
+    glVertexArrayVertexBuffer(ID, 0, vbo->ID, 0, stride);
 }
 
 void VAO::addBuffer(const VBO *vbo, const VBlayout &layout) {
-    vbo->bind();
-    int i = 0;
-    unsigned int offset = 0;
+    unsigned int i = 0, offset = 0;
     for(const auto &e : layout.getElements()) {
-        // printf("%d, %d, %d, %d\n", i, e.count, layout->getStride(), offset);
-        glVertexAttribPointer(i, e.count, e.type, e.normalized, layout.getStride(), reinterpret_cast<void *>(offset));
+        glVertexArrayAttribBinding(ID, i, 0);
+        glVertexArrayAttribFormat(ID, i, e.count, e.type, e.normalized, offset);
         offset += e.count * VBelement::getSize(e.type);
-        glEnableVertexAttribArray(i++);
+        glEnableVertexArrayAttrib(ID, i++);
     }
-    vbo->unbind();
+    glVertexArrayVertexBuffer(ID, 0, vbo->ID, 0, layout.getStride());
 }
-
-void addBuffer(const GLuint vbo, const VBlayout &layout) {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    int i = 0;
-    unsigned int offset = 0;
-    for(const auto &e : layout.getElements()) {
-        // printf("%d, %d, %d, %d\n", i, e.count, layout->getStride(), offset);
-        glVertexAttribPointer(i, e.count, e.type, e.normalized, layout.getStride(), reinterpret_cast<void *>(offset));
-        offset += e.count * VBelement::getSize(e.type);
-        glEnableVertexAttribArray(i++);
-    }
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-// template<typename T>
-// void VAO::pushAttrib(VBO *vbo, GLuint count, GLuint vertexPropCount) {
-    
-// }
-
-// template<>
-// void VAO::pushAttrib<float>(VBO *vbo, GLuint count, GLuint vertexPropCount) {
-//     linkAttrib(vbo, layoutCount++, count, GL_FLOAT, vertexPropCount * sizeof(float), (void *)(attribEnd*sizeof(float)));
-//     attribEnd += count;
-// }
 
 void VAO::bind() const {
     glBindVertexArray(ID);
@@ -57,8 +31,8 @@ void VAO::unbind() const {
 }
 
 void VAO::free(VAO *vao) {
-    if(vao != nullptr) {
-        glDeleteVertexArrays(1, &vao->ID);
-        delete vao;
-    }
+    if(vao == nullptr) return;
+    
+    glDeleteVertexArrays(1, &vao->ID);
+    delete vao;
 }

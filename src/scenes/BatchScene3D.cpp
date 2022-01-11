@@ -15,29 +15,10 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     
-    // s = Shader::createShader("assets/shaders/batch3d.glsl");
-    // s->use();
-    // s->setUniform1i("tex0", 0);
-    // vpUniform = s->getUniformLocation("viewProj");
-    // modelUniform = s->getUniformLocation("model");
-    // wave = 0;
-    // s->setUniformMat4f(modelUniform, glm::mat4(1.f));
-    
-    // wavey = Shader::createShader("assets/shaders/waveyBlock.glsl");
-    // wavey->use();
-    // wavey->setUniform1i("tex0", 0);
-    // wVpUniform = wavey->getUniformLocation("viewProj");
-    // wModelUniform = wavey->getUniformLocation("model");
-    // wave = 0;
-    // waveUniform = wavey->getUniformLocation("waveOffset");
-    // wavey->setUniformMat4f(wModelUniform, glm::mat4(1.f));
-    
-    // s->use();
-    
     block_atlas = SpriteSheet::loadFromImageFile("assets/textures/block_atlas.png", 32, 32);
     block_atlas->bind();
     
-    TexCoords grass = block_atlas->getSubTexture(1, 21);
+    TexCoords grassSide = block_atlas->getSubTexture(1, 21);
     TexCoords grassTop = block_atlas->getSubTexture(4, 21);
     TexCoords dirt = block_atlas->getSubTexture(8, 26);
     TexCoords stone = block_atlas->getSubTexture(19, 25);
@@ -49,36 +30,30 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     TexCoords lava = block_atlas->getSubTexture(8, 19);
     TexCoords square = block_atlas->getSubTexture(30, 13, 2, 2);
     
-    BlockTexture grassTex{ grassTop, dirt, grass, grass, grass, grass };
-    BlockTexture dirtTex{ dirt, dirt, dirt, dirt, dirt, dirt };
-    BlockTexture stoneTex{ stone, stone, stone, stone, stone, stone };
-    BlockTexture logTex{ logTop, logTop, logSide, logSide, logSide, logSide };
-    BlockTexture leavesTex{ leaves, leaves, leaves, leaves, leaves, leaves };
-    BlockTexture sandTex{ sand, sand, sand, sand, sand, sand };
-    BlockTexture waterTex{ water, water, water, water, water, water };
-    BlockTexture lavaTex{ lava, lava, lava, lava, lava, lava };
-    highlight = { square, square, square, square, square, square };
+    highlight = { square };
     
     Blocks::blocks[0] = Block{ "air", {}, 0, true, false};
-    Blocks::blocks[1] = Block{ "grass", grassTex, 1, false, false };
-    Blocks::blocks[2] = Block{ "dirt", dirtTex, 2, false, false };
-    Blocks::blocks[3] = Block{ "stone", stoneTex, 3, false, false };
-    Blocks::blocks[4] = Block{ "log", logTex, 4, false, false };
-    Blocks::blocks[5] = Block{ "leaves", leavesTex, 5, true, false };
-    Blocks::blocks[6] = Block{ "sand", sandTex, 6, false, false };
-    Blocks::blocks[7] = Block{ "water", waterTex, 7, true, true };
-    Blocks::blocks[8] = Block{ "lava", lavaTex, 8, true, true };
+    Blocks::blocks[1] = Block{ "grass", { grassTop, dirt, grassSide }, 1, false, false };
+    Blocks::blocks[2] = Block{ "dirt", { dirt }, 2, false, false };
+    Blocks::blocks[3] = Block{ "stone", { stone }, 3, false, false };
+    Blocks::blocks[4] = Block{ "log", { logTop, logTop, logSide }, 4, false, false };
+    Blocks::blocks[5] = Block{ "leaves", { leaves }, 5, true, false };
+    Blocks::blocks[6] = Block{ "sand", { sand }, 6, false, false };
+    Blocks::blocks[7] = Block{ "water", { water }, 7, true, true };
+    Blocks::blocks[8] = Block{ "lava", { lava }, 8, true, true };
     
-    int maxChunkX = 20;
-    int maxChunkZ = 20;
+    // int maxChunkX = 20;
+    // int maxChunkZ = 20;
+    int maxChunkX = 10;
+    int maxChunkZ = 10;
     
     c = new Camera(window);
     Renderer::setCamera(c);
-    CameraConfig::cameraPos.x = floor((float)maxChunkX / 2.f)*16 + 8.5;
+    CameraConfig::cameraPos.x = floor((float)maxChunkX / 2.f) * Chunk::chunkW + (float)Chunk::chunkW / 2.f;
     auto pos = glm::floor(CameraConfig::cameraPos);
     CameraConfig::cameraPos.y = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
-    CameraConfig::cameraPos.z = floor((float)maxChunkZ / 2.f)*16 + 8.5;
-    c->update(0);
+    CameraConfig::cameraPos.z = floor((float)maxChunkZ / 2.f) * Chunk::chunkL + (float)Chunk::chunkL / 2.f;
+    
     f = new Frustum(c->getProjection() * c->getView());
     
     layout.push<float>(3);
@@ -92,13 +67,9 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
             c.generateChunk();
             World::chunks.push_back(c);
         }
-    printf("Test: %d\n", World::chunks[0] < World::chunks[1]);
-    for(auto &c : World::chunks) {
+    
+    for(auto &c : World::chunks)
         meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, &c));
-        // c.rebuildMesh();
-    }
-
-    test = glm::perspective(glm::radians(180.f), (float)window->getWidth()/10000, 0.1f, 1000.0f);
 }
 
 BatchScene3D::~BatchScene3D() {
@@ -107,16 +78,11 @@ BatchScene3D::~BatchScene3D() {
     delete f;
 }
 
-bool BatchScene3D::drawVertexArray(const Vertex *array, const int size) {
-    return false;
-}
-
-bool BatchScene3D::drawTransparentVertexArray(const Vertex *array, const int size) {
-    return false;
-}
+std::vector<glm::vec3> testPos;
 
 bool lookingAtBlock = false;
-int side = -1; // 0=top, 1=bottom, 2=left, 3=right, 4=front, 5=back
+// int side = -1; // 0=top, 1=bottom, 2=left, 3=right, 4=front, 5=back
+glm::vec3 side;
 glm::vec3 lookingAt;
 void BatchScene3D::render() {
     glClearColor(0.35f, 0.52f, 0.95f, 1.0f);
@@ -124,20 +90,11 @@ void BatchScene3D::render() {
     
     
     double drawStart = glfwGetTime();
-    // glDisable(GL_DEPTH_TEST);
     for(const auto &c : World::chunks) {
         if(c.getStatus() == ChunkStatus::SHOWING) {
-            // continue;
-        // auto pos = c.getPos();
-        // if(f->isBoxVisible(glm::vec3(pos.x, 0, pos.y), glm::vec3(pos.x + Chunk::chunkW, Chunk::chunkH, pos.y + Chunk::chunkL))) {
-            // if(Input::isKeyBeginDown(GLFW_KEY_Q))
-            //     printf("YES %d, %d\n", pos.x, pos.y);
             const auto &v = c.getMesh().v;
             DebugStats::chunksRenderedCount++;
             Renderer::renderMesh(v.data(), v.size());
-            
-            // const auto &tv = c.getTransparentMesh().v;
-            // Renderer::renderTransparentMesh(tv.data(), tv.size());
         }
     }
     if(Input::isKeyBeginDown(GLFW_KEY_Q))
@@ -159,6 +116,13 @@ void BatchScene3D::render() {
         Renderer::renderMesh(mesh.data(), mesh.size());
         Renderer::flushRegularBatch();
     }
+    for(auto pos : testPos) {
+        std::vector<Vertex> mesh;
+        Chunk::generateCubeMesh(mesh, pos.x, pos.y, pos.z, highlight, true, true, true, true, true, true);
+        Renderer::renderMesh(mesh.data(), mesh.size());
+    }
+    Renderer::flushRegularBatch();
+    
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 }
@@ -169,6 +133,7 @@ void BatchScene3D::guiRender() {
         if(ImGui::SliderFloat("FOV", &CameraConfig::fov, 1.0f, 120.0f)) {
             c->recalculateProjection();
         }
+        ImGui::SliderFloat("Zoom FOV", &CameraConfig::zoomFov, 1.0f, 120.0f);
         ImGui::SliderFloat("Mouse Sensitivity", &CameraConfig::mouseSensitivity, 0.0f, 10.0f);
         ImGui::SliderFloat("Bobbing Height", &CameraConfig::bobbingHeight, 0.0f, 1.0f);
         ImGui::SliderFloat("Bobbing Speed", &CameraConfig::bobbingSpeed, 0.0f, 20.0f);
@@ -187,6 +152,7 @@ void BatchScene3D::guiRender() {
         }
         ImGui::SliderFloat("Climb Speed", &CameraConfig::climbSpeed, 0.f, 20.f);
         ImGui::SliderFloat3("Camera Position", glm::value_ptr(CameraConfig::cameraPos), -50.f, 50.f);
+        ImGui::SliderInt("Block Reach", &CameraConfig::blockReach, 0.f, 100.f);
         
         ImGui::Checkbox("Wire mesh", &wiremeshToggle);
         ImGui::Checkbox("No clip", &CameraConfig::noclip);
@@ -203,8 +169,8 @@ void BatchScene3D::guiRender() {
     }
 }
 
-// glm::ivec2 prevChunk;
 double dtSum = 0;
+bool clr = false;
 void BatchScene3D::update(double deltaTime) {
     c->update(deltaTime);
     f->update(c->getProjection() * c->getView());
@@ -221,25 +187,7 @@ void BatchScene3D::update(double deltaTime) {
         }
     }
     
-    // glm::ivec2 currChunk {((int)CameraConfig::cameraPos.x) / Chunk::chunkW, ((int)CameraConfig::cameraPos.z) / Chunk::chunkL };
-    // if(currChunk != prevChunk && World::chunks.size() > 0)
-    //     std::sort(World::chunks.begin(), World::chunks.end());
-    // prevChunk = currChunk;
-    if(Input::isKeyBeginDown(GLFW_KEY_X)) {
-        auto pos = glm::floor(CameraConfig::cameraPos);
-        float x = pos.x;
-        float y = pos.y;
-        float z = pos.z;
-        World::addBlock(1, x, y, z);
-    }
-    if(Input::isKeyBeginDown(GLFW_KEY_C)) {
-        auto pos = glm::floor(CameraConfig::cameraPos);
-        float x = pos.x;
-        float y = pos.y-2;
-        float z = pos.z;
-        World::removeBlock(x, y, z);
-    }
-    
+    {
     // Make player stand on terrain
     auto pos = glm::floor(CameraConfig::cameraPos - glm::vec3(-.4, 1, -.4));
     auto pos2 = glm::floor(CameraConfig::cameraPos - glm::vec3(.4f, 1, -.4f));
@@ -250,6 +198,7 @@ void BatchScene3D::update(double deltaTime) {
     auto ground2 = ceil(Chunk::getNoise(pos3.x, pos3.z))+70.7;
     auto ground3 = ceil(Chunk::getNoise(pos4.x, pos4.z))+70.7;
     CameraConfig::ground = glm::max(glm::max(ground, ground1), glm::max(ground2, ground3));
+    }
     
     if(Input::isKeyBeginDown(GLFW_KEY_TAB)) {
         if(Input::cursorEnabled)
@@ -273,59 +222,71 @@ void BatchScene3D::update(double deltaTime) {
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     }
     
-    if(lookingAtBlock) {
+    if(lookingAtBlock && !Input::cursorEnabled) {
         if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_LEFT))
-            World::removeBlock(lookingAt.x, lookingAt.y, lookingAt.z);
-        else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_RIGHT)) {
-            if(side == 0)
-                World::addBlock(4, lookingAt.x, lookingAt.y+1, lookingAt.z);
-            else if(side == 1)
-                World::addBlock(4, lookingAt.x, lookingAt.y-1, lookingAt.z);
-            else if(side == 2)
-                World::addBlock(4, lookingAt.x, lookingAt.y, lookingAt.z+1);
-            else if(side == 3)
-                World::addBlock(4, lookingAt.x, lookingAt.y, lookingAt.z-1);
-            else if(side == 4)
-                World::addBlock(4, lookingAt.x-1, lookingAt.y, lookingAt.z);
-            else if(side == 5)
-                World::addBlock(4, lookingAt.x+1, lookingAt.y, lookingAt.z);
-        }
+            World::removeBlock(lookingAt);
+        else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_RIGHT))
+            World::addBlock(4, lookingAt + side);
     }
-    // Ray casting i guess
-    auto startPos = CameraConfig::cameraPos;
-    auto dir = CameraConfig::cameraFront;
+    
+    {
+    // Ray casting :D
     lookingAtBlock = false;
-    side = -1;
-    for(auto dir = CameraConfig::cameraFront; glm::length(dir) < 6.f; dir = dir + .005f * dir) {
-        glm::vec3 blockPos  {startPos.x + dir.x * 1, startPos.y + dir.y * 1, startPos.z + dir.z * 1};
-        auto newBlockPos = glm::floor(blockPos);
-        if(auto block = World::getBlock(newBlockPos.x, newBlockPos.y, newBlockPos.z); block && !Blocks::getBlockFromID(block).liquid) {
-            lookingAt = newBlockPos;
-            lookingAtBlock = true;
-            
-            float distRight = blockPos.z - glm::floor(blockPos.z);
-            float distLeft = 1-distRight;
-            float distBottom = blockPos.y - glm::floor(blockPos.y);
-            float distTop = 1-distBottom;
-            float distFront = blockPos.x - glm::floor(blockPos.x);
-            float distBack = 1-distFront;
-            
-            float min = glm::min(glm::min(distTop, distBottom), glm::min(glm::min(distLeft, distRight), glm::min(distFront, distBack)));
-            // printf("Min %f\n", min);
-            if(min == distTop)
-                side = 0;
-            else if(min == distBottom)
-                side = 1;
-            else if(min == distLeft)
-                side = 2;
-            else if(min == distRight)
-                side = 3;
-            else if(min == distFront)
-                side = 4;
-            else
-                side = 5;
-            
-            break;
+    
+    glm::vec3 tMax, tDelta, pos, startPos, step, dir;
+    
+    pos = glm::floor(CameraConfig::cameraPos);
+    BlockID block = World::getBlock(pos);
+    startPos = CameraConfig::cameraPos;
+    dir = CameraConfig::cameraFront;
+    step = glm::sign(dir);
+    
+    tMax = (pos + (step * .5f) + .5f - startPos) / dir;
+    tDelta = step / dir;
+    
+    int sside = -1;
+    
+    if(clr) 
+        testPos.clear();
+    if(Input::isKeyBeginDown(GLFW_KEY_I))
+        clr = !clr;
+    bool g = Input::isKeyBeginDown(GLFW_KEY_G);
+    if(g) printf("pos: %f %f %f\nstart: %f %f %f\ndir: %f %f %f\nstep: %f %f %f\ntMax %f %f %f\ntDelta %f %f %f\n\n", pos.x, pos.y, pos.z, 
+            startPos.x, startPos.y, startPos.z, dir.x, dir.y, dir.z, step.x, step.y, step.z, tMax.x, tMax.y, tMax.z, tDelta.x, tDelta.y, tDelta.z);
+    
+    int count = 0;
+    while(glm::distance(startPos, pos) <= CameraConfig::blockReach && block == Blocks::airBlockID && block != Blocks::nullBlockID) {
+        float min = glm::min(tMax.x, glm::min(tMax.y, tMax.z));
+        if(tMax.x == min) {
+            pos.x += step.x;
+            tMax.x += tDelta.x;
+            sside = 0;
+        } else if(tMax.y == min) {
+            pos.y += step.y;
+            tMax.y += tDelta.y;
+            sside = 1;
+        } else {
+            pos.z += step.z;
+            tMax.z += tDelta.z;
+            sside = 2;
         }
+        glm::vec3 pos2 = pos;
+        if(clr) testPos.push_back(pos2);
+        
+        block = World::getBlock(pos);
+        count++;
+    }
+    switch(sside) {
+        case 0: side = {-step.x, 0.f, 0.f}; break;
+        case 1: side = {0.f, -step.y, 0.f}; break;
+        case 2: side = {0.f, 0.f, -step.z}; break;
+    }
+    
+    if(g) printf("count: %d\n", count);
+    
+    if(block != Blocks::nullBlockID && block != Blocks::airBlockID) {
+        lookingAtBlock = true;
+        lookingAt = pos;
+    }
     }
 }

@@ -2,25 +2,21 @@
 
 VBO::VBO(const GLfloat *vertices, const GLsizeiptr size, const GLenum drawType) : size(size){
     glCreateBuffers(1, &ID);
-    bind();
-    glBufferData(GL_ARRAY_BUFFER, size, vertices, drawType);
+    glNamedBufferData(ID, size, vertices, drawType);
 }
 
 VBO::VBO(const GLsizeiptr size) : size(size) {
-    glGenBuffers(1, &ID);
-    bind();
-    glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+    glCreateBuffers(1, &ID);
+    glNamedBufferData(ID, size, nullptr, GL_DYNAMIC_DRAW);
 }
 
 void VBO::bind() const {
     glBindBuffer(GL_ARRAY_BUFFER, ID);
 }
 
-// template<typename T>
-// void VBO::bind(T *vertices) const {
-//     bind();
-//     glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
-// }
+void VBO::setData(const void *data, const GLsizeiptr size) const {
+    glNamedBufferData(ID, size, data, GL_DYNAMIC_DRAW);
+}
 
 void VBO::unbind() const {
     glBindBuffer(GL_ARRAY_BUFFER, 0);

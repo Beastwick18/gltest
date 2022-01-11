@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
                  x2, -y2, // Bottom right
                 -x2, -y2  // Bottom left
             };
-            unsigned int indices[] = {
+            static unsigned int indices[] = {
                 0, 2, 1,
                 2, 0, 3,
                 4, 6, 5,

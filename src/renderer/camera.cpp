@@ -12,13 +12,16 @@ namespace CameraConfig {
     glm::vec3 cameraPos(0);
     float pitch = 0, roll = 0, yaw = 0;
     float maxPitch = 89.0f, minPitch = -89.0f;
-    float bobbingSpeed = 10.f, bobbingHeight = .15f;
+    // float bobbingSpeed = 10.f, bobbingHeight = .15f;
+    float bobbingSpeed = 10.f, bobbingHeight = 0.f;
     float jumpVelocity = 3.2f*2;
     float ground = 1.5f, gravity = 18.f;
     float fov = 90.0f, fovMax = 120.0f, fovMin = 1.0f;
+    float zoomFov = 50.f;
     float mouseSensitivity = 2.5f, m_yaw = .022f;
     float cameraSpeed = 5.1f, lerpSpeed = 10.f;
     float climbSpeed = 10.f;
+    int blockReach = 6;
     bool noclip = false;
     
     void setFov(float fov) {
@@ -107,15 +110,8 @@ void Camera::update(double deltaTime) {
         
         
         
-        // auto pos = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
-        // auto pos2 = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
-        // auto pos3 = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
-        // auto pos4 = glm::floor(CameraConfig::cameraPos - glm::vec3(.5, 1.7, .5));
-        // CameraConfig::ground = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
-        // CameraConfig::ground = World::getBlock(
-        // if(auto block = World::getBlock(pos.x, pos.y, pos.z); block && !Blocks::getBlockFromID(block).liquid) {
         glm::vec3 speed = verticalSpeed + forwardSpeed + sidewaysSpeed;
-        if(CameraConfig::cameraPos.y <= CameraConfig::ground) {
+        if(CameraConfig::cameraPos.y <= CameraConfig::ground+CameraConfig::bobbingHeight*glm::sin(bobbing)) {
             // CameraConfig::cameraPos.y = pos.y+2.7;
             verticalSpeed = glm::vec3(0);
             CameraConfig::cameraPos.y = glm::lerp(CameraConfig::cameraPos.y, CameraConfig::ground, (float)deltaTime*CameraConfig::climbSpeed);
@@ -126,14 +122,6 @@ void Camera::update(double deltaTime) {
             jumping = false;
         }
         
-        // pos = glm::floor(CameraConfig::cameraPos + glm::vec3(.5, 0, 0));
-        // if(auto block = World::getBlock(pos.x, pos.y, pos.z); speed.x > 0 && block && !Blocks::getBlockFromID(block).liquid) {
-        //     speed.x = 0;
-        // }
-        // pos = glm::floor(CameraConfig::cameraPos + glm::vec3(1, -1.7, 0));
-        // if(auto block = World::getBlock(pos.x, pos.y, pos.z); speed.x > 0 && block && !Blocks::getBlockFromID(block).liquid) {
-        //     speed.x = 0;
-        // }
         CameraConfig::cameraPos += (float) deltaTime *(speed);
     }
     
@@ -142,19 +130,22 @@ void Camera::update(double deltaTime) {
         newPos.y = CameraConfig::bobbingHeight*glm::sin(bobbing) + CameraConfig::cameraPos.y;
     }
     
+    static float oldFov;
+    static bool zoom = false;
+    if(Input::isKeyBeginDown(GLFW_KEY_C)) {
+        oldFov = CameraConfig::fov;
+        CameraConfig::fov = CameraConfig::zoomFov;
+        zoom = true;
+    } else if(zoom && !Input::isKeyDown(GLFW_KEY_C)) {
+        zoom = false;
+        CameraConfig::fov = oldFov;
+    }
+    
     view = glm::lookAt(newPos,newPos + CameraConfig::cameraFront, CameraConfig::cameraUp);
     proj = glm::perspective(glm::radians(CameraConfig::fov), (float)window->getWidth()/(float)window->getHeight(), 0.1f, 1000.0f);
 }
 
 void Camera::recalculateProjection() {
-}
-
-glm::mat4 Camera::getProjection() const {
-    return proj;
-}
-
-glm::mat4 Camera::getView() const {
-    return view;
 }
 
 void Camera::free(Camera *c) {

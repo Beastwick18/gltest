@@ -13,9 +13,11 @@ namespace CameraConfig {
     extern float bobbingSpeed, bobbingHeight;
     extern float jumpVelocity;
     extern float fov, fovMax, fovMin;
+    extern float zoomFov;
     extern float mouseSensitivity;
     extern float cameraSpeed, lerpSpeed;
     extern float climbSpeed;
+    extern int blockReach;
     extern bool noclip;
     
     // Set the fov (in degrees)
@@ -31,12 +33,13 @@ class Camera {
     public:
         Camera(MinecraftClone::Window *window);
         
+        static void free(Camera *c);
+        
         void update(double deltaTime);
-        glm::mat4 getView() const;
-        glm::mat4 getProjection() const;
         void recalculateProjection();
         
-        static void free(Camera *c);
+        inline glm::mat4 getView() const { return view; }
+        inline glm::mat4 getProjection() const { return proj; }
     private:
         glm::vec3 forwardSpeed, sidewaysSpeed, verticalSpeed;
         glm::mat4 view, proj;

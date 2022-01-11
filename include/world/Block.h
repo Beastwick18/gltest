@@ -6,6 +6,10 @@
 typedef unsigned char BlockID;
 
 struct BlockTexture {
+    BlockTexture(TexCoords allSides) : top(allSides), bottom(allSides), left(allSides), right(allSides), front(allSides), back(allSides) {}
+    BlockTexture(TexCoords top, TexCoords bottom, TexCoords side) : top(top), bottom(bottom), left(side), right(side), front(side), back(side) {}
+    BlockTexture(TexCoords top, TexCoords bottom, TexCoords left, TexCoords right, TexCoords front, TexCoords back) : top(top), bottom(bottom), left(left), right(right), front(front), back(back) {}
+    BlockTexture() {}
     TexCoords top;
     TexCoords bottom;
     TexCoords left;
@@ -20,10 +24,6 @@ struct Block {
     BlockID id;
     bool transparent;
     bool liquid;
-    
-    bool operator==(const Block &other) {
-        return id == other.id;
-    }
 };
 
 namespace Blocks {
@@ -33,7 +33,7 @@ namespace Blocks {
     extern BlockID nullBlockID;
     extern Block nullBlock;
     
-    Block getBlockFromID(BlockID id);
+    const Block &getBlockFromID(BlockID id);
     BlockID getIdFromName(std::string name);
 }
 

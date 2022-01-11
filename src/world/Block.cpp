@@ -6,11 +6,11 @@
 namespace Blocks {
     Block blocks[256];
     BlockID airBlockID = 0;
-    Block airBlock { "Air", 0, 0, true };
-    BlockID nullBlockID = -1;
-    Block nullBlock { "Null", 0, 0, true };
+    Block airBlock { "Air", {}, 0, true };
+    BlockID nullBlockID = 255;
+    Block nullBlock { "Null", {}, 0, true };
     
-    Block getBlockFromID(BlockID id) {
+    const Block &getBlockFromID(BlockID id) {
         if(id < 0 || id > 255)
             return nullBlock;
         return blocks[id];

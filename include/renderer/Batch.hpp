@@ -7,6 +7,7 @@
 #include "renderer/VAO.h"
 #include "input/input.h"
 #include "utils/DebugStats.h"
+#include <cstring>
 
 struct Vertex {
     glm::vec3 position;
@@ -30,21 +31,19 @@ class Batch {
         ~Batch() {}
         
         void init(const VBlayout &layout) {
-            maxVertices = (verticesInKilobytes * 1024)/sizeof(T);
+            maxVertices = (verticesInKilobytes )/sizeof(T);
             vertices = (T*)calloc(maxVertices, sizeof(T));
             
             vao = new VAO;
-            vao->bind();
             vbo = new VBO(sizeof(T) * maxVertices);
             vao->addBuffer(vbo, layout);
-            vbo->bind();
             
             numVertices = 0;
             vertexSize = sizeof(T);
         }
         
         bool addVertex(const T &t) {
-            if(hasRoomFor(1) || vertices == nullptr) return false;
+            if(!isFull() || vertices == nullptr) return false;
             vertices[numVertices++] = t;
             return true;
         }
@@ -58,9 +57,8 @@ class Batch {
         
         void flush() {
             if(numVertices == 0) return;
-            vbo->bind();
-            // Only send the part of the buffer that has been used
-            glBufferData(GL_ARRAY_BUFFER, numVertices * vertexSize, vertices, GL_DYNAMIC_DRAW);
+            
+            vbo->setData(vertices, numVertices * vertexSize);
             vao->bind();
             glDrawArrays(GL_TRIANGLES, 0, numVertices);
             DebugStats::drawCalls++;
@@ -76,23 +74,23 @@ class Batch {
                 VBO::free(vbo);
             }
         }
-        bool isFull() const {
+        inline bool isFull() const {
             return numVertices == maxVertices-1;
         }
         
-        bool hasRoomFor(const int vertices) const {
+        inline bool hasRoomFor(const int vertices) const {
             return numVertices+vertices < maxVertices;
         }
         
-        bool isEmpty() const {
+        inline bool isEmpty() const {
             return numVertices == 0;
         }
         
         unsigned int numVertices = 0;
     private:
         // static constexpr size_t verticesInKilobytes = 1024*3;
-        static constexpr size_t verticesInKilobytes = 1024;
-        // static constexpr size_t verticesInKilobytes = 512;
+        // static constexpr size_t verticesInKilobytes = 1024;
+        static constexpr size_t verticesInKilobytes = 511872;
         // static constexpr size_t verticesInKilobytes = 4096;
         size_t maxVertices;
         size_t vertexSize;
