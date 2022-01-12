@@ -1,15 +1,15 @@
 #ifndef MINECRAFT_CLONE_BLOCK_H
 #define MINECRAFT_CLONE_BLOCK_H
 
-#include "renderer/texture2D.h"
+#include "renderer/spriteSheet.h"
 
 typedef unsigned char BlockID;
 
 struct BlockTexture {
-    BlockTexture(TexCoords allSides) : top(allSides), bottom(allSides), left(allSides), right(allSides), front(allSides), back(allSides) {}
-    BlockTexture(TexCoords top, TexCoords bottom, TexCoords side) : top(top), bottom(bottom), left(side), right(side), front(side), back(side) {}
-    BlockTexture(TexCoords top, TexCoords bottom, TexCoords left, TexCoords right, TexCoords front, TexCoords back) : top(top), bottom(bottom), left(left), right(right), front(front), back(back) {}
-    BlockTexture() {}
+    BlockTexture(TexCoords allSides);
+    BlockTexture(TexCoords top, TexCoords bottom, TexCoords side);
+    BlockTexture(TexCoords top, TexCoords bottom, TexCoords left, TexCoords right, TexCoords front, TexCoords back);
+    BlockTexture();
     TexCoords top;
     TexCoords bottom;
     TexCoords left;
@@ -32,7 +32,11 @@ namespace Blocks {
     extern Block airBlock;
     extern BlockID nullBlockID;
     extern Block nullBlock;
+    extern SpriteSheet *blockAtlas;
+    extern BlockTexture highlight;
     
+    void init();
+    void free();
     const Block &getBlockFromID(BlockID id);
     BlockID getIdFromName(std::string name);
 }

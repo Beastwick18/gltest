@@ -10,6 +10,7 @@
 #include <mutex>
 #include <future>
 #include "world/Chunk.h"
+#include "world/World.h"
 #include <functional>
 
 class BatchScene3D : public Scene {
@@ -23,10 +24,9 @@ class BatchScene3D : public Scene {
         
     private:
         MinecraftClone::Window *window;
-        SpriteSheet *block_atlas;
         Camera *c;
         Frustum *f;
-        VBlayout layout;
+        RaycastResult ray;
         
         std::vector<std::future<void>> meshFutures;
         bool wiremeshToggle = false, wiremesh = false, showGui = false;

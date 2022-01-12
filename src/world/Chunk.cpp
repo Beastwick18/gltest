@@ -32,7 +32,7 @@ void Chunk::hide() {
     }
 }
 
-BlockID Chunk::getBlock(int x, int y, int z) {
+BlockID Chunk::getBlock(int x, int y, int z) const {
     if(x > chunkW-1 || z > chunkL-1 || y > chunkH-1 || x < 0 || y < 0 || z < 0)
         return Blocks::nullBlockID;
     
@@ -127,77 +127,6 @@ void Chunk::generateChunk() {
     status = ChunkStatus::BUILT;
 }
 
-void Chunk::generateQuadMesh(std::vector<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
-    newMesh.push_back(v0);
-    newMesh.push_back(v1);
-    newMesh.push_back(v2);
-    newMesh.push_back(v2);
-    newMesh.push_back(v3);
-    newMesh.push_back(v0);
-}
-
-void Chunk::generateCubeMesh(std::vector<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back) {
-    if(front) {
-        generateQuadMesh(mesh,
-            { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h} },
-            { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y} },
-            { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y} },
-            { {x+1, y+1, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h} }
-        );
-        DebugStats::triCount += 1;
-    }
-    
-    if(right) {
-        generateQuadMesh(mesh,
-            { {x+1, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h} },
-            { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y} },
-            { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y} },
-            { {x+1, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h} }
-        );
-        DebugStats::triCount += 1;
-    }
-    
-    if(back) {
-        generateQuadMesh(mesh,
-                { {x,   y+1, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h} },
-                { {x+1, y+1, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h} },
-                { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y} },
-                { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y} }
-        );
-        DebugStats::triCount += 1;
-    }
-    
-    if(left) {
-        generateQuadMesh(mesh,
-                { {x, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h} },
-                { {x, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h} },
-                { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y} },
-                { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y} }
-        );
-        DebugStats::triCount += 1;
-    }
-    
-    if(top) {
-        generateQuadMesh(mesh,
-                { {x+1, y+1, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y} },
-                { {x,   y+1, z},   {0, 1, 0}, {tex.top.x, tex.top.y} },
-                { {x,   y+1, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h} },
-                { {x+1, y+1, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h} }
-        );
-        DebugStats::triCount += 1;
-    }
-    
-    if(bottom) {
-        generateQuadMesh(mesh,
-                { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h} },
-                { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y} },
-                { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y} },
-                { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h} }
-        );
-        DebugStats::triCount += 1;
-    }
-}
-
 void Chunk::rebuildMesh() {
     // if(status != ChunkStatus::HIDDEN) return;
     status = ChunkStatus::MESHING;
@@ -222,9 +151,9 @@ void Chunk::rebuildMesh() {
                     bool back = z == 0 ? !chunks.back || chunks.back->blocks[y][x][chunkL-1] : blocks[y][x][z-1];
                     
                     if(b.liquid) {
-                        generateCubeMesh(transparentMesh.v, pos.x + x, y-(1.f/16.f), pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                        Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y-(1.f/16.f), pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
                     }else
-                        generateCubeMesh(transparentMesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                        Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
                 } else {
                     bool top = y == chunkH-1 ? false : !Blocks::getBlockFromID(blocks[y+1][x][z]).transparent;
                     bool bottom = y == 0 ? true : !Blocks::getBlockFromID(blocks[y-1][x][z]).transparent;
@@ -232,7 +161,7 @@ void Chunk::rebuildMesh() {
                     bool right = x == chunkW-1 ? !chunks.right || !Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : !Blocks::getBlockFromID(blocks[y][x+1][z]).transparent;
                     bool front = z == chunkL-1 ? !chunks.front || !Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : !Blocks::getBlockFromID(blocks[y][x][z+1]).transparent;
                     bool back = z == 0 ? !chunks.back || !Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : !Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
-                    generateCubeMesh(mesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                    Renderer::generateCubeMesh(mesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
                 }
             }
         }

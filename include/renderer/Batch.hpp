@@ -31,7 +31,7 @@ class Batch {
         ~Batch() {}
         
         void init(const VBlayout &layout) {
-            maxVertices = (verticesInKilobytes )/sizeof(T);
+            maxVertices = (verticesInKilobytes * 1024)/sizeof(T);
             vertices = (T*)calloc(maxVertices, sizeof(T));
             
             vao = new VAO;
@@ -89,8 +89,8 @@ class Batch {
         unsigned int numVertices = 0;
     private:
         // static constexpr size_t verticesInKilobytes = 1024*3;
-        // static constexpr size_t verticesInKilobytes = 1024;
-        static constexpr size_t verticesInKilobytes = 511872;
+        static constexpr size_t verticesInKilobytes = 1024;
+        // static constexpr size_t verticesInKilobytes = 511872;
         // static constexpr size_t verticesInKilobytes = 4096;
         size_t maxVertices;
         size_t vertexSize;

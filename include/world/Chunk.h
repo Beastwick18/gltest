@@ -23,11 +23,9 @@ public:
     Chunk(int x, int z);
     ~Chunk();
     
-    static void generateQuadMesh(std::vector<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
-    static void generateCubeMesh(std::vector<Vertex> &newMesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back);
     void generateChunk();
     void rebuildMesh();
-    BlockID getBlock(int x, int y, int z);
+    BlockID getBlock(int x, int y, int z) const;
     void addBlock(BlockID id, int x, int y, int z);
     void removeBlock(int x, int y, int z);
     void show();

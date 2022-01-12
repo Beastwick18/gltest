@@ -45,10 +45,78 @@ namespace Renderer {
         camera = cameraPtr;
     }
     
-    void flushRegularBatch() {
-        // if(regularBatch.isEmtpy())
-        //     return;
+    void generateQuadMesh(std::vector<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
+        newMesh.push_back(v0);
+        newMesh.push_back(v1);
+        newMesh.push_back(v2);
+        newMesh.push_back(v2);
+        newMesh.push_back(v3);
+        newMesh.push_back(v0);
+    }
+
+    void generateCubeMesh(std::vector<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back) {
+        if(front) {
+            generateQuadMesh(mesh,
+                { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h} },
+                { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y} },
+                { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y} },
+                { {x+1, y+1, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h} }
+            );
+            DebugStats::triCount += 1;
+        }
         
+        if(right) {
+            generateQuadMesh(mesh,
+                { {x+1, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h} },
+                { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y} },
+                { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y} },
+                { {x+1, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h} }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(back) {
+            generateQuadMesh(mesh,
+                    { {x,   y+1, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h} },
+                    { {x+1, y+1, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h} },
+                    { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y} },
+                    { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y} }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(left) {
+            generateQuadMesh(mesh,
+                    { {x, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h} },
+                    { {x, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h} },
+                    { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y} },
+                    { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y} }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(top) {
+            generateQuadMesh(mesh,
+                    { {x+1, y+1, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y} },
+                    { {x,   y+1, z},   {0, 1, 0}, {tex.top.x, tex.top.y} },
+                    { {x,   y+1, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h} },
+                    { {x+1, y+1, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h} }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(bottom) {
+            generateQuadMesh(mesh,
+                    { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h} },
+                    { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y} },
+                    { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y} },
+                    { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h} }
+            );
+            DebugStats::triCount += 1;
+        }
+    }
+    
+    void flushRegularBatch() {
         regularShader->use();
         regularShader->setUniformMat4f(vpUniform, camera->getProjection() * camera->getView());
         regularBatch.flush();
