@@ -17,6 +17,10 @@ Chunk::Chunk(int xx, int yy) : pos(xx*chunkW,yy*chunkL) {
     status = ChunkStatus::EMPTY;
 }
 
+Chunk::Chunk() {
+    
+}
+
 Chunk::~Chunk() {
     
 }
@@ -71,56 +75,66 @@ float caveTest(float x, float y, float z) {
 }
 
 void Chunk::generateChunk() {
+    const BlockID grassID = Blocks::getIdFromName("Grass");
+    const BlockID dirtID = Blocks::getIdFromName("Dirt");
+    const BlockID stoneID = Blocks::getIdFromName("Stone");
+    const BlockID sandID = Blocks::getIdFromName("Sand");
+    const BlockID waterID = Blocks::getIdFromName("Water");
+    const BlockID logID = Blocks::getIdFromName("Log");
+    const BlockID leavesID = Blocks::getIdFromName("Leaves");
+    const BlockID bedrockID = Blocks::getIdFromName("Bedrock");
+    
     status = ChunkStatus::BUILDING;
     for(int x = 0; x < chunkW; x++) {
         for(int z = 0; z < chunkL; z++) {
             int height = getNoise(pos.x + x, pos.y + z)+70;
             float stoneHeight = (float)height / 1.15f;
             bool tree = glm::linearRand(0.f, 1.f) > .99f;
-            for(int y = 0; y < height; y++) {
+            blocks[0][x][z] = bedrockID;
+            for(int y = 1; y < height; y++) {
                 if(y < stoneHeight-1)
-                    blocks[y][x][z] = 3;
+                    blocks[y][x][z] = stoneID;
                 else if(y < height-1)
-                    blocks[y][x][z] = 2;
+                    blocks[y][x][z] = dirtID;
                 else if(y < 81) {
-                    blocks[y][x][z] = 6;
+                    blocks[y][x][z] = sandID;
                     if(y < 80)
                         for(int w = y+1; w < 80; w++)
-                            blocks[w][x][z] = 7;
+                            blocks[w][x][z] = waterID;
                 } else
-                    blocks[y][x][z] = 1;
+                    blocks[y][x][z] = grassID;
             }
             if(tree && height-1 >= 81 && x > 1 && x < chunkW-2 && z > 1 && z < chunkL-2) {
                 int treeHeight = glm::linearRand(4, 7);
-                if(blocks[height-1][x][z] == 1)
-                    blocks[height-1][x][z] = 2;
-                for(int y = height; y < height+treeHeight; y++) {
-                    blocks[y][x][z] = 4;
-                }
-                blocks[height+treeHeight][x][z] = 5;
+                if(blocks[height-1][x][z] == grassID)
+                    blocks[height-1][x][z] = dirtID;
+                for(int y = height; y < height+treeHeight; y++)
+                    blocks[y][x][z] = logID;
                 
-                blocks[height+treeHeight][x-1][z] = 5;
-                blocks[height+treeHeight][x+1][z] = 5;
+                blocks[height+treeHeight][x][z] = leavesID;
                 
-                blocks[height+treeHeight][x][z-1] = 5;
-                blocks[height+treeHeight][x][z+1] = 5;
+                blocks[height+treeHeight][x-1][z] = leavesID;
+                blocks[height+treeHeight][x+1][z] = leavesID;
                 
-                blocks[height+treeHeight-1][x-1][z] = 5;
-                blocks[height+treeHeight-1][x+1][z] = 5;
+                blocks[height+treeHeight][x][z-1] = leavesID;
+                blocks[height+treeHeight][x][z+1] = leavesID;
                 
-                blocks[height+treeHeight-1][x-1][z+1] = 5;
-                blocks[height+treeHeight-1][x][z+1] = 5;
-                blocks[height+treeHeight-1][x+1][z+1] = 5;
+                blocks[height+treeHeight-1][x-1][z] = leavesID;
+                blocks[height+treeHeight-1][x+1][z] = leavesID;
                 
-                blocks[height+treeHeight-1][x-1][z-1] = 5;
-                blocks[height+treeHeight-1][x][z-1] = 5;
-                blocks[height+treeHeight-1][x+1][z-1] = 5;
+                blocks[height+treeHeight-1][x-1][z+1] = leavesID;
+                blocks[height+treeHeight-1][x][z+1] = leavesID;
+                blocks[height+treeHeight-1][x+1][z+1] = leavesID;
+                
+                blocks[height+treeHeight-1][x-1][z-1] = leavesID;
+                blocks[height+treeHeight-1][x][z-1] = leavesID;
+                blocks[height+treeHeight-1][x+1][z-1] = leavesID;
                 
                 for(int yy=height+treeHeight-3; yy < height+treeHeight-1; yy++)
                     for(int xx=x-2; xx < x+3; xx++)
                         for(int zz = z-2; zz < z+3; zz++)
                             if(xx != x || zz != z)
-                                blocks[yy][xx][zz] = 5;
+                                blocks[yy][xx][zz] = leavesID;
             }
         }
     }

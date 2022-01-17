@@ -21,6 +21,7 @@ struct ChunkMesh {
 class Chunk {
 public:
     Chunk(int x, int z);
+    Chunk();
     ~Chunk();
     
     void generateChunk();

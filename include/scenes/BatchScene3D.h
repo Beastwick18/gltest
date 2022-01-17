@@ -26,7 +26,7 @@ class BatchScene3D : public Scene {
         MinecraftClone::Window *window;
         Camera *c;
         Frustum *f;
-        RaycastResult ray;
+        RaycastResults ray;
         
         std::vector<std::future<void>> meshFutures;
         bool wiremeshToggle = false, wiremesh = false, showGui = false;

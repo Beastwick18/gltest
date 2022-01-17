@@ -1,28 +1,38 @@
 #include "world/World.h"
 
 namespace World {
-    std::vector<Chunk> chunks;
+    std::map<std::string, Chunk> chunks;
     std::mutex chunkMutex;
     
+    std::string generateChunkKey(const glm::ivec2 pos) {
+        return std::to_string(pos.x) + "," + std::to_string(pos.y);
+    }
+    
     // Ray casting :D
-    RaycastResult raycast(const glm::vec3 startPos, const glm::vec3 dir, const float length) {
-        RaycastResult result;
-        result.hit = false;
-        result.block = Blocks::nullBlockID;
+    RaycastResults raycast(const glm::vec3 startPos, const glm::vec3 dir, const float length) {
+        RaycastResults result;
+        result.block.hit = false;
+        result.liquid.blockID = Blocks::nullBlockID;
+        result.block.blockID = Blocks::nullBlockID;
         
         glm::vec3 tMax, tDelta, pos, step;
         
         pos = glm::floor(startPos);
         step = glm::sign(dir);
         Chunk *currChunk = getChunk(pos.x, pos.z);
-        BlockID block = getBlock(currChunk, pos);
+        BlockID blockID = getBlock(currChunk, pos);
         tMax = (pos + (step * .5f) + .5f - startPos) / dir;
         tDelta = step / dir;
         
         int side = 0;
         float min;
         
-        while(currChunk && glm::distance(startPos, pos) <= length && (block == Blocks::airBlockID || Blocks::getBlockFromID(block).liquid) && block != Blocks::nullBlockID) {
+        if((result.liquid.hit = Blocks::getBlockFromID(blockID).liquid)) {
+            result.liquid = {true, pos, {0, 0, 0}, blockID};
+            blockID = Blocks::airBlockID;
+        }
+        
+        while(currChunk && glm::distance(startPos, pos) <= length && blockID == Blocks::airBlockID && blockID != Blocks::nullBlockID) {
             min = glm::min(tMax.x, glm::min(tMax.y, tMax.z));
             for(int i = 0; i < tMax.length(); i++)
                 if(tMax[i] == min) {
@@ -35,12 +45,19 @@ namespace World {
             glm::ivec2 cpos { glm::floor(pos.x / Chunk::chunkW) * Chunk::chunkW, glm::floor(pos.z / Chunk::chunkL) * Chunk::chunkL};
             if(cpos != currChunk->getPos())
                 currChunk = getChunk(cpos);
-            block = getBlock(currChunk, pos.x, pos.y, pos.z);
+            blockID = getBlock(currChunk, pos.x, pos.y, pos.z);
+            if(Blocks::getBlockFromID(blockID).liquid) {
+                if(!result.liquid.hit) {
+                    result.liquid = {true, pos, {0, 0, 0}, blockID};
+                    result.liquid.hitSide[side] = -step[side];
+                }
+                blockID = Blocks::airBlockID;
+            }
         }
         
-        if(block != Blocks::nullBlockID && block != Blocks::airBlockID && !Blocks::getBlockFromID(block).liquid) {
-            result = { true, pos, {0, 0, 0}, block };
-            result.hitSide[side] = -step[side];
+        if(blockID != Blocks::nullBlockID && blockID != Blocks::airBlockID && !Blocks::getBlockFromID(blockID).liquid) {
+            result.block = { true, pos, {0, 0, 0}, blockID };
+            result.block.hitSide[side] = -step[side];
         }
         return result; 
     }
@@ -52,10 +69,9 @@ namespace World {
     Chunk *getChunk(const int x, const int z) {
         glm::ivec2 chunkPos{Chunk::chunkW * (x / Chunk::chunkW), Chunk::chunkL * (z / Chunk::chunkL)};
         
-        for(auto &c : chunks)
-            if(c.getPos() == chunkPos)
-                return &c;
-        return nullptr;
+        auto i = chunks.find(generateChunkKey(chunkPos));
+        if(i == chunks.end()) return nullptr;
+        return &i->second;
     }
     
     BlockID getBlock(const Chunk *chunk, const glm::ivec3 pos) {
@@ -156,19 +172,17 @@ namespace World {
     
     AdjChunks getAdjacentChunks(const glm::ivec2 pos) {
         AdjChunks adj { nullptr };
-        for(auto &c : chunks) {
-            const auto &cpos = c.getPos();
-            if(cpos.x == pos.x) {
-                if(cpos.y == pos.y + Chunk::chunkL)
-                    adj.front = &c;
-                else if(cpos.y == pos.y - Chunk::chunkL)
-                    adj.back = &c;
-            } else if(cpos.y == pos.y) {
-                if(cpos.x == pos.x + Chunk::chunkW)
-                    adj.right = &c;
-                else if(cpos.x == pos.x - Chunk::chunkW)
-                    adj.left = &c;
-            }
+        if(auto it = chunks.find(generateChunkKey({pos.x, pos.y + Chunk::chunkL})); it != chunks.end()) {
+            adj.front = &it->second;
+        }
+        if(auto it = chunks.find(generateChunkKey({pos.x, pos.y - Chunk::chunkL})); it != chunks.end()) {
+            adj.back = &it->second;
+        }
+        if(auto it = chunks.find(generateChunkKey({pos.x + Chunk::chunkW, pos.y})); it != chunks.end()) {
+            adj.right = &it->second;
+        }
+        if(auto it = chunks.find(generateChunkKey({pos.x - Chunk::chunkW, pos.y})); it != chunks.end()) {
+            adj.left = &it->second;
         }
         return adj;
     }

@@ -5,11 +5,27 @@
 
 typedef unsigned char BlockID;
 
+enum BlockOrientation : unsigned char {
+    WEST    = 0,
+    EAST    = 1,
+    UP      = 2,
+    DOWN    = 3,
+    NORTH   = 4,
+    SOUTH   = 5
+};
+
+struct BlockData {
+    BlockID id;
+    BlockOrientation orientation;
+};
+
 struct BlockTexture {
     BlockTexture(TexCoords allSides);
     BlockTexture(TexCoords top, TexCoords bottom, TexCoords side);
     BlockTexture(TexCoords top, TexCoords bottom, TexCoords left, TexCoords right, TexCoords front, TexCoords back);
     BlockTexture();
+    
+    // Store all rotated versions of the texcoords
     TexCoords top;
     TexCoords bottom;
     TexCoords left;
@@ -24,6 +40,8 @@ struct Block {
     BlockID id;
     bool transparent;
     bool liquid;
+    bool breakable;
+    bool rotatable;
 };
 
 namespace Blocks {

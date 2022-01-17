@@ -33,7 +33,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	
 	$(CXX) $(CXXFLAGS) -MMD -MP -o $@ -c $<
 
-$(OBJDIR)/%.o: **/%.c
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@# Create parent directories for obj files
 	mkdir -p "$(dir $@)"
 	
