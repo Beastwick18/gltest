@@ -24,18 +24,18 @@ You can either copy the assets folder into the bin folder and run from inside th
 
 ## Controls
 The controls are curreltly all over the place. They are as follows:
-- Tab -- Toggle the cursor 
-- F3 -- Show the config GUI
-- C -- Zoom
-- W, A, S, D -- Movement
-- Space -- Jump, Fly up (no-clip)
-- Shift -- Fly down (no-clip)
-- Esc -- Exit the program
-- F -- Toggle fullscreen
-- Z -- Toggle no-clip
-- Mouse -- Turning, left and right click for breaking and placing
-- Scroll -- Change current block in hand (shown in config GUI under debug stats)
-- 1-5 -- Switch between some 3D scenes (most do not work anymore)
+- Tab - Toggle the cursor 
+- F3 - Show the config GUI
+- C - Zoom
+- W, A, S, D - Movement
+- Space - Jump, Fly up (no-clip)
+- Shift - Fly down (no-clip)
+- Esc - Exit the program
+- F - Toggle fullscreen
+- Z - Toggle no-clip
+- Mouse - Turning, left and right click for breaking and placing
+- Scroll - Change current block in hand (shown in config GUI under debug stats)
+- 1-5 - Switch between some 3D scenes (most do not work anymore)
 
 ## Screenshots
 ![The whole world](./screenshots/world.png)
