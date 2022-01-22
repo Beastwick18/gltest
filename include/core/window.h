@@ -10,8 +10,8 @@ namespace MinecraftClone {
             std::string title;
             bool fullscreen;
             static void error_callback(int error, const char *msg);
-        public:
             unsigned int width, height;
+        public:
             static Window *createWindow(unsigned int width, unsigned int height, const std::string &title, const bool fullscreen = false);
             static void freeWindow(Window *window);
             

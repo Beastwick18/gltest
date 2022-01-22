@@ -7,8 +7,8 @@ SRCDIR = src
 OBJDIR = obj
 INCDIRS = include include/imgui
 INCLUDE = $(addprefix -I./,$(INCDIRS))
-CXXFLAGS = -x c++ -std=c++17 $(INCLUDE)
-CFLAGS = -x c++ -std=c++17 $(INCLUDE)
+CXXFLAGS = -x c++ -std=c++17 -Wall $(INCLUDE)
+CFLAGS = -x c++ -std=c++17 -Wall $(INCLUDE)
 LIBS = `pkg-config --static --libs glfw3`
 CXX_SRCS = $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/**/*.cpp)
 C_SRCS = $(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)

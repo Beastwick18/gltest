@@ -10,6 +10,7 @@ class EBO {
         EBO(const GLuint *indices, const GLuint count);
         EBO(const GLuint count);
         
+        void setData(const void *data, const GLsizeiptr size);
         void bind() const;
         void unbind() const;
         

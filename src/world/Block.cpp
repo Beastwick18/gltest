@@ -11,9 +11,9 @@ BlockTexture::BlockTexture() {}
 namespace Blocks {
     Block blocks[256];
     BlockID airBlockID = 0;
-    Block airBlock { "Air", {}, 0, true, false };
+    Block airBlock { "Air", {}, 0, true, false, false, false };
     BlockID nullBlockID = 255;
-    Block nullBlock { "Null", {}, 0, false, false, false };
+    Block nullBlock { "Null", {}, 0, false, false, false, false };
     SpriteSheet *blockAtlas = nullptr;
     BlockTexture highlight;
     
@@ -35,8 +35,9 @@ namespace Blocks {
         TexCoords water = blockAtlas->getSubTexture(20, 19);
         TexCoords lava = blockAtlas->getSubTexture(8, 19);
         TexCoords bedrock = blockAtlas->getSubTexture(4, 28);
+        TexCoords cobblestone = blockAtlas->getSubTexture(3, 26);
         
-        TexCoords square = blockAtlas->getSubTexture(30, 13, 2, 2);
+        // TexCoords square = blockAtlas->getSubTexture(30, 13, 2, 2);
         TexCoords white = blockAtlas->getSubTexture(29, 13);
         highlight = { white };
         
@@ -50,6 +51,7 @@ namespace Blocks {
         Blocks::blocks[7] = Block{ "Water", { water }, 7, true, true, true };
         Blocks::blocks[8] = Block{ "Lava", { lava }, 8, true, true, true };
         Blocks::blocks[9] = Block{ "Bedrock", { bedrock }, 9, false, false, false };
+        Blocks::blocks[10] = Block{ "Cobblestone", { cobblestone }, 10, false, false, true };
         Blocks::blocks[255] = Blocks::nullBlock;
     }
     

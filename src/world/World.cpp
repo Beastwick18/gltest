@@ -107,7 +107,6 @@ namespace World {
         int rz = z - pos.y;
         chunk->addBlock(id, rx, y, rz);
         chunk->rebuildMesh();
-        AdjChunks adj = getAdjacentChunks(pos);
         bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
         if(left || right || front || back) {
             AdjChunks adj = getAdjacentChunks(pos);
@@ -145,7 +144,6 @@ namespace World {
         int rz = z - pos.y;
         chunk->removeBlock(rx, y, rz);
         chunk->rebuildMesh();
-        AdjChunks adj = getAdjacentChunks(pos);
         bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
         if(left || right || front || back) {
             AdjChunks adj = getAdjacentChunks(pos);

@@ -37,7 +37,7 @@ void readArguments(int argc, char **argv) {
                 size_t commandLen = strlen(commandString);
                 bool foundValue = false;
                 char *value;
-                for(int j = 0; j < commandLen; j++) {
+                for(size_t j = 0; j < commandLen; j++) {
                     if(commandString[j] == '=') {
                         foundValue = true;
                         commandString[j] = 0;
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
             glClear(GL_DEPTH_BUFFER_BIT);
             qs->use();
             
-            float ratio = (float)window->getWidth()/(float)window->getHeight();
+            // float ratio = (float)window->getWidth()/(float)window->getHeight();
             float x = 14.f/ window->getWidth();
             float y = 2.f/  window->getHeight();
             float x2 = 2.f/ window->getWidth();
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
                  x2, -y2, // Bottom right
                 -x2, -y2  // Bottom left
             };
-            static unsigned int indices[] = {
+            static const unsigned int indices[] = {
                 0, 2, 1,
                 2, 0, 3,
                 4, 6, 5,
@@ -234,7 +234,7 @@ int main(int argc, char **argv) {
         
         int display_w, display_h;
         glfwGetFramebufferSize(window->getGlfwWindow(), &display_w, &display_h);
-        if(display_w != window->getWidth() || display_h != window->getHeight()) {
+        if((unsigned)display_w != window->getWidth() || (unsigned)display_h != window->getHeight()) {
             window->resize(display_w, display_h);
             glViewport(0, 0, display_w, display_h);
         }

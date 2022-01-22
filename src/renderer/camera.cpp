@@ -69,60 +69,59 @@ Camera::Camera(Window *window) {
 }
 
 void Camera::update(double deltaTime) {
+    float ftime = (float)deltaTime;
     // Either both keys are down or neither are
     if(Input::isKeyDown(GLFW_KEY_W) == Input::isKeyDown(GLFW_KEY_S))
-        forwardSpeed = glm::lerp(forwardSpeed, glm::vec3(0), CameraConfig::lerpSpeed*(float)deltaTime);
+        forwardSpeed = glm::lerp(forwardSpeed, glm::vec3(0), CameraConfig::lerpSpeed*ftime);
     else if(Input::isKeyDown(GLFW_KEY_W))
-        forwardSpeed = glm::lerp(forwardSpeed, CameraConfig::cameraSpeed * glm::normalize(CameraConfig::cameraFront * glm::vec3(1, 0, 1)), CameraConfig::lerpSpeed*(float)deltaTime);
+        forwardSpeed = glm::lerp(forwardSpeed, CameraConfig::cameraSpeed * glm::normalize(CameraConfig::cameraFront * glm::vec3(1, 0, 1)), CameraConfig::lerpSpeed*ftime);
     else
-        forwardSpeed = glm::lerp(forwardSpeed, -CameraConfig::cameraSpeed * glm::normalize(CameraConfig::cameraFront * glm::vec3(1, 0, 1)), CameraConfig::lerpSpeed*(float)deltaTime);
+        forwardSpeed = glm::lerp(forwardSpeed, -CameraConfig::cameraSpeed * glm::normalize(CameraConfig::cameraFront * glm::vec3(1, 0, 1)), CameraConfig::lerpSpeed*ftime);
     
     if(Input::isKeyDown(GLFW_KEY_A) == Input::isKeyDown(GLFW_KEY_D))
-        sidewaysSpeed = glm::lerp(sidewaysSpeed, glm::vec3(0), CameraConfig::lerpSpeed*(float)deltaTime);
+        sidewaysSpeed = glm::lerp(sidewaysSpeed, glm::vec3(0), CameraConfig::lerpSpeed*ftime);
     else if(Input::isKeyDown(GLFW_KEY_D))
-        sidewaysSpeed = glm::lerp(sidewaysSpeed, glm::normalize(glm::cross(CameraConfig::cameraFront, CameraConfig::cameraUp)) * CameraConfig::cameraSpeed, CameraConfig::lerpSpeed*(float)deltaTime);
+        sidewaysSpeed = glm::lerp(sidewaysSpeed, glm::normalize(glm::cross(CameraConfig::cameraFront, CameraConfig::cameraUp)) * CameraConfig::cameraSpeed, CameraConfig::lerpSpeed*ftime);
     else
-        sidewaysSpeed = glm::lerp(sidewaysSpeed, glm::normalize(glm::cross(CameraConfig::cameraFront, CameraConfig::cameraUp)) * -CameraConfig::cameraSpeed, CameraConfig::lerpSpeed*(float)deltaTime);
+        sidewaysSpeed = glm::lerp(sidewaysSpeed, glm::normalize(glm::cross(CameraConfig::cameraFront, CameraConfig::cameraUp)) * -CameraConfig::cameraSpeed, CameraConfig::lerpSpeed*ftime);
     
     if(!jumping) {
         if(Input::isKeyDown(GLFW_KEY_W) || Input::isKeyDown(GLFW_KEY_D))
-            bobbing += CameraConfig::bobbingSpeed * (float)deltaTime;
+            bobbing += CameraConfig::bobbingSpeed * ftime;
         else if(Input::isKeyDown(GLFW_KEY_A) || Input::isKeyDown(GLFW_KEY_S))
-            bobbing -= CameraConfig::bobbingSpeed * (float)deltaTime;
+            bobbing -= CameraConfig::bobbingSpeed * ftime;
     }
     
     if(CameraConfig::noclip) {
         if(Input::isKeyDown(GLFW_KEY_LEFT_SHIFT) == Input::isKeyDown(GLFW_KEY_SPACE))
-            verticalSpeed = glm::lerp(verticalSpeed, glm::vec3(0), CameraConfig::lerpSpeed*(float)deltaTime);
+            verticalSpeed = glm::lerp(verticalSpeed, glm::vec3(0), CameraConfig::lerpSpeed*ftime);
         else if(Input::isKeyDown(GLFW_KEY_SPACE))
-            verticalSpeed = glm::lerp(verticalSpeed, CameraConfig::cameraSpeed * CameraConfig::cameraUp, CameraConfig::lerpSpeed*(float)deltaTime);
+            verticalSpeed = glm::lerp(verticalSpeed, CameraConfig::cameraSpeed * CameraConfig::cameraUp, CameraConfig::lerpSpeed*ftime);
         else
-            verticalSpeed = glm::lerp(verticalSpeed, -CameraConfig::cameraSpeed * CameraConfig::cameraUp, CameraConfig::lerpSpeed*(float)deltaTime);
+            verticalSpeed = glm::lerp(verticalSpeed, -CameraConfig::cameraSpeed * CameraConfig::cameraUp, CameraConfig::lerpSpeed*ftime);
         
         glm::vec3 speed = verticalSpeed + forwardSpeed + sidewaysSpeed;
-        CameraConfig::cameraPos += (float)(deltaTime) * (speed);
+        CameraConfig::cameraPos += ftime * speed;
     } else {
         if(Input::isKeyDown(GLFW_KEY_SPACE) && !jumping) {
             jumping = true;
             verticalSpeed = CameraConfig::jumpVelocity * CameraConfig::cameraUp;
         }
-        verticalSpeed -= (float)deltaTime * CameraConfig::gravity * CameraConfig::cameraUp;
-        
-        
+        verticalSpeed -= ftime * CameraConfig::gravity * CameraConfig::cameraUp;
         
         glm::vec3 speed = verticalSpeed + forwardSpeed + sidewaysSpeed;
         if(CameraConfig::cameraPos.y <= CameraConfig::ground+CameraConfig::bobbingHeight*glm::sin(bobbing)) {
             // CameraConfig::cameraPos.y = pos.y+2.7;
             verticalSpeed = glm::vec3(0);
-            CameraConfig::cameraPos.y = glm::lerp(CameraConfig::cameraPos.y, CameraConfig::ground, (float)deltaTime*CameraConfig::climbSpeed);
+            CameraConfig::cameraPos.y = glm::lerp(CameraConfig::cameraPos.y, CameraConfig::ground, ftime*CameraConfig::climbSpeed);
             
-            if(glm::abs(CameraConfig::cameraPos.y - CameraConfig::ground) < .01f) {
+            if(glm::abs(CameraConfig::cameraPos.y - CameraConfig::ground) < .1f) {
                 CameraConfig::cameraPos.y = CameraConfig::ground;
             }
             jumping = false;
         }
         
-        CameraConfig::cameraPos += (float) deltaTime *(speed);
+        CameraConfig::cameraPos += ftime *(speed);
     }
     
     auto newPos = CameraConfig::cameraPos;
@@ -130,14 +129,10 @@ void Camera::update(double deltaTime) {
         newPos.y = CameraConfig::bobbingHeight*glm::sin(bobbing) + CameraConfig::cameraPos.y;
     }
     
-    static float oldFov;
-    static bool zoom = false;
     if(Input::isKeyBeginDown(GLFW_KEY_C)) {
         oldFov = CameraConfig::fov;
         CameraConfig::fov = CameraConfig::zoomFov;
-        zoom = true;
-    } else if(zoom && !Input::isKeyDown(GLFW_KEY_C)) {
-        zoom = false;
+    } else if(Input::isKeyBeginUp(GLFW_KEY_C)) {
         CameraConfig::fov = oldFov;
     }
     
@@ -145,8 +140,7 @@ void Camera::update(double deltaTime) {
     proj = glm::perspective(glm::radians(CameraConfig::fov), (float)window->getWidth()/(float)window->getHeight(), 0.1f, 1000.0f);
 }
 
-void Camera::recalculateProjection() {
-}
+void Camera::recalculateProjection() {}
 
 void Camera::free(Camera *c) {
     if(c) {

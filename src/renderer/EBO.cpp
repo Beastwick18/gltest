@@ -2,16 +2,18 @@
 
 EBO::EBO(const GLuint *indices, const GLuint count) {
     this->count = count;
-    glGenBuffers(1, &ID);
-    bind();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(GLuint), indices, GL_STATIC_DRAW);
+    glCreateBuffers(1, &ID);
+    glNamedBufferData(ID, count * sizeof(GLuint), indices, GL_STATIC_DRAW);
 }
 
 EBO::EBO(const GLuint count) {
     this->count = count;
-    glGenBuffers(1, &ID);
-    bind();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
+    glCreateBuffers(1, &ID);
+    glNamedBufferData(ID, count * sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
+}
+
+void EBO::setData(const void *data, const GLsizeiptr size) {
+    glNamedBufferData(ID, size, data, GL_DYNAMIC_DRAW);
 }
 
 void EBO::bind() const {

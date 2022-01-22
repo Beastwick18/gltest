@@ -48,9 +48,8 @@ namespace MinecraftClone {
     }
     
     void Window::close() {
-        if(glfwWindow != nullptr) {
+        if(glfwWindow != nullptr)
             glfwSetWindowShouldClose(glfwWindow, GLFW_TRUE);
-        }
     }
     
     void Window::setCallbacks() {
@@ -60,9 +59,8 @@ namespace MinecraftClone {
             glfwSetCursorPosCallback(glfwWindow, Input::mouseCallback);
             glfwSetScrollCallback(glfwWindow, Input::mouseScrollCallback);
             Input::window = this;
-        } else {
+        } else
             fprintf(stderr, "Non fatal: Cannot set callbacks, glfw window not created yet [line %d]\n", __LINE__);
-        }
     }
     
     bool Window::shouldClose() {

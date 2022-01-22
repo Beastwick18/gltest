@@ -8,6 +8,7 @@ namespace MinecraftClone {
     namespace Input {
         extern bool keysPressed[GLFW_KEY_LAST];
         extern bool keysBeginPress[GLFW_KEY_LAST];
+        extern bool keysBeginRelease[GLFW_KEY_LAST];
         extern bool mouseButtonsPressed[GLFW_MOUSE_BUTTON_LAST];
         extern bool mouseButtonsBeginPressed[GLFW_MOUSE_BUTTON_LAST];
         extern float mouseX, mouseY;
@@ -26,6 +27,7 @@ namespace MinecraftClone {
         
         bool isKeyDown(int key);
         bool isKeyBeginDown(int key);
+        bool isKeyBeginUp(int key);
         bool isMouseButtonDown(int button);
         bool isMouseButtonBeginDown(int button);
         

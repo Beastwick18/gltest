@@ -171,7 +171,7 @@ void OriginalScene::render() {
     // ebo->bind();
     s->setUniformMat4f(modelUniform, glm::translate(model, glm::vec3(0, 0, 0)) );
     // tex2->bind(1);
-    float time = glfwGetTime();
+    // float time = glfwGetTime();
     // float time = 1;
     int w = 100, l = 30, h = 30;
     // float y = -1;

@@ -28,6 +28,7 @@ class BatchScene3D : public Scene {
         Frustum *f;
         RaycastResults ray;
         
+        BlockID blockInHand;
         std::vector<std::future<void>> meshFutures;
         bool wiremeshToggle = false, wiremesh = false, showGui = false;
 };

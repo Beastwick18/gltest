@@ -1,5 +1,3 @@
-// TODO: Create a chunk mesh of vertices that should be sent to the renderer for rendering. Only update the mesh when something changes
-
 #include <mutex>
 #include "world/Chunk.h"
 #include "glm/gtc/noise.hpp"
@@ -10,11 +8,13 @@
 #include "glm/gtc/random.hpp"
 
 Chunk::Chunk(int xx, int yy) : pos(xx*chunkW,yy*chunkL) {
+    maxY = 0;
+    minY = Chunk::chunkH;
     for(int y = 0; y < chunkH; y++)
         for(int x = 0; x < chunkW; x++)
             for(int z = 0; z < chunkL; z++)
                 blocks[y][x][z] = 0;
-    status = ChunkStatus::EMPTY;
+    status = EMPTY;
 }
 
 Chunk::Chunk() {
@@ -26,13 +26,13 @@ Chunk::~Chunk() {
 }
 
 void Chunk::show() {
-    if(status == ChunkStatus::HIDDEN) {
-        status = ChunkStatus::SHOWING;
+    if(status == HIDDEN) {
+        status = SHOWING;
     }
 }
 void Chunk::hide() {
-    if(status == ChunkStatus::SHOWING) {
-        status = ChunkStatus::HIDDEN;
+    if(status == SHOWING) {
+        status = HIDDEN;
     }
 }
 
@@ -57,6 +57,10 @@ void Chunk::removeBlock(int x, int y, int z) {
     blocks[y][x][z] = Blocks::airBlockID;
 }
 
+float Chunk::getNoise(glm::vec2 position) {
+    return getNoise(position.x, position.y);
+}
+
 float Chunk::getNoise(float x, float z) {
     glm::vec2 position((float)x/100.f, (float)z/100.f);
     float h = (1+glm::simplex(position))/3.0 * 50;
@@ -75,21 +79,24 @@ float caveTest(float x, float y, float z) {
 }
 
 void Chunk::generateChunk() {
-    const BlockID grassID = Blocks::getIdFromName("Grass");
-    const BlockID dirtID = Blocks::getIdFromName("Dirt");
-    const BlockID stoneID = Blocks::getIdFromName("Stone");
-    const BlockID sandID = Blocks::getIdFromName("Sand");
-    const BlockID waterID = Blocks::getIdFromName("Water");
-    const BlockID logID = Blocks::getIdFromName("Log");
-    const BlockID leavesID = Blocks::getIdFromName("Leaves");
-    const BlockID bedrockID = Blocks::getIdFromName("Bedrock");
+    const BlockID grassID = Blocks::getIdFromName("Grass"),
+        dirtID = Blocks::getIdFromName("Dirt"),
+        stoneID = Blocks::getIdFromName("Stone"),
+        sandID = Blocks::getIdFromName("Sand"),
+        waterID = Blocks::getIdFromName("Water"),
+        logID = Blocks::getIdFromName("Log"),
+        leavesID = Blocks::getIdFromName("Leaves"),
+        bedrockID = Blocks::getIdFromName("Bedrock");
     
-    status = ChunkStatus::BUILDING;
+    int height, stoneHeight;
+    bool tree;
+    status = BUILDING;
     for(int x = 0; x < chunkW; x++) {
         for(int z = 0; z < chunkL; z++) {
-            int height = getNoise(pos.x + x, pos.y + z)+70;
-            float stoneHeight = (float)height / 1.15f;
-            bool tree = glm::linearRand(0.f, 1.f) > .99f;
+            height = getNoise(pos.x + x, pos.y + z)+70;
+            stoneHeight = (float)height / 1.15f;
+            tree = glm::linearRand(0.f, 1.f) > .99f;
+            
             blocks[0][x][z] = bedrockID;
             for(int y = 1; y < height; y++) {
                 if(y < stoneHeight-1)
@@ -138,12 +145,11 @@ void Chunk::generateChunk() {
             }
         }
     }
-    status = ChunkStatus::BUILT;
+    status = BUILT;
 }
 
 void Chunk::rebuildMesh() {
-    // if(status != ChunkStatus::HIDDEN) return;
-    status = ChunkStatus::MESHING;
+    status = MESHING;
     AdjChunks chunks = World::getAdjacentChunks(pos);
     mesh.v.clear();
     transparentMesh.v.clear();
@@ -157,41 +163,51 @@ void Chunk::rebuildMesh() {
                 const Block b = Blocks::getBlockFromID(blocks[y][x][z]);
                 
                 if(b.transparent) {
-                    bool top = y == chunkH-1 ? false : blocks[y+1][x][z];
-                    bool bottom = y == 0 ? true : blocks[y-1][x][z];
-                    bool left = x == 0 ? !chunks.left || chunks.left->blocks[y][chunkW-1][z] : blocks[y][x-1][z];
-                    bool right = x == chunkW-1 ? !chunks.right || chunks.right->blocks[y][0][z] : blocks[y][x+1][z];
-                    bool front = z == chunkL-1 ? !chunks.front || chunks.front->blocks[y][x][0] : blocks[y][x][z+1];
-                    bool back = z == 0 ? !chunks.back || chunks.back->blocks[y][x][chunkL-1] : blocks[y][x][z-1];
+                    bool top = y == chunkH-1 ? true : !blocks[y+1][x][z],
+                        bottom = y == 0 ? false : !blocks[y-1][x][z],
+                        left = x == 0 ? chunks.left && !chunks.left->blocks[y][chunkW-1][z] : !blocks[y][x-1][z],
+                        right = x == chunkW-1 ? chunks.right && !chunks.right->blocks[y][0][z] : !blocks[y][x+1][z],
+                        front = z == chunkL-1 ? chunks.front && !chunks.front->blocks[y][x][0] : !blocks[y][x][z+1],
+                        back = z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1];
                     
-                    if(b.liquid) {
-                        Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y-(1.f/16.f), pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
-                    }else
-                        Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                    if(top || bottom || left || right || front || back) {
+                        if(y < minY) minY = y;
+                        if(y > maxY) maxY = y;
+                        if(b.liquid)
+                            Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y-(1.f/16.f), pos.y + z, b.tex, top, bottom, left, right, front, back);
+                        else
+                            Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back);
+                    }
                 } else {
-                    bool top = y == chunkH-1 ? false : !Blocks::getBlockFromID(blocks[y+1][x][z]).transparent;
-                    bool bottom = y == 0 ? true : !Blocks::getBlockFromID(blocks[y-1][x][z]).transparent;
-                    bool left = x == 0 ? !chunks.left || !Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : !Blocks::getBlockFromID(blocks[y][x-1][z]).transparent;
-                    bool right = x == chunkW-1 ? !chunks.right || !Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : !Blocks::getBlockFromID(blocks[y][x+1][z]).transparent;
-                    bool front = z == chunkL-1 ? !chunks.front || !Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : !Blocks::getBlockFromID(blocks[y][x][z+1]).transparent;
-                    bool back = z == 0 ? !chunks.back || !Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : !Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
-                    Renderer::generateCubeMesh(mesh.v, pos.x + x, y, pos.y + z, b.tex, !top, !bottom, !left, !right, !front, !back);
+                    bool top = y == chunkH-1 ? true : Blocks::getBlockFromID(blocks[y+1][x][z]).transparent,
+                        bottom = y == 0 ? false : Blocks::getBlockFromID(blocks[y-1][x][z]).transparent,
+                        left = x == 0 ? chunks.left && Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : Blocks::getBlockFromID(blocks[y][x-1][z]).transparent,
+                        right = x == chunkW-1 ? chunks.right && Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : Blocks::getBlockFromID(blocks[y][x+1][z]).transparent,
+                        front = z == chunkL-1 ? chunks.front && Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : Blocks::getBlockFromID(blocks[y][x][z+1]).transparent,
+                        back = z == 0 ? chunks.back && Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
+                    
+                    if(top || bottom || left || right || front || back) {
+                        if(y < minY) minY = y;
+                        if(y > maxY) maxY = y;
+                        Renderer::generateCubeMesh(mesh.v, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back);
+                    }
                 }
             }
         }
     }
     
-    status = ChunkStatus::SHOWING;
+    status = SHOWING;
+}
+
+bool Chunk::isVisible(const Frustum *f) const {
+    return f->isBoxVisible(glm::vec3(pos.x, minY-1, pos.y), glm::vec3(pos.x + Chunk::chunkW, maxY+1, pos.y + Chunk::chunkL));
 }
 
 bool Chunk::operator<(const Chunk& other) const {
-    if(status == ChunkStatus::HIDDEN) return false;
-    if(other.status == ChunkStatus::HIDDEN) return true;
+    if(status == HIDDEN) return false;
+    if(other.status == HIDDEN) return true;
     auto cpos = glm::vec2(CameraConfig::cameraPos.x, CameraConfig::cameraPos.z);
     auto fpos = glm::vec2((float)this->pos.x, (float)this->pos.y) - cpos;
     auto ofpos = glm::vec2((float)other.pos.x, (float)other.pos.y) - cpos;
     return glm::dot(fpos, fpos) < glm::dot(ofpos, ofpos);
 }
-
-// TODO: Maybe create maxNonAir, which contains the max y value of the chunk that contains a non air block. This could be used to not render chunks that only have blocks below the cameras pov
-// Or maybe just split the chunk into 32x32x32 sub-chunks;

@@ -1,4 +1,5 @@
 #include "scenes/BatchRendering2DScene.h"
+#include "input/input.h"
 #include "imgui/imgui.h"
 
 using namespace MinecraftClone;

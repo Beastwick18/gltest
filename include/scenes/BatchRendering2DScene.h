@@ -6,6 +6,7 @@
 #include "core/window.h"
 #include "renderer/Batch.hpp"
 #include "renderer/texture2D.h"
+#include "renderer/shader.h"
 
 class BatchRendering2DScene : public Scene {
     public:

@@ -1,28 +1,24 @@
 #ifndef MINECRAFT_CLONE_BATCH_H
 #define MINECRAFT_CLONE_BATCH_H
 
-// #include <array>
 #include "glm/glm.hpp"
 #include "core.h"
+#include "renderer/VBlayout.h"
 #include "renderer/VAO.h"
-#include "input/input.h"
+#include "renderer/VBO.h"
 #include "utils/DebugStats.h"
-#include <cstring>
 
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texCoords;
-    // float textureIndex;
 };
 
 struct Vertex2D {
     glm::vec2 position;
     glm::vec2 texCoords;
-    // float textureIndex;
 };
 
-// use offsetof macro
 template<typename T>
 class Batch {
     public:
@@ -38,62 +34,61 @@ class Batch {
             vbo = new VBO(sizeof(T) * maxVertices);
             vao->addBuffer(vbo, layout);
             
-            numVertices = 0;
-            vertexSize = sizeof(T);
+            vertexCount = 0;
+            sizeOfVertex = sizeof(T);
         }
         
         bool addVertex(const T &t) {
             if(!isFull() || vertices == nullptr) return false;
-            vertices[numVertices++] = t;
+            vertices[vertexCount++] = t;
             return true;
         }
         
         bool addVertices(const T *arr, const GLsizeiptr size) {
             if(!hasRoomFor(size) || vertices == nullptr) return false;
-            std::copy(arr, arr+size, vertices+numVertices);
-            numVertices += size;
+            std::copy(arr, arr+size, vertices+vertexCount);
+            vertexCount += size;
             return true;
         }
         
         void flush() {
-            if(numVertices == 0) return;
+            if(vertexCount == 0) return;
             
-            vbo->setData(vertices, numVertices * vertexSize);
+            vbo->setData(vertices, vertexCount * sizeOfVertex);
             vao->bind();
-            glDrawArrays(GL_TRIANGLES, 0, numVertices);
+            glDrawArrays(GL_TRIANGLES, 0, vertexCount);
             DebugStats::drawCalls++;
-            numVertices = 0;
+            vertexCount = 0;
         }
         
         void free() {
             if(vertices != nullptr) {
                 std::free(vertices);
                 vertices = nullptr;
-                numVertices = 0;
+                vertexCount = 0;
                 VAO::free(vao);
                 VBO::free(vbo);
             }
         }
         inline bool isFull() const {
-            return numVertices == maxVertices-1;
+            return vertexCount >= maxVertices-1;
         }
         
         inline bool hasRoomFor(const int vertices) const {
-            return numVertices+vertices < maxVertices;
+            return vertexCount+vertices < maxVertices;
         }
         
         inline bool isEmpty() const {
-            return numVertices == 0;
+            return vertexCount == 0;
         }
         
-        unsigned int numVertices = 0;
     private:
-        // static constexpr size_t verticesInKilobytes = 1024*3;
+        unsigned int vertexCount = 0;
         static constexpr size_t verticesInKilobytes = 1024;
         // static constexpr size_t verticesInKilobytes = 511872;
         // static constexpr size_t verticesInKilobytes = 4096;
         size_t maxVertices;
-        size_t vertexSize;
+        size_t sizeOfVertex;
         T* vertices = nullptr;
         VBO *vbo = nullptr;
         VAO *vao = nullptr;

@@ -4,6 +4,8 @@
 #include "scenes/scene.h"
 #include "renderer/renderer.h"
 #include "core/window.h"
+#include "renderer/EBO.h"
+#include "renderer/shader.h"
 
 class QuadScene : public Scene {
     public:

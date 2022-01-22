@@ -1,4 +1,6 @@
 #include "renderer/renderer.h"
+#include "renderer/shader.h"
+#include "input/input.h"
 
 namespace Renderer {
     Shader *regularShader, *transparentShader;

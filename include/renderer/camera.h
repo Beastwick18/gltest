@@ -43,7 +43,7 @@ class Camera {
     private:
         glm::vec3 forwardSpeed, sidewaysSpeed, verticalSpeed;
         glm::mat4 view, proj;
-        float bobbing;
+        float bobbing, oldFov;
         bool jumping;
         MinecraftClone::Window *window;
 };
