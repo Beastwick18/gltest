@@ -10,6 +10,7 @@ It is very Minecraft-like with blocks that can be placed and broken at will.
 - Separate rendering of transparent and opaque voxels.
 - Ray traversal voxel selection.
 - Variables in the game are very customizable during gameplay through the config GUI.
+- Procedural terrain generation
 
 ## Todo
 - Use a noise algorithm that allows for seeds and more interesting terrain generation.
@@ -35,7 +36,7 @@ The controls are curreltly all over the place. They are as follows:
 - Z - Toggle no-clip
 - Mouse - Turning, left and right click for breaking and placing
 - Scroll - Change current block in hand (shown in config GUI under debug stats)
-- 1-5 - Switch between some 3D scenes (most do not work anymore)
+- 1-5 - Switch between some 2D/3D scenes (most do not work anymore)
 
 ## Screenshots
 ![The whole world](./screenshots/world.png)
