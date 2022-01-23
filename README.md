@@ -35,7 +35,8 @@ The controls are curreltly all over the place. They are as follows:
 - F - Toggle fullscreen
 - Z - Toggle no-clip
 - Mouse - Turning, left and right click for breaking and placing
-- Scroll - Change current block in hand (shown in config GUI under debug stats)
+- Middle mouse button - Change block in hand to the block the player is currently looking at
+- Scroll - Change current block in hand (shown in bottom right of screen)
 - 1-5 - Switch between some 2D/3D scenes (most do not work anymore)
 
 ## Screenshots
