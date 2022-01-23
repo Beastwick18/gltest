@@ -36,6 +36,7 @@ namespace Blocks {
         TexCoords lava = blockAtlas->getSubTexture(8, 19);
         TexCoords bedrock = blockAtlas->getSubTexture(4, 28);
         TexCoords cobblestone = blockAtlas->getSubTexture(3, 26);
+        TexCoords planks = blockAtlas->getSubTexture(8, 16);
         
         // TexCoords square = blockAtlas->getSubTexture(30, 13, 2, 2);
         TexCoords white = blockAtlas->getSubTexture(29, 13);
@@ -52,6 +53,7 @@ namespace Blocks {
         Blocks::blocks[8] = Block{ "Lava", { lava }, 8, true, true, true };
         Blocks::blocks[9] = Block{ "Bedrock", { bedrock }, 9, false, false, false };
         Blocks::blocks[10] = Block{ "Cobblestone", { cobblestone }, 10, false, false, true };
+        Blocks::blocks[11] = Block{ "WoodenPlanks", { planks }, 11, false, false, true };
         Blocks::blocks[255] = Blocks::nullBlock;
     }
     

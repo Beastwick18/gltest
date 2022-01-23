@@ -3,9 +3,16 @@
 
 #include "renderer/Batch.hpp"
 #include "renderer/camera.h"
+#include "renderer/shader.h"
 #include "world/Block.h"
 
 namespace Renderer {
+    extern Shader *regularShader, *transparentShader;
+    extern GLint vpUniform, wVpUniform;
+    extern GLint waveUniform;
+    extern Batch<Vertex> regularBatch;
+    extern Batch<Vertex> transparentBatch;
+    
     void init();
     void free();
     void setCamera(const Camera *cameraPtr);

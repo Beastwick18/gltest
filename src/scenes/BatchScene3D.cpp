@@ -18,6 +18,12 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Blocks::blockAtlas->bind();
     
     blockInHand = Blocks::getIdFromName("Cobblestone");
+    
+    guiScale = 13.f;
+    auto camPos = glm::vec3{1,-.5,-1};
+    glm::mat4 view = glm::lookAt(camPos, camPos + glm::normalize(glm::vec3{1,-1,1}), glm::vec3{0,1,0});
+    blockView = view;
+    
     // int maxChunkX = 20;
     // int maxChunkZ = 20;
     int maxChunkX = 10;
@@ -78,7 +84,6 @@ void BatchScene3D::render() {
     
     Renderer::render();
     
-    // glDisable(GL_CULL_FACE);
     
     glDisable(GL_DEPTH_TEST);
     if(ray.block.hit) {
@@ -90,9 +95,18 @@ void BatchScene3D::render() {
         DebugStats::triCount -= 6;
         Renderer::flushRegularBatch();
     }
+    glDisable(GL_CULL_FACE);
+    std::vector<Vertex> mesh;
+    Renderer::generateCubeMesh(mesh, 0, 0, 0, Blocks::getBlockFromID(blockInHand).tex, true, false, true, false, false, true);
+    Renderer::renderMesh(mesh.data(), mesh.size());
+    Renderer::regularShader->use();
+    float ratio = (float)window->getWidth() / window->getHeight();
+    glm::mat4 proj = glm::ortho(ratio*guiScale, 0.f, 0.f, guiScale, -2.f, 1.f);
+    Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
+    Renderer::regularBatch.flush();
     glEnable(GL_DEPTH_TEST);
     
-    // glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
 }
 
 void BatchScene3D::guiRender() {
@@ -119,6 +133,7 @@ void BatchScene3D::guiRender() {
         }
         ImGui::SliderFloat("Climb Speed", &CameraConfig::climbSpeed, 0.f, 20.f);
         ImGui::SliderFloat3("Camera Position", glm::value_ptr(CameraConfig::cameraPos), -50.f, 50.f);
+        ImGui::SliderFloat("Gui scale", &guiScale, 0.f, 100.f);
         ImGui::SliderInt("Block Reach", &CameraConfig::blockReach, 0.f, 100.f);
         
         ImGui::Checkbox("Wire mesh", &wiremeshToggle);

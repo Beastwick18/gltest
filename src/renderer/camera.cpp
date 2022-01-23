@@ -115,7 +115,7 @@ void Camera::update(double deltaTime) {
             verticalSpeed = glm::vec3(0);
             CameraConfig::cameraPos.y = glm::lerp(CameraConfig::cameraPos.y, CameraConfig::ground, ftime*CameraConfig::climbSpeed);
             
-            if(glm::abs(CameraConfig::cameraPos.y - CameraConfig::ground) < .1f) {
+            if(glm::abs(CameraConfig::cameraPos.y - CameraConfig::ground) < .01f) {
                 CameraConfig::cameraPos.y = CameraConfig::ground;
             }
             jumping = false;

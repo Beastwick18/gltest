@@ -27,6 +27,8 @@ class BatchScene3D : public Scene {
         Camera *c;
         Frustum *f;
         RaycastResults ray;
+        glm::mat4 blockView;
+        float guiScale;
         
         BlockID blockInHand;
         std::vector<std::future<void>> meshFutures;
