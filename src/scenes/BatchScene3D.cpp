@@ -215,6 +215,8 @@ void BatchScene3D::update(double deltaTime) {
                 World::removeBlock(ray.block.hitCoords);
             else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_RIGHT))
                 World::addBlock(blockInHand, ray.block.hitCoords + ray.block.hitSide);
+            else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_3))
+                blockInHand = ray.block.blockID;
         }
     }
 }
