@@ -1,5 +1,5 @@
 # Minecraft-like Voxel Game
-This is my personal attempt at a 3D game and my first experience with OpenGL.
+This is my first attempt at a 3D game and my first experience with OpenGL.
 It is very Minecraft-like with blocks that can be placed and broken at will.
 
 ## Features
