@@ -111,10 +111,11 @@ int main(int argc, char **argv) {
     ImGui_ImplGlfw_InitForOpenGL(window->getGlfwWindow(), false);
     ImGui_ImplOpenGL3_Init("#version 130");
     
-    {
-    int currentScene = 5;
-    Scene *scene = new BatchScene3D(window);
-    Scene *nextScene = nullptr;
+    // {
+    // int currentScene = 5;
+    // Scene *scene = new BatchScene3D(window);
+    BatchScene3D scene(window);
+    // Scene *nextScene = nullptr;
     
     double targetFps = 1.0/targetFramerate;
     double lastTime = glfwGetTime();
@@ -125,27 +126,28 @@ int main(int argc, char **argv) {
         double deltaTime = (currentTime - lastTime);
         lastTime = currentTime;
         
-        if(nextScene != nullptr) {
-            delete scene;
-            scene = nextScene;
-            nextScene = nullptr;
-        }
+        // if(nextScene != nullptr) {
+        //     delete scene;
+        //     scene = nextScene;
+        //     nextScene = nullptr;
+        // }
         
         
         // frameCount++;
         
         DebugStats::updateCount++;
+        // printf("Here\n");
         
         window->pollEvents();
         double updateStart = glfwGetTime();
-        scene->update(deltaTime);
+        scene.update(deltaTime);
         Renderer::update(deltaTime);
         DebugStats::updateTime += glfwGetTime() - updateStart;
         
         dtSum += deltaTime;
         if(dtSum >= targetFps) {
             double renderStart = glfwGetTime();
-            scene->render();
+            scene.render();
             Renderer::render();
             glClear(GL_DEPTH_BUFFER_BIT);
             qs->use();
@@ -187,7 +189,7 @@ int main(int argc, char **argv) {
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
             double guiStart = glfwGetTime();
-            scene->guiRender();
+            scene.guiRender();
             double guiEnd = glfwGetTime();
             DebugStats::guiTime += guiEnd - guiStart;
             
@@ -200,29 +202,30 @@ int main(int argc, char **argv) {
             dtSum = 0;
         }
         
-        if(Input::isKeyBeginDown(GLFW_KEY_ESCAPE))
+        if(Input::isKeyBeginDown(GLFW_KEY_ESCAPE)) {
             window->close();
+        }
         
-        if(Input::isKeyBeginDown(GLFW_KEY_1) && currentScene != 1) {
-            nextScene = new OriginalScene(window);
-            currentScene = 1;
-        }
-        if(Input::isKeyBeginDown(GLFW_KEY_2) && currentScene != 2) {
-            nextScene = new ClearColorScene(window);
-            currentScene = 2;
-        }
-        if(Input::isKeyBeginDown(GLFW_KEY_3) && currentScene != 3) {
-            nextScene = new QuadScene(window);
-            currentScene = 3;
-        }
-        if(Input::isKeyBeginDown(GLFW_KEY_4) && currentScene != 4) {
-            nextScene = new BatchRendering2DScene(window);
-            currentScene = 4;
-        }
-        if(Input::isKeyBeginDown(GLFW_KEY_5) && currentScene != 5) {
-            nextScene = new BatchScene3D(window);
-            currentScene = 5;
-        }
+        // if(Input::isKeyBeginDown(GLFW_KEY_1) && currentScene != 1) {
+        //     nextScene = new OriginalScene(window);
+        //     currentScene = 1;
+        // }
+        // if(Input::isKeyBeginDown(GLFW_KEY_2) && currentScene != 2) {
+        //     nextScene = new ClearColorScene(window);
+        //     currentScene = 2;
+        // }
+        // if(Input::isKeyBeginDown(GLFW_KEY_3) && currentScene != 3) {
+        //     nextScene = new QuadScene(window);
+        //     currentScene = 3;
+        // }
+        // if(Input::isKeyBeginDown(GLFW_KEY_4) && currentScene != 4) {
+        //     nextScene = new BatchRendering2DScene(window);
+        //     currentScene = 4;
+        // }
+        // if(Input::isKeyBeginDown(GLFW_KEY_5) && currentScene != 5) {
+        //     nextScene = new BatchScene3D(window);
+        //     currentScene = 5;
+        // }
         
         // if(glfwGetTime() - timer > 1) {
         //     printf("FPS: %f, TICK: %f\n", frameCount, tickCount);
@@ -241,26 +244,25 @@ int main(int argc, char **argv) {
         Input::reset();
         DebugStats::reset();
     }
-    if(scene != nullptr)
-        delete scene;
-    if(nextScene != nullptr)
-        delete nextScene;
+    // if(scene != nullptr)
+        // delete scene;
+    // if(nextScene != nullptr)
+    //     delete nextScene;
     
-    }
+    // }
     
-    Renderer::free();
-    Window::freeWindow(window);
+    // Renderer::free();
+    // Window::freeWindow(window);
     
-    VAO::free(vao);
-    VBO::free(vbo);
-    EBO::free(ebo);
-    Shader::freeShader(qs);
+    // VAO::free(vao);
+    // VBO::free(vbo);
+    // EBO::free(ebo);
+    // Shader::freeShader(qs);
     
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    // ImGui_ImplOpenGL3_Shutdown();
+    // ImGui_ImplGlfw_Shutdown();
+    // ImGui::DestroyContext();
     
     glfwTerminate();
-    
     return 0;
 }

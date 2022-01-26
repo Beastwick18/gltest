@@ -42,6 +42,8 @@ struct Block {
     bool liquid;
     bool breakable;
     bool rotatable;
+    float lightBlocking;
+    float lightEmit;
 };
 
 namespace Blocks {

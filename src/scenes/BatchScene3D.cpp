@@ -9,17 +9,20 @@ using namespace MinecraftClone;
 
 BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Input::disableCursor();
+    dtSum = 0;
     
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     
+    for(int i = 1; i < 10; i++)
+        inv[i-1] = i;
     
     Blocks::init();
     Blocks::blockAtlas->bind();
     
-    blockInHand = Blocks::getIdFromName("Cobblestone");
+    blockInHand = 0;
     
-    guiScale = 13.f;
+    guiScale = 20.f;
     auto camPos = glm::vec3{1,-.5,-1};
     glm::mat4 view = glm::lookAt(camPos, camPos + glm::normalize(glm::vec3{1,-1,1}), glm::vec3{0,1,0});
     blockView = view;
@@ -36,10 +39,10 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     
     c = new Camera(window);
     Renderer::setCamera(c);
-    CameraConfig::cameraPos.x = floor((float)maxChunkX / 2.f) * Chunk::chunkW + (float)Chunk::chunkW / 2.f;
+    // CameraConfig::cameraPos.x = floor((float)maxChunkX / 2.f) * Chunk::chunkW + (float)Chunk::chunkW / 2.f;
     auto pos = glm::floor(CameraConfig::cameraPos);
     CameraConfig::cameraPos.y = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
-    CameraConfig::cameraPos.z = floor((float)maxChunkZ / 2.f) * Chunk::chunkL + (float)Chunk::chunkL / 2.f;
+    // CameraConfig::cameraPos.z = floor((float)maxChunkZ / 2.f) * Chunk::chunkL + (float)Chunk::chunkL / 2.f;
     
     
     f = new Frustum(c->getProjection() * c->getView());
@@ -52,18 +55,21 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
             World::chunks[World::generateChunkKey({x * Chunk::chunkW, z * Chunk::chunkL})] = c;
         }
     
+    // for(auto &[_, c] : World::chunks) {
+    //     c.calculateSkyLighting();
+    // }
     for(auto &[_, c] : World::chunks)
         meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, &c));
 }
 
 BatchScene3D::~BatchScene3D() {
-    Blocks::free();
-    Camera::free(c);
-    delete f;
+    // Blocks::free();
+    // Camera::free(c);
+    // delete f;
 }
 
 void BatchScene3D::render() {
-    glClearColor(0.35f, 0.52f, 0.95f, 1.0f);
+    glClearColor(0.35f * Renderer::skyBrightness, 0.52f * Renderer::skyBrightness, 0.95f * Renderer::skyBrightness, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     double drawStart = glfwGetTime();
@@ -90,23 +96,25 @@ void BatchScene3D::render() {
         std::vector<Vertex> mesh;
         auto pos = ray.block.hitCoords;
         Renderer::generateCubeMesh(mesh, ray.block.hitCoords.x, ray.block.hitCoords.y, ray.block.hitCoords.z, Blocks::highlight,
-                !World::getBlock(pos.x, pos.y+1, pos.z), !World::getBlock(pos.x, pos.y-1, pos.z), !World::getBlock(pos.x-1, pos.y, pos.z), !World::getBlock(pos.x+1, pos.y, pos.z), !World::getBlock(pos.x, pos.y, pos.z+1), !World::getBlock(pos.x, pos.y, pos.z-1));
+                !World::getBlock(pos.x, pos.y+1, pos.z), !World::getBlock(pos.x, pos.y-1, pos.z), !World::getBlock(pos.x-1, pos.y, pos.z), !World::getBlock(pos.x+1, pos.y, pos.z), !World::getBlock(pos.x, pos.y, pos.z+1), !World::getBlock(pos.x, pos.y, pos.z-1), .8f, 0.f);
         Renderer::renderMesh(mesh.data(), mesh.size());
         DebugStats::triCount -= 6;
         Renderer::flushRegularBatch();
     }
+    
     glDisable(GL_CULL_FACE);
     std::vector<Vertex> mesh;
-    Renderer::generateCubeMesh(mesh, 0, 0, 0, Blocks::getBlockFromID(blockInHand).tex, true, false, true, false, false, true);
+    for(float i = 0; i < 9; i++)
+        Renderer::generateCubeMesh(mesh, -(i * 1.1f), ( blockInHand == i ) * .5f, i * 1.1f, Blocks::getBlockFromID(inv[(int)i]).tex, true, false, true, false, false, true);
     Renderer::renderMesh(mesh.data(), mesh.size());
     Renderer::regularShader->use();
     float ratio = (float)window->getWidth() / window->getHeight();
-    glm::mat4 proj = glm::ortho(ratio*guiScale, 0.f, 0.f, guiScale, -2.f, 1.f);
+    glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -1.5f, 0.5f);
     Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
     Renderer::regularBatch.flush();
-    glEnable(GL_DEPTH_TEST);
-    
     glEnable(GL_CULL_FACE);
+    
+    glEnable(GL_DEPTH_TEST);
 }
 
 void BatchScene3D::guiRender() {
@@ -133,7 +141,9 @@ void BatchScene3D::guiRender() {
         }
         ImGui::SliderFloat("Climb Speed", &CameraConfig::climbSpeed, 0.f, 20.f);
         ImGui::SliderFloat3("Camera Position", glm::value_ptr(CameraConfig::cameraPos), -50.f, 50.f);
+        // ImGui::SliderInt("Test Position", &test, -5, 5);
         ImGui::SliderFloat("Gui scale", &guiScale, 0.f, 100.f);
+        ImGui::SliderFloat("Sky Brightness", &Renderer::skyBrightness, 0.f, 1.f);
         ImGui::SliderInt("Block Reach", &CameraConfig::blockReach, 0.f, 100.f);
         
         ImGui::Checkbox("Wire mesh", &wiremeshToggle);
@@ -151,19 +161,14 @@ void BatchScene3D::guiRender() {
     }
 }
 
-double dtSum = 0;
 void BatchScene3D::update(double deltaTime) {
     c->update(deltaTime);
-    // auto proj = glm::perspective(glm::radians(CameraConfig::fov), (float)window->getWidth()/(float)window->getHeight(), 0.1f, 1000.0f);
-    // if(!Input::isKeyDown(GLFW_KEY_X))
     f->update(c->getProjection() * c->getView());
     
     for(auto &[_, c] : World::chunks) {
         if(c.getStatus() != ChunkStatus::SHOWING && c.getStatus() != ChunkStatus::HIDDEN)
             continue;
         
-        // auto pos = c.getPos();
-        // if(f->isBoxVisible(glm::vec3(pos.x, 0, pos.y), glm::vec3(pos.x + Chunk::chunkW, Chunk::chunkH, pos.y + Chunk::chunkL)))
         if(c.isVisible(f))
             c.show();
         else
@@ -203,20 +208,28 @@ void BatchScene3D::update(double deltaTime) {
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     }
     
-    ray = World::raycast(CameraConfig::cameraPos, CameraConfig::cameraFront, CameraConfig::blockReach);
+    for(int i = 0; i < 9; i++)
+        if(Input::isKeyBeginDown(GLFW_KEY_1+i)) {
+            blockInHand = i;
+        }
+    
     if(!Input::cursorEnabled) {
-        if(Input::mouseScrollY > 0 && blockInHand < 255)
-            blockInHand++;
-        else if(Input::mouseScrollY < 0 && blockInHand > 0)
+        ray = World::raycast(CameraConfig::cameraPos, CameraConfig::cameraFront, CameraConfig::blockReach);
+        if(Input::mouseScrollY > 0)
             blockInHand--;
+        else if(Input::mouseScrollY < 0)
+            blockInHand++;
+        
+        if(blockInHand > 8) blockInHand = 0;
+        else if(blockInHand < 0) blockInHand = 8;
         
         if(ray.block.hit) {
             if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_LEFT) && Blocks::getBlockFromID(ray.block.blockID).breakable)
                 World::removeBlock(ray.block.hitCoords);
             else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_RIGHT))
-                World::addBlock(blockInHand, ray.block.hitCoords + ray.block.hitSide);
+                World::addBlock(inv[blockInHand], ray.block.hitCoords + ray.block.hitSide);
             else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_3))
-                blockInHand = ray.block.blockID;
+                inv[blockInHand] = ray.block.blockID;
         }
     }
 }

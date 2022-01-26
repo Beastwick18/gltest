@@ -12,6 +12,7 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texCoords;
+    float light, skyLight;
 };
 
 struct Vertex2D {
@@ -84,9 +85,9 @@ class Batch {
         
     private:
         unsigned int vertexCount = 0;
-        static constexpr size_t verticesInKilobytes = 1024;
+        // static constexpr size_t verticesInKilobytes = 1024;
         // static constexpr size_t verticesInKilobytes = 511872;
-        // static constexpr size_t verticesInKilobytes = 4096;
+        static constexpr size_t verticesInKilobytes = 4096;
         size_t maxVertices;
         size_t sizeOfVertex;
         T* vertices = nullptr;

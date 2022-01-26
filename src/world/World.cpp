@@ -1,7 +1,9 @@
 #include "world/World.h"
+#include <future>
 
 namespace World {
     std::map<std::string, Chunk> chunks;
+    std::vector<std::future<void>> meshFutures;
     std::mutex chunkMutex;
     
     std::string generateChunkKey(const glm::ivec2 pos) {
@@ -106,18 +108,23 @@ namespace World {
         int rx = x - pos.x;
         int rz = z - pos.y;
         chunk->addBlock(id, rx, y, rz);
+        // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, chunk));
         chunk->rebuildMesh();
         bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
         if(left || right || front || back) {
             AdjChunks adj = getAdjacentChunks(pos);
             if(left && adj.left)
                 adj.left->rebuildMesh();
+                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.left));
             if(right && adj.right)
                 adj.right->rebuildMesh();
+                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.right));
             if(front && adj.front)
                 adj.front->rebuildMesh();
+                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.front));
             if(back && adj.back)
                 adj.back->rebuildMesh();
+                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.back));
         }
         
     }

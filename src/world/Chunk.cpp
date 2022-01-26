@@ -12,8 +12,11 @@ Chunk::Chunk(int xx, int yy) : pos(xx*chunkW,yy*chunkL) {
     minY = Chunk::chunkH;
     for(int y = 0; y < chunkH; y++)
         for(int x = 0; x < chunkW; x++)
-            for(int z = 0; z < chunkL; z++)
+            for(int z = 0; z < chunkL; z++) {
                 blocks[y][x][z] = 0;
+                skyLight[y][x][z] = 1;
+                skyLightSpread[y][x][z] = 0;
+            }
     status = EMPTY;
 }
 
@@ -148,19 +151,135 @@ void Chunk::generateChunk() {
     status = BUILT;
 }
 
+void Chunk::calculateSkyLighting(int x, int y, int z, float prev) {
+    if(x < 0 || y < 0 || z < 0 || x >= chunkW || y >= chunkH || z >= chunkL)
+        return;
+    
+    if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
+        // skyLight[y][x][z] = (unsigned char)( prev*15 );
+        // prev = prev - Blocks::getBlockFromID(b).lightBlocking;
+        skyLight[y][x][z] = prev*15;
+        // calculateLighting(x, y, z, prev);
+        return;
+    }
+    if(prev <= 0 || prev * 15 <= skyLight[y][x][z]) return;
+    skyLight[y][x][z] = glm::max(skyLight[y][x][z], (unsigned char)(prev*15));
+    calculateSkyLighting(x, y-1, z, prev);
+    calculateSkyLightingSpread(x, y+1, z, prev);
+    calculateSkyLightingSpread(x+1, y, z, prev);
+    calculateSkyLightingSpread(x-1, y, z, prev);
+    calculateSkyLightingSpread(x, y, z-1, prev);
+    calculateSkyLightingSpread(x, y, z+1, prev);
+}
+
+void Chunk::calculateSkyLightingSpread(int x, int y, int z, float prev) {
+    if(x < 0 || y < 0 || z < 0 || x >= chunkW || y >= chunkH || z >= chunkL)
+        return;
+    if(prev <= 0) return;
+    if(prev * 15 <= skyLightSpread[y][x][z])
+        return;
+    float lb = .3f;
+    skyLightSpread[y][x][z] = glm::max(skyLightSpread[y][x][z], (unsigned char)(prev*15));
+    if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
+        // light[y][x][z] = (unsigned char)( prev*15 );
+        // lb = Blocks::getBlockFromID(b).lightBlocking;
+    //     // prev = prev - 0.9f;
+        // return;
+    }
+    // light[y][x][z] = 15;
+    calculateSkyLightingSpread(x, y+1, z, prev-lb);
+    calculateSkyLightingSpread(x, y-1, z, prev-lb);
+    calculateSkyLightingSpread(x-1, y, z, prev-lb);
+    calculateSkyLightingSpread(x+1, y, z, prev-lb);
+    calculateSkyLightingSpread(x, y, z-1, prev-lb);
+    calculateSkyLightingSpread(x, y, z+1, prev-lb);
+
+}
+
+void Chunk::calculateLighting(int x, int y, int z, float prev) {
+    if(x < 0 || y < 0 || z < 0 || x >= chunkW || y >= chunkH || z >= chunkL)
+        return;
+    if(prev <= 0) return;
+    if(prev * 15 <= light[y][x][z])
+        return;
+    float lb = .1f;
+    light[y][x][z] = glm::max(light[y][x][z], (unsigned char)(prev*15));
+    if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
+        // light[y][x][z] = (unsigned char)( prev*15 );
+        // lb = Blocks::getBlockFromID(b).lightBlocking;
+    //     // prev = prev - 0.9f;
+        // return;
+    }
+    // light[y][x][z] = 15;
+    calculateLighting(x, y+1, z, prev-lb);
+    calculateLighting(x, y-1, z, prev-lb);
+    calculateLighting(x-1, y, z, prev-lb);
+    calculateLighting(x+1, y, z, prev-lb);
+    calculateLighting(x, y, z-1, prev-lb);
+    calculateLighting(x, y, z+1, prev-lb);
+}
+
 void Chunk::rebuildMesh() {
     status = MESHING;
     AdjChunks chunks = World::getAdjacentChunks(pos);
     mesh.v.clear();
     transparentMesh.v.clear();
-    for(int y = 0; y < chunkH; y++) {
-        for(int x = 0; x < chunkW; x++) {
+    std::vector<Light> lights;
+    for(int y = 0; y < chunkH; y++)
+        for(int x = 0; x < chunkW; x++)
             for(int z = 0; z < chunkL; z++) {
+                light[y][x][z] = skyLight[y][x][z] = skyLightSpread[y][x][z] = 0;
                 BlockID id = blocks[y][x][z];
+                if(id == Blocks::airBlockID || id == Blocks::nullBlockID)
+                    continue;
+                bool top = y == chunkH-1 ? true : Blocks::getBlockFromID(blocks[y+1][x][z]).transparent,
+                    bottom = y == 0 ? false : Blocks::getBlockFromID(blocks[y-1][x][z]).transparent,
+                    left = x == 0 ? chunks.left && Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : Blocks::getBlockFromID(blocks[y][x-1][z]).transparent,
+                    right = x == chunkW-1 ? chunks.right && Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : Blocks::getBlockFromID(blocks[y][x+1][z]).transparent,
+                    front = z == chunkL-1 ? chunks.front && Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : Blocks::getBlockFromID(blocks[y][x][z+1]).transparent,
+                    back = z == 0 ? chunks.back && Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
+                top = top || ( y == chunkH-1 ? true : !blocks[y+1][x][z] ),
+                bottom = bottom || ( y == 0 ? false : !blocks[y-1][x][z] ),
+                left = left || ( x == 0 ? chunks.left && !chunks.left->blocks[y][chunkW-1][z] : !blocks[y][x-1][z] ),
+                right = right || ( x == chunkW-1 ? chunks.right && !chunks.right->blocks[y][0][z] : !blocks[y][x+1][z] ),
+                front = front || ( z == chunkL-1 ? chunks.front && !chunks.front->blocks[y][x][0] : !blocks[y][x][z+1] ),
+                back = back || ( z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1] );
+                if(top || bottom || left || right || front || back) {
+                    if(y < minY) minY = y;
+                    if(y > maxY) maxY = y;
+                    
+                    if(const auto &b = Blocks::getBlockFromID(id); b.lightEmit > 0.f) {
+                        lights.push_back({{x, y, z}, b.lightEmit});
+                    }
+                }
+            }
+    // printf("%d %d\n", maxY, minY);
+    for(int x = 0; x < chunkW; x++)
+        for(int z = 0; z < chunkL; z++) {
+            calculateSkyLighting(x, maxY+2, z, 1.f);
+            // for(int y = 0; y < chunkH; y++) {
+            //     const BlockID id = blocks[y][x][z];
+            //     if(Blocks::getBlockFromID(id).name == "Lava") {
+            //         calculateLighting(x, y, z, 1.f);
+            //     }
+            // }
+        }
+    for(const auto &p : lights) {
+        calculateLighting(p.pos.x, p.pos.y, p.pos.z, p.val);
+    }
+    
+    for(int x = 0; x < chunkW; x++) {
+        for(int z = 0; z < chunkL; z++) {
+            for(int y = 0; y < chunkH; y++) {
+                const BlockID id = blocks[y][x][z];
                 if(id == Blocks::airBlockID || id == Blocks::nullBlockID)
                     continue;
                 
                 const Block b = Blocks::getBlockFromID(blocks[y][x][z]);
+                // const float l = (float)(1+light[y][x][z])/16.f;
+                const float l = (float)(1+light[y][x][z])/16.f;
+                const float sl = (float)(1+glm::max(skyLight[y][x][z], skyLightSpread[y][x][z]))/16.f;
+                // const float l = Blocks::getBlockFromID(id).lightBlocking;
                 
                 if(b.transparent) {
                     bool top = y == chunkH-1 ? true : !blocks[y+1][x][z],
@@ -171,12 +290,10 @@ void Chunk::rebuildMesh() {
                         back = z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1];
                     
                     if(top || bottom || left || right || front || back) {
-                        if(y < minY) minY = y;
-                        if(y > maxY) maxY = y;
                         if(b.liquid)
-                            Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y-(1.f/16.f), pos.y + z, b.tex, top, bottom, left, right, front, back);
+                            Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y-(1.f/16.f), pos.y + z, b.tex, top, bottom, left, right, front, back, l, sl);
                         else
-                            Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back);
+                            Renderer::generateCubeMesh(transparentMesh.v, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back, l, sl);
                     }
                 } else {
                     bool top = y == chunkH-1 ? true : Blocks::getBlockFromID(blocks[y+1][x][z]).transparent,
@@ -187,9 +304,7 @@ void Chunk::rebuildMesh() {
                         back = z == 0 ? chunks.back && Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
                     
                     if(top || bottom || left || right || front || back) {
-                        if(y < minY) minY = y;
-                        if(y > maxY) maxY = y;
-                        Renderer::generateCubeMesh(mesh.v, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back);
+                        Renderer::generateCubeMesh(mesh.v, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back, l, sl);
                     }
                 }
             }

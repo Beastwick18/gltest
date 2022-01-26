@@ -29,8 +29,11 @@ class BatchScene3D : public Scene {
         RaycastResults ray;
         glm::mat4 blockView;
         float guiScale;
+        double dtSum;
         
-        BlockID blockInHand;
+        int blockInHand;
+        BlockID inv[9];
+        
         std::vector<std::future<void>> meshFutures;
         bool wiremeshToggle = false, wiremesh = false, showGui = false;
 };

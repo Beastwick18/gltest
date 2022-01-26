@@ -11,11 +11,13 @@ It is very Minecraft-like with blocks that can be placed and broken at will.
 - Ray traversal voxel selection.
 - Variables in the game are very customizable during gameplay through the config GUI.
 - Procedural terrain generation
+- Recursive lighting
 
 ## Todo
 - Use a noise algorithm that allows for seeds and more interesting terrain generation.
 - A proper GUI system other than ImGUI.
 - A proper collision system.
+- Make lighting system light each face of a voxel independently.
 
 ## Installation and Running
 - If you for some reason want to install this program, I would recommend installing it on Linux. I have managed to get it running on Windows but it is a pain It requires MinGW and GLFW and OpenGL installed on MinGW. Both must be accessable to the compiler. I have not tried to get it to work on Mac.
@@ -40,6 +42,7 @@ The controls are curreltly all over the place. They are as follows:
 - 1-5 - Switch between some 2D/3D scenes (most do not work anymore)
 
 ## Screenshots
+![Lighting](./screenshots/lighting.png)
 ![The whole world](./screenshots/world.png)
 ![A bridge](./screenshots/bridge.png)
 ![Early development](./screenshots/old.png)

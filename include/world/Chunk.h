@@ -19,6 +19,11 @@ struct ChunkMesh {
     std::vector<Vertex> v;
 };
 
+struct Light {
+    glm::ivec3 pos;
+    float val;
+};
+
 class Chunk {
 public:
     Chunk(int x, int z);
@@ -26,6 +31,9 @@ public:
     ~Chunk();
     
     void generateChunk();
+    void calculateSkyLighting(int x = 0, int y = chunkH-1, int z = 0, float prev = 1.f);
+    void calculateSkyLightingSpread(int x = 0, int y = chunkH-1, int z = 0, float prev = 1.f);
+    void calculateLighting(int x = 0, int y = 0, int z = 0, float prev = 1.f);
     void rebuildMesh();
     BlockID getBlock(int x, int y, int z) const;
     void addBlock(BlockID id, int x, int y, int z);
@@ -49,6 +57,9 @@ private:
     ChunkMesh transparentMesh;
     ChunkStatus status;
     BlockID blocks[chunkH][chunkW][chunkL];
+    unsigned char light[chunkH][chunkW][chunkL];
+    unsigned char skyLightSpread[chunkH][chunkW][chunkL];
+    unsigned char skyLight[chunkH][chunkW][chunkL];
     int maxY, minY;
 };
 
