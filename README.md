@@ -11,7 +11,7 @@ It is very Minecraft-like with blocks that can be placed and broken at will.
 - Ray traversal voxel selection.
 - Variables in the game are very customizable during gameplay through the config GUI.
 - Procedural terrain generation
-- Recursive lighting
+- Recursive lighting, including variable skylight (adjustable in config GUI)
 
 ## Todo
 - Use a noise algorithm that allows for seeds and more interesting terrain generation.
@@ -38,8 +38,8 @@ The controls are curreltly all over the place. They are as follows:
 - Z - Toggle no-clip
 - Mouse - Turning, left and right click for breaking and placing
 - Middle mouse button - Change block in hand to the block the player is currently looking at
-- Scroll - Change current block in hand (shown in bottom right of screen)
-- 1-5 - Switch between some 2D/3D scenes (most do not work anymore)
+- Scroll - Move through inventory
+- 1-9 - Select corresponding block in inventory
 
 ## Screenshots
 ![Lighting](./screenshots/lighting.png)
