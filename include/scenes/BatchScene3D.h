@@ -1,6 +1,7 @@
 #ifndef BATCH_SCENE_3D_H
 #define BATCH_SCENE_3D_H
 
+#include "renderer/cubemap.h"
 #include "renderer/spriteSheet.h"
 #include "scenes/scene.h"
 #include "core/window.h"
@@ -26,13 +27,21 @@ class BatchScene3D : public Scene {
         MinecraftClone::Window *window;
         Camera *c;
         Frustum *f;
+        CubeMap *m;
+        Shader *ms;
+        GLint mView, mProj, mTime;
+        VAO *vao;
+        VBO *vbo;
         RaycastResults ray;
         glm::mat4 blockView;
         float guiScale;
         double dtSum;
+        Mesh<Vertex> highlightMesh;
+        Mesh<Vertex> invMesh;
         
         int blockInHand;
-        BlockID inv[9];
+        const int invSize = 12;
+        BlockID inv[12];
         
         std::vector<std::future<void>> meshFutures;
         bool wiremeshToggle = false, wiremesh = false, showGui = false;

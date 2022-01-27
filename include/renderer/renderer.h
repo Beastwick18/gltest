@@ -18,8 +18,8 @@ namespace Renderer {
     void init();
     void free();
     void setCamera(const Camera *cameraPtr);
-    void generateQuadMesh(std::vector<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
-    void generateCubeMesh(std::vector<Vertex> &newMesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light = 1.f, float skyLight = 1.f);
+    void generateQuadMesh(Mesh<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
+    void generateCubeMesh(Mesh<Vertex> &newMesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light = 1.f, float skyLight = 1.f);
     void renderMesh(const Vertex *mesh, const size_t size);
     void renderTransparentMesh(const Vertex *mesh, const size_t size);
     void render();

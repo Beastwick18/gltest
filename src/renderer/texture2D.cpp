@@ -1,6 +1,8 @@
 #include "renderer/texture2D.h"
 #include "stb/stb_image.h"
 
+Texture2D::Texture2D() {};
+
 Texture2D::Texture2D(const unsigned char *bytes, unsigned int imageWidth, unsigned int imageHeight, const GLenum format,
                      const GLenum internalFormat, const GLenum filter, const GLenum repeat) {
     this->imageWidth = imageWidth;

@@ -251,17 +251,17 @@ int main(int argc, char **argv) {
     
     // }
     
-    // Renderer::free();
-    // Window::freeWindow(window);
+    Renderer::free();
+    Window::freeWindow(window);
     
-    // VAO::free(vao);
-    // VBO::free(vbo);
-    // EBO::free(ebo);
-    // Shader::freeShader(qs);
+    VAO::free(vao);
+    VBO::free(vbo);
+    EBO::free(ebo);
+    Shader::freeShader(qs);
     
-    // ImGui_ImplOpenGL3_Shutdown();
-    // ImGui_ImplGlfw_Shutdown();
-    // ImGui::DestroyContext();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     
     glfwTerminate();
     return 0;

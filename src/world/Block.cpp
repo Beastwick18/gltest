@@ -50,7 +50,7 @@ namespace Blocks {
         Blocks::blocks[4] = Block{ "Log", { logTop, logTop, logSide }, 4, false, false, true, false, 1.0f, 0.f };
         Blocks::blocks[5] = Block{ "Leaves", { leaves }, 5, true, false, true, false, 1.0f, 0.f };
         Blocks::blocks[6] = Block{ "Sand", { sand }, 6, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[7] = Block{ "Water", { water }, 7, true, true, true, false, 0.0f, 0.f };
+        Blocks::blocks[7] = Block{ "Water", { water }, 7, true, true, true, false, 0.2f, 0.f };
         Blocks::blocks[8] = Block{ "Glowstone", { glowstone }, 8, false, false, true, false, 1.0f, 1.f };
         Blocks::blocks[9] = Block{ "Bedrock", { bedrock }, 9, false, false, false, false, 1.0f, 0.f };
         Blocks::blocks[10] = Block{ "Cobblestone", { cobblestone }, 10, false, false, true, false, 1.0f, 0.f };

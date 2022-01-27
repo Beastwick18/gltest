@@ -15,9 +15,6 @@ enum ChunkStatus {
     SHOWING
 };
 
-struct ChunkMesh {
-    std::vector<Vertex> v;
-};
 
 struct Light {
     glm::ivec3 pos;
@@ -44,8 +41,8 @@ public:
     bool operator<(const Chunk& other) const;
     static float getNoise(glm::vec2 position);
     static float getNoise(float x, float z);
-    inline const ChunkMesh& getMesh() const { return mesh; }
-    inline const ChunkMesh& getTransparentMesh() const { return transparentMesh; }
+    inline const Mesh<Vertex>& getMesh() const { return mesh; }
+    inline const Mesh<Vertex>& getTransparentMesh() const { return transparentMesh; }
     inline glm::ivec2 getPos() const { return pos; }
     inline ChunkStatus getStatus() const { return status; }
     static const int chunkW = 32, chunkL = 32, chunkH = 150;
@@ -53,8 +50,8 @@ public:
     // static const int chunkW = 16, chunkL = 16, chunkH = 256;
 private:
     glm::ivec2 pos;
-    ChunkMesh mesh;
-    ChunkMesh transparentMesh;
+    Mesh<Vertex> mesh;
+    Mesh<Vertex> transparentMesh;
     ChunkStatus status;
     BlockID blocks[chunkH][chunkW][chunkL];
     unsigned char light[chunkH][chunkW][chunkL];

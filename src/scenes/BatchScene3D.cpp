@@ -14,13 +14,78 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     
-    for(int i = 1; i < 10; i++)
+    for(int i = 1; i < invSize+1; i++)
         inv[i-1] = i;
     
     Blocks::init();
     Blocks::blockAtlas->bind();
     
+    invMesh.init(18 * invSize);
+    highlightMesh.init(36);
+    
     blockInHand = 0;
+    
+    std::vector<std::string> files = {
+        "assets/textures/skybox/right.jpg",
+        "assets/textures/skybox/left.jpg",
+        "assets/textures/skybox/top.jpg",
+        "assets/textures/skybox/bottom.jpg",
+        "assets/textures/skybox/front.jpg",
+        "assets/textures/skybox/back.jpg",
+    };
+    m = CubeMap::loadFromImageFile(files);
+    ms = Shader::createShader("assets/shaders/skybox.glsl");
+    mView = ms->getUniformLocation("view");
+    mProj = ms->getUniformLocation("projection");
+    mTime = ms->getUniformLocation("time");
+    float skyboxVertices[] = {
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+    VBlayout layout;
+    layout.push<float>(3);
+    vao = new VAO;
+    vbo = new VBO(skyboxVertices, sizeof(skyboxVertices), GL_STATIC_DRAW);
+    vao->addBuffer(vbo, layout);
     
     guiScale = 20.f;
     auto camPos = glm::vec3{1,-.5,-1};
@@ -39,10 +104,10 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     
     c = new Camera(window);
     Renderer::setCamera(c);
-    // CameraConfig::cameraPos.x = floor((float)maxChunkX / 2.f) * Chunk::chunkW + (float)Chunk::chunkW / 2.f;
+    CameraConfig::cameraPos.x = floor((float)maxChunkX / 2.f) * Chunk::chunkW + (float)Chunk::chunkW / 2.f;
     auto pos = glm::floor(CameraConfig::cameraPos);
     CameraConfig::cameraPos.y = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
-    // CameraConfig::cameraPos.z = floor((float)maxChunkZ / 2.f) * Chunk::chunkL + (float)Chunk::chunkL / 2.f;
+    CameraConfig::cameraPos.z = floor((float)maxChunkZ / 2.f) * Chunk::chunkL + (float)Chunk::chunkL / 2.f;
     
     
     f = new Frustum(c->getProjection() * c->getView());
@@ -63,58 +128,76 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
 }
 
 BatchScene3D::~BatchScene3D() {
-    // Blocks::free();
-    // Camera::free(c);
-    // delete f;
+    Blocks::free();
+    Camera::free(c);
+    delete f;
+    VAO::free(vao);
+    VBO::free(vbo);
+    CubeMap::free(m);
+    Shader::freeShader(ms);
+    invMesh.free();
+    highlightMesh.free();
 }
 
+// TODO: skybox (cubemap), that changes over time
 void BatchScene3D::render() {
     glClearColor(0.35f * Renderer::skyBrightness, 0.52f * Renderer::skyBrightness, 0.95f * Renderer::skyBrightness, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+    glDepthMask(GL_FALSE);
+    ms->use();
+    ms->setUniformMat4f(mView, glm::mat4(glm::mat3(c->getView())));
+    ms->setUniformMat4f(mProj, c->getProjection());
+    ms->setUniform1f(mTime, Renderer::skyBrightness);
+    vao->bind();
+    m->bind();
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthMask(GL_TRUE);
+    
     double drawStart = glfwGetTime();
     for(const auto &[_, c] : World::chunks) {
         if(c.getStatus() == ChunkStatus::SHOWING) {
-            const auto &v = c.getMesh().v;
+            const auto &v = c.getMesh();
             DebugStats::chunksRenderedCount++;
-            Renderer::renderMesh(v.data(), v.size());
+            Renderer::renderMesh(v.data, v.size());
         }
     }
     for(const auto &[_, c] : World::chunks) {
         if(c.getStatus() == ChunkStatus::SHOWING) {
-            const auto &v = c.getTransparentMesh().v;
-            Renderer::renderTransparentMesh(v.data(), v.size());
+            const auto &v = c.getTransparentMesh();
+            Renderer::renderTransparentMesh(v.data, v.size());
         }
     }
     DebugStats::drawTime += glfwGetTime() - drawStart;
     
     Renderer::render();
     
-    
-    glDisable(GL_DEPTH_TEST);
-    if(ray.block.hit) {
-        std::vector<Vertex> mesh;
-        auto pos = ray.block.hitCoords;
-        Renderer::generateCubeMesh(mesh, ray.block.hitCoords.x, ray.block.hitCoords.y, ray.block.hitCoords.z, Blocks::highlight,
-                !World::getBlock(pos.x, pos.y+1, pos.z), !World::getBlock(pos.x, pos.y-1, pos.z), !World::getBlock(pos.x-1, pos.y, pos.z), !World::getBlock(pos.x+1, pos.y, pos.z), !World::getBlock(pos.x, pos.y, pos.z+1), !World::getBlock(pos.x, pos.y, pos.z-1), .8f, 0.f);
-        Renderer::renderMesh(mesh.data(), mesh.size());
-        DebugStats::triCount -= 6;
-        Renderer::flushRegularBatch();
+    if(!Input::isKeyDown(GLFW_KEY_X)) {
+        glDisable(GL_DEPTH_TEST);
+        if(ray.block.hit) {
+            highlightMesh.clear();
+            auto pos = ray.block.hitCoords;
+            Renderer::generateCubeMesh(highlightMesh, ray.block.hitCoords.x, ray.block.hitCoords.y, ray.block.hitCoords.z, Blocks::highlight,
+                    !World::getBlock(pos.x, pos.y+1, pos.z), !World::getBlock(pos.x, pos.y-1, pos.z), !World::getBlock(pos.x-1, pos.y, pos.z), !World::getBlock(pos.x+1, pos.y, pos.z), !World::getBlock(pos.x, pos.y, pos.z+1), !World::getBlock(pos.x, pos.y, pos.z-1), .8f, 0.f);
+            Renderer::renderMesh(highlightMesh.data, highlightMesh.size());
+            DebugStats::triCount -= 6;
+            Renderer::flushRegularBatch();
+        }
+        
+        glDisable(GL_CULL_FACE);
+        invMesh.clear();
+        for(int i = 0; i < invSize; i++)
+            Renderer::generateCubeMesh(invMesh, -(i * 1.1f), ( blockInHand == i ) * .5f, i * 1.1f, Blocks::getBlockFromID(inv[i]).tex, true, false, true, false, false, true);
+        Renderer::renderMesh(invMesh.data, invMesh.size());
+        Renderer::regularShader->use();
+        float ratio = (float)window->getWidth() / window->getHeight();
+        glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -1.5f, 0.5f);
+        Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
+        Renderer::regularBatch.flush();
+        glEnable(GL_CULL_FACE);
+        
+        glEnable(GL_DEPTH_TEST);
     }
-    
-    glDisable(GL_CULL_FACE);
-    std::vector<Vertex> mesh;
-    for(float i = 0; i < 9; i++)
-        Renderer::generateCubeMesh(mesh, -(i * 1.1f), ( blockInHand == i ) * .5f, i * 1.1f, Blocks::getBlockFromID(inv[(int)i]).tex, true, false, true, false, false, true);
-    Renderer::renderMesh(mesh.data(), mesh.size());
-    Renderer::regularShader->use();
-    float ratio = (float)window->getWidth() / window->getHeight();
-    glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -1.5f, 0.5f);
-    Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
-    Renderer::regularBatch.flush();
-    glEnable(GL_CULL_FACE);
-    
-    glEnable(GL_DEPTH_TEST);
 }
 
 void BatchScene3D::guiRender() {
@@ -157,7 +240,7 @@ void BatchScene3D::guiRender() {
         ImGui::Text("%.1f FPS (%.3f ms/frame) ", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
         ImGui::Text("Focused Block: Blocks::%s\n", Blocks::getBlockFromID(ray.block.blockID).name.c_str());
         ImGui::Text("Focused Liquid: Blocks::%s\n", Blocks::getBlockFromID(ray.liquid.blockID).name.c_str());
-        ImGui::Text("Block in hand: Blocks::%s\n", Blocks::getBlockFromID(blockInHand).name.c_str());
+        ImGui::Text("Block in hand: Blocks::%s\n", Blocks::getBlockFromID(inv[blockInHand]).name.c_str());
     }
 }
 
@@ -220,8 +303,8 @@ void BatchScene3D::update(double deltaTime) {
         else if(Input::mouseScrollY < 0)
             blockInHand++;
         
-        if(blockInHand > 8) blockInHand = 0;
-        else if(blockInHand < 0) blockInHand = 8;
+        if(blockInHand > invSize-1) blockInHand = 0;
+        else if(blockInHand < 0) blockInHand = invSize-1;
         
         if(ray.block.hit) {
             if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_LEFT) && Blocks::getBlockFromID(ray.block.blockID).breakable)

@@ -53,16 +53,16 @@ namespace Renderer {
         camera = cameraPtr;
     }
     
-    void generateQuadMesh(std::vector<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
-        newMesh.push_back(v0);
-        newMesh.push_back(v1);
-        newMesh.push_back(v2);
-        newMesh.push_back(v2);
-        newMesh.push_back(v3);
-        newMesh.push_back(v0);
+    void generateQuadMesh(Mesh<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
+        newMesh.addVertex(v0);
+        newMesh.addVertex(v1);
+        newMesh.addVertex(v2);
+        newMesh.addVertex(v2);
+        newMesh.addVertex(v3);
+        newMesh.addVertex(v0);
     }
 
-    void generateCubeMesh(std::vector<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light, float skyLight) {
+    void generateCubeMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light, float skyLight) {
         if(front) {
             generateQuadMesh(mesh,
                 { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light, skyLight },
