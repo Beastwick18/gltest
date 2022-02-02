@@ -23,6 +23,9 @@ namespace CameraConfig {
     float climbSpeed = 10.f;
     int blockReach = 6;
     bool noclip = false;
+    bool jumping = false;
+    float orthoZoom = 50.f;
+    bool ortho = false;;
     
     void setFov(float fov) {
         CameraConfig::fov = fov;
@@ -30,7 +33,10 @@ namespace CameraConfig {
     
     void setRotation(float xoff, float yoff) {
         yaw += xoff * mouseSensitivity * m_yaw;
-        pitch -= yoff * mouseSensitivity * m_yaw;
+        if(ortho)
+            pitch = -30.f;
+        else
+            pitch -= yoff * mouseSensitivity * m_yaw;
         
         if(pitch > maxPitch)
             pitch = maxPitch;
@@ -57,7 +63,6 @@ Camera::Camera(Window *window) {
     CameraConfig::updateRotation();
     
     this->window = window;
-    this->jumping = false;
     this->bobbing = 0;
     
     this->forwardSpeed = glm::vec3(0);
@@ -85,7 +90,7 @@ void Camera::update(double deltaTime) {
     else
         sidewaysSpeed = glm::lerp(sidewaysSpeed, glm::normalize(glm::cross(CameraConfig::cameraFront, CameraConfig::cameraUp)) * -CameraConfig::cameraSpeed, CameraConfig::lerpSpeed*ftime);
     
-    if(!jumping) {
+    if(!CameraConfig::jumping) {
         if(Input::isKeyDown(GLFW_KEY_W) || Input::isKeyDown(GLFW_KEY_D))
             bobbing += CameraConfig::bobbingSpeed * ftime;
         else if(Input::isKeyDown(GLFW_KEY_A) || Input::isKeyDown(GLFW_KEY_S))
@@ -103,8 +108,8 @@ void Camera::update(double deltaTime) {
         glm::vec3 speed = verticalSpeed + forwardSpeed + sidewaysSpeed;
         CameraConfig::cameraPos += ftime * speed;
     } else {
-        if(Input::isKeyDown(GLFW_KEY_SPACE) && !jumping) {
-            jumping = true;
+        if(Input::isKeyDown(GLFW_KEY_SPACE) && !CameraConfig::jumping) {
+            CameraConfig::jumping = true;
             verticalSpeed = CameraConfig::jumpVelocity * CameraConfig::cameraUp;
         }
         verticalSpeed -= ftime * CameraConfig::gravity * CameraConfig::cameraUp;
@@ -118,7 +123,7 @@ void Camera::update(double deltaTime) {
             if(glm::abs(CameraConfig::cameraPos.y - CameraConfig::ground) < .01f) {
                 CameraConfig::cameraPos.y = CameraConfig::ground;
             }
-            jumping = false;
+            CameraConfig::jumping = false;
         }
         
         CameraConfig::cameraPos += ftime *(speed);
@@ -137,7 +142,11 @@ void Camera::update(double deltaTime) {
     }
     
     view = glm::lookAt(newPos,newPos + CameraConfig::cameraFront, CameraConfig::cameraUp);
-    proj = glm::perspective(glm::radians(CameraConfig::fov), (float)window->getWidth()/(float)window->getHeight(), 0.1f, 1000.0f);
+    if(CameraConfig::ortho) {
+        float h = (float)window->getHeight() / window->getWidth();
+        proj = glm::ortho(-CameraConfig::orthoZoom, CameraConfig::orthoZoom, -h * CameraConfig::orthoZoom, h * CameraConfig::orthoZoom, -1000.f, 1000.f);
+    } else
+        proj = glm::perspective(glm::radians(CameraConfig::fov), (float)window->getWidth()/(float)window->getHeight(), 0.1f, 1000.0f);
 }
 
 void Camera::recalculateProjection() {}

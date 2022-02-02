@@ -25,8 +25,8 @@ void EBO::unbind() const {
 }
 
 void EBO::free(EBO *ebo) {
-    if(ebo != nullptr) {
-        glDeleteBuffers(1, &ebo->ID);
-        delete ebo;
-    }
+    if(ebo == nullptr)
+        return;
+    glDeleteBuffers(1, &ebo->ID);
+    delete ebo;
 }

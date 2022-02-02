@@ -19,6 +19,9 @@ namespace CameraConfig {
     extern float climbSpeed;
     extern int blockReach;
     extern bool noclip;
+    extern bool jumping;
+    extern float orthoZoom;
+    extern bool ortho;
     
     // Set the fov (in degrees)
     void setFov(float fov);
@@ -44,7 +47,6 @@ class Camera {
         glm::vec3 forwardSpeed, sidewaysSpeed, verticalSpeed;
         glm::mat4 view, proj;
         float bobbing, oldFov;
-        bool jumping;
         MinecraftClone::Window *window;
 };
 

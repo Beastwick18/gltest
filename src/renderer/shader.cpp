@@ -1,4 +1,5 @@
 #include "renderer/shader.h"
+#include "glm/gtc/type_ptr.hpp"
 #include <fstream>
 #include <optional>
 
@@ -137,9 +138,9 @@ void Shader::setUniform1f(const int location, const GLfloat value) const {
 }
 
 void Shader::setUniformMat4f(const char *name, const glm::mat4 &mat) const {
-    glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+    glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
 void Shader::setUniformMat4f(const int location, const glm::mat4 &mat) const {
-    glUniformMatrix4fv(location, 1, GL_FALSE, &mat[0][0]);
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
 }

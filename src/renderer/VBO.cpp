@@ -23,8 +23,8 @@ void VBO::unbind() const {
 }
 
 void VBO::free(VBO *vbo) {
-    if(vbo != nullptr) {
-        glDeleteBuffers(1, &vbo->ID);
-        delete vbo;
-    }
+    if(vbo == nullptr)
+        return;
+    glDeleteBuffers(1, &vbo->ID);
+    delete vbo;
 }

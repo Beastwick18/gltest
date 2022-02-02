@@ -124,34 +124,21 @@ void Chunk::generateChunk() {
                 for(int y = height; y < height+treeHeight; y++)
                     blocks[y][x][z] = logID;
                 
-                // blocks[height+treeHeight][x][z] = leavesID;
                 addBlock(leavesID, x, height + treeHeight, z);
                 
-                // blocks[height+treeHeight][x-1][z] = leavesID;
-                // blocks[height+treeHeight][x+1][z] = leavesID;
                 addBlock(leavesID, x - 1, height + treeHeight, z);
                 addBlock(leavesID, x + 1, height + treeHeight, z);
                 
-                // blocks[height+treeHeight][x][z-1] = leavesID;
-                // blocks[height+treeHeight][x][z+1] = leavesID;
                 addBlock(leavesID, x, height + treeHeight, z - 1);
                 addBlock(leavesID, x, height + treeHeight, z + 1);
                 
-                // blocks[height+treeHeight-1][x-1][z] = leavesID;
-                // blocks[height+treeHeight-1][x+1][z] = leavesID;
                 addBlock(leavesID, x - 1, height + treeHeight - 1, z);
                 addBlock(leavesID, x + 1, height + treeHeight - 1, z);
                 
-                // blocks[height+treeHeight-1][x-1][z+1] = leavesID;
-                // blocks[height+treeHeight-1][x][z+1] = leavesID;
-                // blocks[height+treeHeight-1][x+1][z+1] = leavesID;
                 addBlock(leavesID, x - 1, height + treeHeight - 1, z + 1);
                 addBlock(leavesID, x, height + treeHeight - 1, z + 1);
                 addBlock(leavesID, x + 1, height + treeHeight - 1, z + 1);
                 
-                // blocks[height+treeHeight-1][x-1][z-1] = leavesID;
-                // blocks[height+treeHeight-1][x][z-1] = leavesID;
-                // blocks[height+treeHeight-1][x+1][z-1] = leavesID;
                 addBlock(leavesID, x - 1, height + treeHeight - 1, z - 1);
                 addBlock(leavesID, x, height + treeHeight - 1, z - 1);
                 addBlock(leavesID, x + 1, height + treeHeight - 1, z - 1);
@@ -213,7 +200,7 @@ void Chunk::calculateSkyLightingSpread(int x, int y, int z, float prev) {
 void Chunk::calculateLighting(int x, int y, int z, float prev) {
     if(prev * 15 <= light[y][x][z] || prev <= 0 || x < 0 || y < minY || z < 0 || x >= chunkW || y >= maxY+1 || z >= chunkL)
         return;
-    float lb = .2f;
+    float lb = .15f;
     light[y][x][z] = glm::max(light[y][x][z], (unsigned char)(prev*15));
     // if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
     // if(auto b = blocks[y][x][z]; !Blocks::getBlockFromID(b).transparent && b != Blocks::nullBlockID) {
@@ -225,10 +212,10 @@ void Chunk::calculateLighting(int x, int y, int z, float prev) {
     // light[y][x][z] = 15;
     calculateLighting(x, y+1, z, prev-lb);
     calculateLighting(x, y-1, z, prev-lb);
-    calculateLighting(x-1, y, z, prev-lb);
     calculateLighting(x+1, y, z, prev-lb);
-    calculateLighting(x, y, z-1, prev-lb);
+    calculateLighting(x-1, y, z, prev-lb);
     calculateLighting(x, y, z+1, prev-lb);
+    calculateLighting(x, y, z-1, prev-lb);
 }
 
 // TODO: Either create a vector of Lights that contains all the lights that spread past the edge of the chunk, or
@@ -249,25 +236,27 @@ void Chunk::rebuildMesh() {
     mesh.clear();
     transparentMesh.clear();
     std::vector<Light> lights;
+    BlockID id;
     bool top, bottom, left, right, front, back;
+    Block b;
     for(int y = 0; y < chunkH; y++)
         for(int x = 0; x < chunkW; x++)
             for(int z = 0; z < chunkL; z++) {
                 light[y][x][z] = skyLight[y][x][z] = skyLightSpread[y][x][z] = 0;
-                BlockID id = blocks[y][x][z];
+                id = blocks[y][x][z];
                 if(id == Blocks::airBlockID || id == Blocks::nullBlockID)
                     continue;
-                const auto &b = Blocks::getBlockFromID(id);
+                b = Blocks::getBlockFromID(id);
                 if(b.transparent) {
-                    top = y == chunkH-1 ? true : !blocks[y+1][x][z],
-                    bottom = y == 0 ? false : !blocks[y-1][x][z],
+                    top = y == chunkH-1 || !blocks[y+1][x][z],
+                    bottom = y != 0 && !blocks[y-1][x][z],
                     left = x == 0 ? chunks.left && !chunks.left->blocks[y][chunkW-1][z] : !blocks[y][x-1][z],
                     right = x == chunkW-1 ? chunks.right && !chunks.right->blocks[y][0][z] : !blocks[y][x+1][z],
                     front = z == chunkL-1 ? chunks.front && !chunks.front->blocks[y][x][0] : !blocks[y][x][z+1],
                     back = z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1];
                 } else {
-                    top = y == chunkH-1 ? true : Blocks::getBlockFromID(blocks[y+1][x][z]).transparent,
-                    bottom = y == 0 ? false : Blocks::getBlockFromID(blocks[y-1][x][z]).transparent,
+                    top = y == chunkH-1 || Blocks::getBlockFromID(blocks[y+1][x][z]).transparent,
+                    bottom = y != 0 && Blocks::getBlockFromID(blocks[y-1][x][z]).transparent,
                     left = x == 0 ? chunks.left && Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : Blocks::getBlockFromID(blocks[y][x-1][z]).transparent,
                     right = x == chunkW-1 ? chunks.right && Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : Blocks::getBlockFromID(blocks[y][x+1][z]).transparent,
                     front = z == chunkL-1 ? chunks.front && Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : Blocks::getBlockFromID(blocks[y][x][z+1]).transparent,
@@ -277,71 +266,56 @@ void Chunk::rebuildMesh() {
                     if(y < minY) minY = y;
                     if(y > maxY) maxY = y;
                     
-                    if(b.lightEmit > 0.f) {
+                    if(b.lightEmit > 0.f)
                         lights.push_back({{x, y, z}, b.lightEmit});
-                    }
                 }
             }
-    // printf("%d %d\n", maxY, minY);
     for(int x = 0; x < chunkW; x++)
-        for(int z = 0; z < chunkL; z++) {
+        for(int z = 0; z < chunkL; z++)
             calculateSkyLighting(x, maxY, z, 1.f);
-            // for(int y = 0; y < chunkH; y++) {
-            //     const BlockID id = blocks[y][x][z];
-            //     if(Blocks::getBlockFromID(id).name == "Lava") {
-            //         calculateLighting(x, y, z, 1.f);
-            //     }
-            // }
-        }
-    // if(chunks.left) {
-    //     for(int z = 0; z < chunkL; z++) {
-    //         for(int y = 0; y < chunkH; y++) {
-    //             if(chunks.left.skyLight[y][0][z] != 0)
-                    
-    //         }
-    //     }
-    // }
-    for(const auto &p : lights) {
-        calculateLighting(p.pos.x, p.pos.y, p.pos.z, p.val);
-    }
     
-    for(int x = 0; x < chunkW; x++) {
-        for(int z = 0; z < chunkL; z++) {
-            for(int y = minY; y <= maxY; y++) {
-                const BlockID id = blocks[y][x][z];
+    for(const auto &p : lights)
+        calculateLighting(p.pos.x, p.pos.y, p.pos.z, p.val);
+    
+    float l, sl;
+    for(int y = minY; y <= maxY; y++) {
+        for(int x = 0; x < chunkW; x++) {
+            for(int z = 0; z < chunkL; z++) {
+                id = blocks[y][x][z];
                 if(id == Blocks::airBlockID || id == Blocks::nullBlockID)
                     continue;
                 
-                const Block b = Blocks::getBlockFromID(blocks[y][x][z]);
+                b = Blocks::getBlockFromID(blocks[y][x][z]);
                 // const float l = (float)(1+light[y][x][z])/16.f;
-                const float l = (float)(1+light[y][x][z])/16.f;
-                const float sl = (float)(1+glm::max(skyLight[y][x][z], skyLightSpread[y][x][z]))/16.f;
+                l = (float)(.5f+light[y][x][z])/15.5f;
+                sl = (float)(.5f+glm::max(skyLight[y][x][z], skyLightSpread[y][x][z]))/15.5f;
                 // const float l = Blocks::getBlockFromID(id).lightBlocking;
                 
+                SurroundingBlocks adj;
                 if(b.transparent) {
-                    top = y == chunkH-1 || !blocks[y+1][x][z];
-                    bottom = y != 0 && !blocks[y-1][x][z];
-                    left = x == 0 ? chunks.left && !chunks.left->blocks[y][chunkW-1][z] : !blocks[y][x-1][z];
-                    right = x == chunkW-1 ? chunks.right && !chunks.right->blocks[y][0][z] : !blocks[y][x+1][z];
-                    front = z == chunkL-1 ? chunks.front && !chunks.front->blocks[y][x][0] : !blocks[y][x][z+1];
-                    back = z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1];
+                    adj.top = y == chunkH-1 || !blocks[y+1][x][z];
+                    adj.bottom = y != 0 && !blocks[y-1][x][z];
+                    adj.left = x == 0 ? chunks.left && !chunks.left->blocks[y][chunkW-1][z] : !blocks[y][x-1][z];
+                    adj.right = x == chunkW-1 ? chunks.right && !chunks.right->blocks[y][0][z] : !blocks[y][x+1][z];
+                    adj.front = z == chunkL-1 ? chunks.front && !chunks.front->blocks[y][x][0] : !blocks[y][x][z+1];
+                    adj.back = z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1];
                     
                     if(top || bottom || left || right || front || back) {
                         if(b.liquid)
-                            Renderer::generateCubeMesh(transparentMesh, pos.x + x, y-(1.f/16.f), pos.y + z, b.tex, top, bottom, left, right, front, back, l, sl);
+                            Renderer::generateLiquidMesh(transparentMesh, {pos.x + x, y, pos.y + z}, b.tex, adj, l, sl);
                         else
-                            Renderer::generateCubeMesh(transparentMesh, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back, l, sl);
+                            Renderer::generateCubeMesh(transparentMesh, {pos.x + x, y, pos.y + z}, b.tex, adj, l, sl);
                     }
                 } else {
-                    top = y == chunkH-1 || Blocks::getBlockFromID(blocks[y+1][x][z]).transparent;
-                    bottom = y != 0 && Blocks::getBlockFromID(blocks[y-1][x][z]).transparent;
-                    left = x == 0 ? chunks.left && Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : Blocks::getBlockFromID(blocks[y][x-1][z]).transparent;
-                    right = x == chunkW-1 ? chunks.right && Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : Blocks::getBlockFromID(blocks[y][x+1][z]).transparent;
-                    front = z == chunkL-1 ? chunks.front && Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : Blocks::getBlockFromID(blocks[y][x][z+1]).transparent;
-                    back = z == 0 ? chunks.back && Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
+                    adj.top = y == chunkH-1 || Blocks::getBlockFromID(blocks[y+1][x][z]).transparent;
+                    adj.bottom = y != 0 && Blocks::getBlockFromID(blocks[y-1][x][z]).transparent;
+                    adj.left = x == 0 ? chunks.left && Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : Blocks::getBlockFromID(blocks[y][x-1][z]).transparent;
+                    adj.right = x == chunkW-1 ? chunks.right && Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : Blocks::getBlockFromID(blocks[y][x+1][z]).transparent;
+                    adj.front = z == chunkL-1 ? chunks.front && Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : Blocks::getBlockFromID(blocks[y][x][z+1]).transparent;
+                    adj.back = z == 0 ? chunks.back && Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
                     
                     if(top || bottom || left || right || front || back) {
-                        Renderer::generateCubeMesh(mesh, pos.x + x, y, pos.y + z, b.tex, top, bottom, left, right, front, back, l, sl);
+                        Renderer::generateCubeMesh(mesh, {pos.x + x, y, pos.y + z}, b.tex, adj, l, sl);
                     }
                 }
             }

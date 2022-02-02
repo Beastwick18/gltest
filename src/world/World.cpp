@@ -1,5 +1,6 @@
 #include "world/World.h"
 #include <future>
+#include "glm/gtc/constants.hpp"
 
 namespace World {
     std::map<std::string, Chunk> chunks;
@@ -8,6 +9,14 @@ namespace World {
     
     std::string generateChunkKey(const glm::ivec2 pos) {
         return std::to_string(pos.x) + "," + std::to_string(pos.y);
+    }
+    
+    glm::ivec2 toChunkCoords(glm::vec3 pos) {
+        return toChunkCoords(pos.x, pos.z);
+    }
+    
+    glm::ivec2 toChunkCoords(int x, int z) {
+        return {Chunk::chunkW * (x / Chunk::chunkW), Chunk::chunkL * (z / Chunk::chunkL)};
     }
     
     // Ray casting :D
@@ -44,13 +53,13 @@ namespace World {
                     break;
                 }
             
-            glm::ivec2 cpos { glm::floor(pos.x / Chunk::chunkW) * Chunk::chunkW, glm::floor(pos.z / Chunk::chunkL) * Chunk::chunkL};
+            const auto &cpos = toChunkCoords(pos);
             if(cpos != currChunk->getPos())
                 currChunk = getChunk(cpos);
             blockID = getBlock(currChunk, pos.x, pos.y, pos.z);
             if(Blocks::getBlockFromID(blockID).liquid) {
                 if(!result.liquid.hit) {
-                    result.liquid = {true, pos, {0, 0, 0}, blockID};
+                    result.liquid = {true, pos, glm::ivec3(0), blockID};
                     result.liquid.hitSide[side] = -step[side];
                 }
                 blockID = Blocks::airBlockID;
@@ -58,7 +67,7 @@ namespace World {
         }
         
         if(blockID != Blocks::nullBlockID && blockID != Blocks::airBlockID && !Blocks::getBlockFromID(blockID).liquid) {
-            result.block = { true, pos, {0, 0, 0}, blockID };
+            result.block = { true, pos, glm::ivec3(0), blockID };
             result.block.hitSide[side] = -step[side];
         }
         return result; 
@@ -69,7 +78,7 @@ namespace World {
     }
     
     Chunk *getChunk(const int x, const int z) {
-        glm::ivec2 chunkPos{Chunk::chunkW * (x / Chunk::chunkW), Chunk::chunkL * (z / Chunk::chunkL)};
+        glm::ivec2 chunkPos = toChunkCoords(x, z);
         
         auto i = chunks.find(generateChunkKey(chunkPos));
         if(i == chunks.end()) return nullptr;
@@ -95,6 +104,40 @@ namespace World {
         auto chunk = getChunk(x, z);
         if(chunk == nullptr) return Blocks::nullBlockID;
         return getBlock(chunk, x, y, z);
+    }
+    
+    SurroundingBlocks getAdjacentBlocks(const glm::ivec3 pos) {
+        return getAdjacentBlocks(pos.x, pos.y, pos.z);
+    }
+    
+    SurroundingBlocks getAdjacentBlocks(const int x, const int y, const int z) {
+        SurroundingBlocks s;
+        const Chunk *c = getChunk(x, z);
+        const auto &cpos = c->getPos();
+        s.top = World::getBlock(c, x, y+1, z);
+        s.bottom = World::getBlock(c, x, y-1, z);
+        
+        if(const auto &pos = toChunkCoords(x-1, z); pos == cpos)
+            s.left = World::getBlock(c, x-1, y, z);
+        else
+            s.left = World::getBlock(getChunk(pos), x-1, y, z);
+        
+        if(const auto &pos = toChunkCoords(x+1, z); pos == cpos)
+            s.right = World::getBlock(c, x+1, y, z);
+        else
+            s.right = World::getBlock(getChunk(pos), x+1, y, z);
+        
+        if(const auto &pos = toChunkCoords(x, z+1); pos == cpos)
+            s.front = World::getBlock(c, x, y, z+1);
+        else
+            s.front = World::getBlock(getChunk(pos), x, y, z+1);
+        
+        if(const auto &pos = toChunkCoords(x, z-1); pos == cpos)
+            s.back = World::getBlock(c, x, y, z-1);
+        else
+            s.back = World::getBlock(getChunk(pos), x, y, z-1);
+        
+        return s;
     }
     
     void addBlock(Chunk *chunk, const BlockID id, const glm::ivec3 pos) {

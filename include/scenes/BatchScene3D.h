@@ -27,11 +27,7 @@ class BatchScene3D : public Scene {
         MinecraftClone::Window *window;
         Camera *c;
         Frustum *f;
-        CubeMap *m;
-        Shader *ms;
         GLint mView, mProj, mTime;
-        VAO *vao;
-        VBO *vbo;
         RaycastResults ray;
         glm::mat4 blockView;
         float guiScale;

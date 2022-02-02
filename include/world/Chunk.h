@@ -4,7 +4,6 @@
 #include "renderer/Batch.hpp"
 #include "renderer/Frustum.h"
 #include "world/Block.h"
-#include "renderer/renderer.h"
 
 enum ChunkStatus {
     EMPTY,

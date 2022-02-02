@@ -16,22 +16,24 @@ namespace MinecraftClone {
         Window *window = nullptr;
         
         void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-            if(key >= 0 && key <= GLFW_KEY_LAST) {
-                if(action == GLFW_PRESS) {
-                    keysPressed[key] = true;
-                    keysBeginPress[key] = true;
-                    keysBeginRelease[key] = false;
-                } else if(action == GLFW_RELEASE) {
-                    keysPressed[key] = false;
-                    keysBeginPress[key] = false;
-                    keysBeginRelease[key] = true;
-                }
+            if(key < 0 || key > GLFW_KEY_LAST)
+                return;
+            
+            if(action == GLFW_PRESS) {
+                keysPressed[key] = true;
+                keysBeginPress[key] = true;
+                keysBeginRelease[key] = false;
+            } else if(action == GLFW_RELEASE) {
+                keysPressed[key] = false;
+                keysBeginPress[key] = false;
+                keysBeginRelease[key] = true;
             }
         }
         
         void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
-            if(button >= 0 && button < GLFW_MOUSE_BUTTON_LAST)
-                mouseButtonsBeginPressed[button] = mouseButtonsPressed[button] = action == GLFW_PRESS;
+            if(button < 0 && button > GLFW_MOUSE_BUTTON_LAST)
+                return;
+            mouseButtonsBeginPressed[button] = mouseButtonsPressed[button] = action == GLFW_PRESS;
         }
         
         void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
@@ -43,13 +45,16 @@ namespace MinecraftClone {
                 first = false;
             }
             
-            if(!cursorEnabled) {
+            if(!cursorEnabled || CameraConfig::ortho) {
                 deltaMouseX = (float)xpos - lastMouseX;
                 deltaMouseY = (float)ypos - lastMouseY;
             }
             lastMouseX = xpos;
             lastMouseY = ypos;
-            CameraConfig::setRotation(deltaMouseX, deltaMouseY);
+            if(!CameraConfig::ortho)
+                CameraConfig::setRotation(deltaMouseX, deltaMouseY);
+            else if(isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT))
+                CameraConfig::setRotation(2*deltaMouseX, 2*deltaMouseY);
         }
         
         void mouseScrollCallback(GLFWwindow *window, double xoff, double yoff) {

@@ -26,6 +26,7 @@ namespace MinecraftClone {
         if(w->glfwWindow == nullptr) {
             fprintf(stderr, "Fatal: Failed to create GLFW window [failure in %s on line %d]\n", __FILE__, __LINE__ - 2);
             glfwTerminate();
+            delete w;
             return nullptr;
         }
         // Make this window the current window we are working with
@@ -48,19 +49,21 @@ namespace MinecraftClone {
     }
     
     void Window::close() {
-        if(glfwWindow != nullptr)
-            glfwSetWindowShouldClose(glfwWindow, GLFW_TRUE);
+        if(glfwWindow == nullptr) return;
+        
+        glfwSetWindowShouldClose(glfwWindow, GLFW_TRUE);
     }
     
     void Window::setCallbacks() {
-        if(glfwWindow != nullptr) {
-            glfwSetKeyCallback(glfwWindow, Input::keyCallback);
-            glfwSetMouseButtonCallback(glfwWindow, Input::mouseButtonCallback);
-            glfwSetCursorPosCallback(glfwWindow, Input::mouseCallback);
-            glfwSetScrollCallback(glfwWindow, Input::mouseScrollCallback);
-            Input::window = this;
-        } else
+        if(glfwWindow == nullptr) {
             fprintf(stderr, "Non fatal: Cannot set callbacks, glfw window not created yet [line %d]\n", __LINE__);
+            return;
+        }
+        glfwSetKeyCallback(glfwWindow, Input::keyCallback);
+        glfwSetMouseButtonCallback(glfwWindow, Input::mouseButtonCallback);
+        glfwSetCursorPosCallback(glfwWindow, Input::mouseCallback);
+        glfwSetScrollCallback(glfwWindow, Input::mouseScrollCallback);
+        Input::window = this;
     }
     
     bool Window::shouldClose() {

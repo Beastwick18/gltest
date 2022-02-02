@@ -11,6 +11,8 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Input::disableCursor();
     dtSum = 0;
     
+    glLineWidth(1.0f);
+    glEnable(GL_LINE_SMOOTH);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     
@@ -25,67 +27,6 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     
     blockInHand = 0;
     
-    std::vector<std::string> files = {
-        "assets/textures/skybox/right.jpg",
-        "assets/textures/skybox/left.jpg",
-        "assets/textures/skybox/top.jpg",
-        "assets/textures/skybox/bottom.jpg",
-        "assets/textures/skybox/front.jpg",
-        "assets/textures/skybox/back.jpg",
-    };
-    m = CubeMap::loadFromImageFile(files);
-    ms = Shader::createShader("assets/shaders/skybox.glsl");
-    mView = ms->getUniformLocation("view");
-    mProj = ms->getUniformLocation("projection");
-    mTime = ms->getUniformLocation("time");
-    float skyboxVertices[] = {
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
-    VBlayout layout;
-    layout.push<float>(3);
-    vao = new VAO;
-    vbo = new VBO(skyboxVertices, sizeof(skyboxVertices), GL_STATIC_DRAW);
-    vao->addBuffer(vbo, layout);
     
     guiScale = 20.f;
     auto camPos = glm::vec3{1,-.5,-1};
@@ -131,31 +72,34 @@ BatchScene3D::~BatchScene3D() {
     Blocks::free();
     Camera::free(c);
     delete f;
-    VAO::free(vao);
-    VBO::free(vbo);
-    CubeMap::free(m);
-    Shader::freeShader(ms);
     invMesh.free();
     highlightMesh.free();
 }
 
+SurroundingBlocks invSides {true, false, true, false, false, true};
+
 // TODO: skybox (cubemap), that changes over time
 void BatchScene3D::render() {
-    glClearColor(0.35f * Renderer::skyBrightness, 0.52f * Renderer::skyBrightness, 0.95f * Renderer::skyBrightness, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // glClearColor(0.35f * Renderer::skyBrightness, 0.52f * Renderer::skyBrightness, 0.95f * Renderer::skyBrightness, 1.0f);
+    if(CameraConfig::ortho) {
+        glClearColor(0.35f * Renderer::skyBrightness, 0.52f * Renderer::skyBrightness, 0.95f * Renderer::skyBrightness, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    } else {
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        Renderer::renderCubemap();
+    }
     
-    glDepthMask(GL_FALSE);
-    ms->use();
-    ms->setUniformMat4f(mView, glm::mat4(glm::mat3(c->getView())));
-    ms->setUniformMat4f(mProj, c->getProjection());
-    ms->setUniform1f(mTime, Renderer::skyBrightness);
-    vao->bind();
-    m->bind();
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glDepthMask(GL_TRUE);
+    // glDisable(GL_DEPTH_TEST);
+    // glDepthMask(GL_TRUE);
+    // glDepthMask(GL_FALSE);
+    // glEnable(GL_DEPTH_TEST);
     
     double drawStart = glfwGetTime();
+    // const auto &hitChunk = World::toChunkCoords(ray.block.hitCoords);
     for(const auto &[_, c] : World::chunks) {
+        // if(ray.block.hit) {
         if(c.getStatus() == ChunkStatus::SHOWING) {
             const auto &v = c.getMesh();
             DebugStats::chunksRenderedCount++;
@@ -173,21 +117,40 @@ void BatchScene3D::render() {
     Renderer::render();
     
     if(!Input::isKeyDown(GLFW_KEY_X)) {
-        glDisable(GL_DEPTH_TEST);
-        if(ray.block.hit) {
-            highlightMesh.clear();
-            auto pos = ray.block.hitCoords;
-            Renderer::generateCubeMesh(highlightMesh, ray.block.hitCoords.x, ray.block.hitCoords.y, ray.block.hitCoords.z, Blocks::highlight,
-                    !World::getBlock(pos.x, pos.y+1, pos.z), !World::getBlock(pos.x, pos.y-1, pos.z), !World::getBlock(pos.x-1, pos.y, pos.z), !World::getBlock(pos.x+1, pos.y, pos.z), !World::getBlock(pos.x, pos.y, pos.z+1), !World::getBlock(pos.x, pos.y, pos.z-1), .8f, 0.f);
-            Renderer::renderMesh(highlightMesh.data, highlightMesh.size());
-            DebugStats::triCount -= 6;
-            Renderer::flushRegularBatch();
-        }
+        glClear(GL_DEPTH_BUFFER_BIT);
+        // glDisable(GL_DEPTH_TEST);
+        // glDepthMask(GL_TRUE);
         
+        if(ray.block.hit) {
+            auto pos = ray.block.hitCoords;
+            SurroundingBlocks adj = World::getAdjacentBlocks(pos);
+            adj.top *= !Blocks::getBlockFromID(adj.top).liquid;
+            adj.bottom *= !Blocks::getBlockFromID(adj.bottom).liquid;
+            adj.left *= !Blocks::getBlockFromID(adj.left).liquid;
+            adj.right *= !Blocks::getBlockFromID(adj.right).liquid;
+            adj.front *= !Blocks::getBlockFromID(adj.front).liquid;
+            adj.back *= !Blocks::getBlockFromID(adj.back).liquid;
+            // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+            highlightMesh.clear();
+            unsigned int triCount = DebugStats::triCount;
+            Renderer::generateCubeMesh(highlightMesh, pos, Blocks::highlight, !adj, 1.f, 1.f);
+            Renderer::renderMesh(highlightMesh.data, highlightMesh.size());
+            DebugStats::triCount = triCount;
+            Renderer::flushRegularBatch();
+            // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        }
+        // if(c.getPos() == hitChunk && ray.block.hit) {
         glDisable(GL_CULL_FACE);
         invMesh.clear();
-        for(int i = 0; i < invSize; i++)
-            Renderer::generateCubeMesh(invMesh, -(i * 1.1f), ( blockInHand == i ) * .5f, i * 1.1f, Blocks::getBlockFromID(inv[i]).tex, true, false, true, false, false, true);
+        for(int i = 0; i < invSize; i++) {
+            unsigned int triCount = DebugStats::triCount;
+            const Block &b = Blocks::getBlockFromID(inv[i]);
+            if(b.liquid)
+                Renderer::generateLiquidMesh(invMesh, {-i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f}, b.tex, invSides);
+            else
+                Renderer::generateCubeMesh(invMesh, {-i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f}, b.tex, invSides);
+            DebugStats::triCount = triCount;
+        }
         Renderer::renderMesh(invMesh.data, invMesh.size());
         Renderer::regularShader->use();
         float ratio = (float)window->getWidth() / window->getHeight();
@@ -196,8 +159,14 @@ void BatchScene3D::render() {
         Renderer::regularBatch.flush();
         glEnable(GL_CULL_FACE);
         
-        glEnable(GL_DEPTH_TEST);
+        // glEnable(GL_DEPTH_TEST);
+        // glDepthMask(GL_TRUE);
+    if(!CameraConfig::ortho)
+        Renderer::renderCrosshair();
     }
+    // glClear(GL_DEPTH_BUFFER_BIT);
+    // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 
 void BatchScene3D::guiRender() {
@@ -228,8 +197,10 @@ void BatchScene3D::guiRender() {
         ImGui::SliderFloat("Gui scale", &guiScale, 0.f, 100.f);
         ImGui::SliderFloat("Sky Brightness", &Renderer::skyBrightness, 0.f, 1.f);
         ImGui::SliderInt("Block Reach", &CameraConfig::blockReach, 0.f, 100.f);
+        ImGui::SliderFloat("Ortho Zoom", &CameraConfig::orthoZoom, 0.f, 500.f);
         
         ImGui::Checkbox("Wire mesh", &wiremeshToggle);
+        ImGui::Checkbox("Ortho", &CameraConfig::ortho);
         ImGui::Checkbox("No clip", &CameraConfig::noclip);
     }
     if(ImGui::CollapsingHeader("Debug stats")) {
@@ -244,6 +215,10 @@ void BatchScene3D::guiRender() {
     }
 }
 
+bool underwater = false;
+float oldG = CameraConfig::gravity;
+float oldJ = CameraConfig::jumpVelocity;
+float oldM = CameraConfig::cameraSpeed;
 void BatchScene3D::update(double deltaTime) {
     c->update(deltaTime);
     f->update(c->getProjection() * c->getView());
@@ -263,11 +238,22 @@ void BatchScene3D::update(double deltaTime) {
     auto pos2 = glm::floor(CameraConfig::cameraPos - glm::vec3(.4f, 1, -.4f));
     auto pos3 = glm::floor(CameraConfig::cameraPos - glm::vec3(.4f, 1, .4f));
     auto pos4 = glm::floor(CameraConfig::cameraPos - glm::vec3(-.4f, 1, .4f));
-    auto ground  = ceil(Chunk::getNoise(pos.x, pos.z)) + 70.7;
+    auto ground = ceil(Chunk::getNoise(pos.x, pos.z)) + 70.7;
     auto ground1 = ceil(Chunk::getNoise(pos2.x, pos2.z))+70.7;
     auto ground2 = ceil(Chunk::getNoise(pos3.x, pos3.z))+70.7;
     auto ground3 = ceil(Chunk::getNoise(pos4.x, pos4.z))+70.7;
     CameraConfig::ground = glm::max(glm::max(ground, ground1), glm::max(ground2, ground3));
+    // underwater = Blocks::getBlockFromID(World::getBlock(pos)).liquid || Blocks::getBlockFromID(World::getBlock(pos2)).liquid || Blocks::getBlockFromID(World::getBlock(pos3)).liquid || Blocks::getBlockFromID(World::getBlock(pos4)).liquid;
+    // if(underwater) {
+    //     CameraConfig::jumpVelocity = oldJ / 2.f;
+    //     CameraConfig::gravity = oldG / 2.f;
+    //     CameraConfig::cameraSpeed = oldM / 2.f;
+    //     CameraConfig::jumping = false;
+    // } else {
+    //     CameraConfig::jumpVelocity = oldJ;
+    //     CameraConfig::gravity = oldG;
+    //     CameraConfig::cameraSpeed = oldM;
+    // }
     
     if(Input::isKeyBeginDown(GLFW_KEY_TAB)) {
         if(Input::cursorEnabled)
@@ -297,11 +283,15 @@ void BatchScene3D::update(double deltaTime) {
         }
     
     if(!Input::cursorEnabled) {
+        // TODO: https://antongerdelan.net/opengl/raycasting.html
+        // Raycast point and click when in ortho mode
         ray = World::raycast(CameraConfig::cameraPos, CameraConfig::cameraFront, CameraConfig::blockReach);
-        if(Input::mouseScrollY > 0)
-            blockInHand--;
-        else if(Input::mouseScrollY < 0)
-            blockInHand++;
+        if(!CameraConfig::ortho) {
+            if(Input::mouseScrollY > 0)
+                blockInHand--;
+            else if(Input::mouseScrollY < 0)
+                blockInHand++;
+        }
         
         if(blockInHand > invSize-1) blockInHand = 0;
         else if(blockInHand < 0) blockInHand = invSize-1;
@@ -315,4 +305,6 @@ void BatchScene3D::update(double deltaTime) {
                 inv[blockInHand] = ray.block.blockID;
         }
     }
+    if(CameraConfig::ortho)
+        CameraConfig::orthoZoom += Input::mouseScrollY * -5;
 }

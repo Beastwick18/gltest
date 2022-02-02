@@ -126,17 +126,7 @@ int main(int argc, char **argv) {
         double deltaTime = (currentTime - lastTime);
         lastTime = currentTime;
         
-        // if(nextScene != nullptr) {
-        //     delete scene;
-        //     scene = nextScene;
-        //     nextScene = nullptr;
-        // }
-        
-        
-        // frameCount++;
-        
         DebugStats::updateCount++;
-        // printf("Here\n");
         
         window->pollEvents();
         double updateStart = glfwGetTime();
@@ -148,41 +138,10 @@ int main(int argc, char **argv) {
         if(dtSum >= targetFps) {
             double renderStart = glfwGetTime();
             scene.render();
-            Renderer::render();
+            // Renderer::render();
             glClear(GL_DEPTH_BUFFER_BIT);
-            qs->use();
             
             // float ratio = (float)window->getWidth()/(float)window->getHeight();
-            float x = 14.f/ window->getWidth();
-            float y = 2.f/  window->getHeight();
-            float x2 = 2.f/ window->getWidth();
-            float y2 = 14.f/window->getHeight();
-            float vertices[] = {
-                -x,  y, // Top left
-                 x,  y, // Top right
-                 x, -y, // Bottom right
-                -x, -y,  // Bottom left
-                -x2,  y2, // Top left
-                 x2,  y2, // Top right
-                 x2, -y2, // Bottom right
-                -x2, -y2  // Bottom left
-            };
-            static const unsigned int indices[] = {
-                0, 2, 1,
-                2, 0, 3,
-                4, 6, 5,
-                6, 4, 7
-            };
-            
-            vao->bind();
-            ebo->bind();
-            glDrawElements(GL_TRIANGLES, ebo->getCount(), GL_UNSIGNED_INT, nullptr);
-            
-            vbo->bind();
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-            ebo->bind();
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
-            glDrawArrays(GL_ARRAY_BUFFER, 0, 8);
             
             DebugStats::renderTime += glfwGetTime() - renderStart;
             ImGui_ImplOpenGL3_NewFrame();
