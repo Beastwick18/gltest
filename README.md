@@ -20,10 +20,11 @@ It is very Minecraft-like with blocks that can be placed and broken at will.
 - Make lighting system light each face of a voxel independently.
 
 ## Installation and Running
-- If you for some reason want to install this program, I would recommend installing it on Linux. I have managed to get it running on Windows but it is a pain It requires MinGW and GLFW and OpenGL installed on MinGW. Both must be accessable to the compiler. I have not tried to get it to work on Mac.
+- If you for some reason want to install this program, I would recommend installing it on Linux. I have managed to get it running on Windows but it is a pain because it requires MinGW as well as GLFW and OpenGL installed on MinGW. Both must be accessable to the compiler. Posix threads must be enabled in MinGW, because the program uses the mutex header. 
+- I have not tried to get it to work on Mac.
 - This program requires GLFW and OpenGL on Linux installations as well.
 - The only method for installation as of now is building from source. Download the source and run make on the root directory of the source. For best performance, run `make release`. The outputted binary requires that the assets folder be in the root of the current working directory.
-You can either copy the assets folder into the bin folder and run from inside the bin folder, or run `bin/release` from the root of the source so that the assets folder is accessable to the program.
+You can either copy the assets folder into the bin folder and run from inside the bin folder, or run `bin/release` from the root of the cloned repository so that the assets folder is accessable to the program.
 
 ## Controls
 The controls are curreltly all over the place. They are as follows:
