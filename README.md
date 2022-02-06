@@ -44,6 +44,7 @@ The controls are curreltly all over the place. They are as follows:
 
 ## Screenshots
 ![Lighting](./screenshots/lighting.png)
+![Orthographic](./screenshots/orthographic.png)
 ![The whole world](./screenshots/world.png)
 ![A bridge](./screenshots/bridge.png)
 ![Early development](./screenshots/old.png)
