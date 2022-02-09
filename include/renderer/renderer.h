@@ -21,9 +21,9 @@ namespace Renderer {
     void setCamera(const Camera *cameraPtr);
     void generateQuadMesh(Mesh<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
     void generateCubeMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, float light = 1.f, float skyLight = 1.f);
-    void generateCubeMesh(Mesh<Vertex> &newMesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light = 1.f, float skyLight = 1.f);
+    void generateCubeMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light = 1.f, float skyLight = 1.f);
     void generateLiquidMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, float light = 1.f, float skyLight = 1.f);
-    void generateLiquidMesh(Mesh<Vertex> &newMesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light = 1.f, float skyLight = 1.f);
+    void generateLiquidMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, float light = 1.f, float skyLight = 1.f);
     void renderMesh(const Vertex *mesh, const size_t size);
     void renderTransparentMesh(const Vertex *mesh, const size_t size);
     void render();

@@ -13,7 +13,7 @@ namespace Blocks {
     BlockID airBlockID = 0;
     Block airBlock { "Air", {}, 0, true, false, false, false, 0.f, 0.f };
     BlockID nullBlockID = 255;
-    Block nullBlock { "Null", {}, 255, false, false, false, false, 0.f, 0.f };
+    Block nullBlock { "Null", {}, 255, true, false, false, false, 0.f, 0.f };
     SpriteSheet *blockAtlas = nullptr;
     BlockTexture highlight;
     
@@ -56,7 +56,6 @@ namespace Blocks {
         Blocks::blocks[10] = Block{ "Cobblestone", { cobblestone }, 10, false, false, true, false, 1.0f, 0.f };
         Blocks::blocks[11] = Block{ "WoodenPlanks", { planks }, 11, false, false, true, false, 1.0f, 0.f };
         Blocks::blocks[12] = Block{ "Lava", { lava }, 12, true, true, true, false, 0.0f, 1.f };
-        Blocks::blocks[255] = Blocks::nullBlock;
     }
     
     void free() {

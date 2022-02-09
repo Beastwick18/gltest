@@ -44,7 +44,7 @@ uniform sampler2D tex0;
 
 vec3 sunDirection = normalize(vec3(-0.27, 0.57, -0.57));
 vec3 lightColor = vec3(1.0, 1.0, 1.0);
-float ambientStrength = 0.5;
+float ambientStrength = 0.8;
 
 void main() {
     vec3 ambient = ambientStrength * lightColor;

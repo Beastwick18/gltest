@@ -20,6 +20,9 @@ struct Light {
     float val;
 };
 
+struct AdjChunks;
+struct SurroundingBlocks;
+
 class Chunk {
 public:
     Chunk(int x, int z);
@@ -30,6 +33,9 @@ public:
     void calculateSkyLighting(int x = 0, int y = chunkH-1, int z = 0, float prev = 1.f);
     void calculateSkyLightingSpread(int x = 0, int y = chunkH-1, int z = 0, float prev = 1.f);
     void calculateLighting(int x = 0, int y = 0, int z = 0, float prev = 1.f);
+    void generateQuadMesh(Mesh<Vertex> &mesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
+    void generateCubeMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, AdjChunks chunks, SurroundingBlocks adj);
+    void generateLiquidMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, AdjChunks chunks, SurroundingBlocks adj);
     void rebuildMesh();
     BlockID getBlock(int x, int y, int z) const;
     void addBlock(BlockID id, int x, int y, int z);
@@ -44,6 +50,8 @@ public:
     inline const Mesh<Vertex>& getTransparentMesh() const { return transparentMesh; }
     inline glm::ivec2 getPos() const { return pos; }
     inline ChunkStatus getStatus() const { return status; }
+    float getLight(int x, int y, int z);
+    float getSkyLight(int x, int y, int z);
     static const int chunkW = 32, chunkL = 32, chunkH = 150;
     // static const int chunkW = 8, chunkL = 8, chunkH = 150;
     // static const int chunkW = 16, chunkL = 16, chunkH = 256;
