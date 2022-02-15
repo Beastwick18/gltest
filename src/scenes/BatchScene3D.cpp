@@ -4,14 +4,16 @@
 #include "utils/DebugStats.h"
 #include "glm/gtc/noise.hpp"
 #include "input/input.h"
+#include "glm/gtx/norm.hpp"
 
 using namespace MinecraftClone;
 
+int renderDistance = 4;
 BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Input::disableCursor();
     dtSum = 0;
     
-    glLineWidth(1.0f);
+    glLineWidth(2.0f);
     glEnable(GL_LINE_SMOOTH);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -50,7 +52,6 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     CameraConfig::cameraPos.y = ceil(Chunk::getNoise(pos.x, pos.z))+70.7;
     CameraConfig::cameraPos.z = floor((float)maxChunkZ / 2.f) * Chunk::chunkL + (float)Chunk::chunkL / 2.f;
     
-    
     f = new Frustum(c->getProjection() * c->getView());
     
     // Create all chunks asynchronously
@@ -80,7 +81,6 @@ SurroundingBlocks invSides {true, false, true, false, false, true};
 
 // TODO: skybox (cubemap), that changes over time
 void BatchScene3D::render() {
-    // glClearColor(0.35f * Renderer::skyBrightness, 0.52f * Renderer::skyBrightness, 0.95f * Renderer::skyBrightness, 1.0f);
     if(CameraConfig::ortho) {
         glClearColor(0.35f * Renderer::skyBrightness, 0.52f * Renderer::skyBrightness, 0.95f * Renderer::skyBrightness, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -91,30 +91,27 @@ void BatchScene3D::render() {
         Renderer::renderCubemap();
     }
     
-    // glDisable(GL_DEPTH_TEST);
-    // glDepthMask(GL_TRUE);
-    // glDepthMask(GL_FALSE);
-    // glEnable(GL_DEPTH_TEST);
-    
     double drawStart = glfwGetTime();
-    // const auto &hitChunk = World::toChunkCoords(ray.block.hitCoords);
-    for(const auto &[_, c] : World::chunks) {
-        // if(ray.block.hit) {
-        if(c.getStatus() == ChunkStatus::SHOWING) {
-            const auto &v = c.getMesh();
-            DebugStats::chunksRenderedCount++;
-            Renderer::renderMesh(v.data, v.size());
-        }
-    }
-    for(const auto &[_, c] : World::chunks) {
-        if(c.getStatus() == ChunkStatus::SHOWING) {
-            const auto &v = c.getTransparentMesh();
-            Renderer::renderTransparentMesh(v.data, v.size());
-        }
-    }
-    DebugStats::drawTime += glfwGetTime() - drawStart;
     
-    Renderer::render();
+    Renderer::regularShader->use();
+    Renderer::regularShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
+    Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+    for(const auto &[_, c] : World::chunks)
+        if(c.getStatus() == ChunkStatus::SHOWING) {
+            DebugStats::chunksRenderedCount++;
+            Renderer::regularBatch.flushMesh(c.getMesh());
+            // Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
+        }
+    glDisable(GL_CULL_FACE);
+    DebugStats::drawTime += glfwGetTime() - drawStart;
+    Renderer::transparentShader->use();
+    Renderer::transparentShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
+    Renderer::transparentShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+    Renderer::transparentShader->setUniform1f(Renderer::waveUniform, Renderer::wave);
+    for(const auto &[_, c] : World::chunks)
+        if(c.getStatus() == ChunkStatus::SHOWING)
+            Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
+    glEnable(GL_CULL_FACE);
     
     if(!Input::isKeyDown(GLFW_KEY_X)) {
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -124,45 +121,51 @@ void BatchScene3D::render() {
         if(ray.block.hit) {
             auto pos = ray.block.hitCoords;
             SurroundingBlocks adj = World::getAdjacentBlocks(pos);
-            adj.top *= !Blocks::getBlockFromID(adj.top).liquid;
-            adj.bottom *= !Blocks::getBlockFromID(adj.bottom).liquid;
-            adj.left *= !Blocks::getBlockFromID(adj.left).liquid;
-            adj.right *= !Blocks::getBlockFromID(adj.right).liquid;
-            adj.front *= !Blocks::getBlockFromID(adj.front).liquid;
-            adj.back *= !Blocks::getBlockFromID(adj.back).liquid;
+            adj.top *= !Blocks::getBlockFromID(adj.top).transparent;
+            adj.bottom *= !Blocks::getBlockFromID(adj.bottom).transparent;
+            adj.left *= !Blocks::getBlockFromID(adj.left).transparent;
+            adj.right *= !Blocks::getBlockFromID(adj.right).transparent;
+            adj.front *= !Blocks::getBlockFromID(adj.front).transparent;
+            adj.back *= !Blocks::getBlockFromID(adj.back).transparent;
             // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
             highlightMesh.clear();
             unsigned int triCount = DebugStats::triCount;
-            Renderer::generateCubeMesh(highlightMesh, pos, Blocks::highlight, !adj, 1.f, 1.f);
-            Renderer::renderMesh(highlightMesh.data, highlightMesh.size());
+            // if(ray.block.blockID == 13 || ray.block.blockID == 14)
+            //     Renderer::generateTorchMesh(highlightMesh, pos.x, pos.y, pos.z, Blocks::highlight, !adj, 1.0f, 1.f);
+            // else
+                Renderer::generateCubeMesh(highlightMesh, pos, Blocks::highlight, !adj, 1.0f, 1.f);
+            Renderer::regularShader->use();
+            Renderer::regularBatch.flushMesh(highlightMesh);
             DebugStats::triCount = triCount;
-            Renderer::flushRegularBatch();
+            // Renderer::flushRegularBatch();
             // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         }
         // if(c.getPos() == hitChunk && ray.block.hit) {
+        
+        // glEnable(GL_DEPTH_TEST);
+        // glDepthMask(GL_TRUE);
         glDisable(GL_CULL_FACE);
         invMesh.clear();
         for(int i = 0; i < invSize; i++) {
             unsigned int triCount = DebugStats::triCount;
             const Block &b = Blocks::getBlockFromID(inv[i]);
-            if(b.liquid)
+            if(b.id == 13 || b.id == 14)
+                Renderer::generateTorchMesh(invMesh, -i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f, b.tex, invSides);
+            else if(b.liquid)
                 Renderer::generateLiquidMesh(invMesh, {-i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f}, b.tex, invSides);
             else
                 Renderer::generateCubeMesh(invMesh, {-i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f}, b.tex, invSides);
             DebugStats::triCount = triCount;
         }
-        Renderer::renderMesh(invMesh.data, invMesh.size());
         Renderer::regularShader->use();
         float ratio = (float)window->getWidth() / window->getHeight();
         glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -1.5f, 0.5f);
         Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
-        Renderer::regularBatch.flush();
+        Renderer::regularBatch.flushMesh(invMesh);
         glEnable(GL_CULL_FACE);
         
-        // glEnable(GL_DEPTH_TEST);
-        // glDepthMask(GL_TRUE);
-    if(!CameraConfig::ortho)
-        Renderer::renderCrosshair();
+        if(!CameraConfig::ortho)
+            Renderer::renderCrosshair();
     }
     // glClear(GL_DEPTH_BUFFER_BIT);
     // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -197,6 +200,7 @@ void BatchScene3D::guiRender() {
         ImGui::SliderFloat("Gui scale", &guiScale, 0.f, 100.f);
         ImGui::SliderFloat("Sky Brightness", &Renderer::skyBrightness, 0.f, 1.f);
         ImGui::SliderInt("Block Reach", &CameraConfig::blockReach, 0.f, 100.f);
+        ImGui::SliderInt("Render Distance", &renderDistance, 0, 10);
         ImGui::SliderFloat("Ortho Zoom", &CameraConfig::orthoZoom, 0.f, 500.f);
         
         ImGui::Checkbox("Wire mesh", &wiremeshToggle);
@@ -227,7 +231,8 @@ void BatchScene3D::update(double deltaTime) {
         if(c.getStatus() != ChunkStatus::SHOWING && c.getStatus() != ChunkStatus::HIDDEN)
             continue;
         
-        if(c.isVisible(f))
+        float dist2 = glm::distance2((glm::vec2)c.getPos(), glm::vec2(glm::ivec2(CameraConfig::cameraPos.x, CameraConfig::cameraPos.z)/32)*32.f);
+        if(c.isVisible(f) && dist2 < (renderDistance * 32) * (renderDistance * 32))
             c.show();
         else
             c.hide();

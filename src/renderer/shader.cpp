@@ -23,7 +23,7 @@ Shader *Shader::createShader(const char *shaderPath) {
     s->attachShader(vertShader.value());
     s->attachShader(fragShader.value());
     
-    s->link();
+    glLinkProgram(s->shaderProgram);
     // Vertex and fragment are already attached to program, so we can delete them.
     glDeleteShader(vertShader.value());
     glDeleteShader(fragShader.value());
@@ -101,10 +101,6 @@ void Shader::freeShader(Shader *s) {
 
 void Shader::use() const {
     glUseProgram(shaderProgram);
-}
-
-void Shader::link() const {
-    glLinkProgram(shaderProgram);
 }
 
 void Shader::enableVertexAttribArray(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) const {

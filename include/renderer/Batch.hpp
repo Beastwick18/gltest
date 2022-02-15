@@ -89,9 +89,9 @@ class Batch {
         ~Batch() {}
         
         void init(const VBlayout &layout) {
-            size_t maxVertices = (verticesInKilobytes * 1024)/sizeof(T);
+            maxVertices = (verticesInKilobytes * 1024)/sizeof(T);
             // vertices = (T*)calloc(maxVertices, sizeof(T));
-            mesh.init(maxVertices);
+            // mesh.init(maxVertices);
             
             vao = new VAO;
             vbo = new VBO(sizeof(T) * maxVertices);
@@ -126,6 +126,15 @@ class Batch {
             mesh.clear();
         }
         
+        void flushMesh(const Mesh<T> &m) {
+            if(m.empty() || m.size() > maxVertices) return;
+            
+            vbo->setData(m.data, m.rawSize());
+            vao->bind();
+            glDrawArrays(GL_TRIANGLES, 0, m.size());
+            DebugStats::drawCalls++;
+        }
+        
         void free() {
             // if(vertices != nullptr) {
                 // std::free(vertices);
@@ -154,7 +163,7 @@ class Batch {
         // static constexpr size_t verticesInKilobytes = 511872;
         static constexpr size_t verticesInKilobytes = 4096;
         Mesh<T> mesh;
-        // size_t maxVertices;
+        size_t maxVertices;
         // size_t sizeOfVertex;
         // T* vertices = nullptr;
         VBO *vbo = nullptr;

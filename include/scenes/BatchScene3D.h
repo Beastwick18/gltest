@@ -36,8 +36,8 @@ class BatchScene3D : public Scene {
         Mesh<Vertex> invMesh;
         
         int blockInHand;
-        const int invSize = 12;
-        BlockID inv[12];
+        static const int invSize = 15;
+        BlockID inv[invSize];
         
         std::vector<std::future<void>> meshFutures;
         bool wiremeshToggle = false, wiremesh = false, showGui = false;

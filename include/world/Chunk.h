@@ -34,8 +34,9 @@ public:
     void calculateSkyLightingSpread(int x = 0, int y = chunkH-1, int z = 0, float prev = 1.f);
     void calculateLighting(int x = 0, int y = 0, int z = 0, float prev = 1.f);
     void generateQuadMesh(Mesh<Vertex> &mesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
-    void generateCubeMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, AdjChunks chunks, SurroundingBlocks adj);
-    void generateLiquidMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, AdjChunks chunks, SurroundingBlocks adj);
+    void generateCubeMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, SurroundingBlocks adj);
+    void generateLiquidMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, SurroundingBlocks adj);
+    void generateTorchMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, SurroundingBlocks adj);
     void rebuildMesh();
     BlockID getBlock(int x, int y, int z) const;
     void addBlock(BlockID id, int x, int y, int z);
@@ -61,8 +62,11 @@ private:
     Mesh<Vertex> transparentMesh;
     ChunkStatus status;
     BlockID blocks[chunkH][chunkW][chunkL];
+    
+    // Can fit 0-15 in 4 bits, consider packing two values into one byte
+    // Shift byte, use 15 (0b1111) as a mask
+    // Do this for both light and skyLight
     unsigned char light[chunkH][chunkW][chunkL];
-    unsigned char skyLightSpread[chunkH][chunkW][chunkL];
     unsigned char skyLight[chunkH][chunkW][chunkL];
     int maxY, minY;
 };

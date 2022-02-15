@@ -22,6 +22,7 @@ namespace CameraConfig {
     extern bool jumping;
     extern float orthoZoom;
     extern bool ortho;
+    extern float guiScale;
     
     // Set the fov (in degrees)
     void setFov(float fov);

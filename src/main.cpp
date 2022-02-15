@@ -15,7 +15,7 @@
 using namespace MinecraftClone;
 
 int windowWidth = 960, windowHeight = 720;
-const char *windowTitle = "Test Window 2: Press space to see something cool!";
+const char *windowTitle = "Voxel Game: Very original!";
 bool fullscreen = false, vsync = true;
 double targetFramerate = 120.0;
 
@@ -91,8 +91,7 @@ int main(int argc, char **argv) {
     glBlendEquation(GL_FUNC_ADD);
     glEnable(GL_BLEND);
     
-    Renderer::init();
-    
+    Renderer::init(window);
     
     
     VAO *vao = new VAO;

@@ -21,7 +21,8 @@ uniform float waveOffset;
 float waveHeight = .05;
 
 void main() {
-    float height = aPosition.y+ waveHeight*sin(aPosition.x + aPosition.z + waveOffset);
+    float height = aPosition.y;
+    // float height = aPosition.y+ waveHeight*sin(aPosition.x + aPosition.z + waveOffset);
     gl_Position = viewProj * model * vec4(aPosition.x, height, aPosition.z, 1.0);
     vTexCoord = aTex;
     vNormal = aNormal;
@@ -44,7 +45,7 @@ uniform sampler2D tex0;
 
 vec3 sunDirection = normalize(vec3(-0.27, 0.57, -0.57));
 vec3 lightColor = vec3(1.0, 1.0, 1.0);
-float ambientStrength = 0.8;
+float ambientStrength = 0.6;
 
 void main() {
     vec3 ambient = ambientStrength * lightColor;
@@ -53,6 +54,7 @@ void main() {
     vec3 diffuse = diff * lightColor;
     float light = max(vLight, vSkyLight * skyBrightness);
     outColor = vec4(min((diffuse + ambient), 1.0), 1.0) * texture(tex0, vTexCoord) * vec4(light, light, light, 1.0);
+    if (outColor.a == 0) { discard; }
     // float f = float(vLight);
     // float light = f / 15.0;
     // outColor = texture(tex0, vTexCoord) * vec4(vLight, vLight, vLight, 1.0);

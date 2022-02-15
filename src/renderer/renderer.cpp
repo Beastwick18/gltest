@@ -23,7 +23,8 @@ namespace Renderer {
     VBO *cVbo;
     EBO *cEbo;
     
-    static const Camera *camera;
+    const Camera *camera;
+    const MinecraftClone::Window *window;
     
     float wave = 0;
     
@@ -71,7 +72,8 @@ namespace Renderer {
          1.0f, -1.0f,  1.0f
     };
     
-    void init() {
+    void init(MinecraftClone::Window *window) {
+        Renderer::window = window;
         camera = nullptr;
         
         cVao = new VAO;
@@ -298,10 +300,76 @@ namespace Renderer {
         }
 
     }
+        
+    void generateTorchMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, float light, float skyLight) {
+        if(adj.front) {
+            generateQuadMesh(mesh,
+                { {x,   y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light, skyLight },
+                { {x,   y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y}, light, skyLight },
+                { {x+1, y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, light, skyLight },
+                { {x+1, y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, light, skyLight }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(adj.right) {
+            generateQuadMesh(mesh,
+                { {x+9.f/16.f, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, light, skyLight },
+                { {x+9.f/16.f, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, light, skyLight },
+                { {x+9.f/16.f, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, light, skyLight },
+                { {x+9.f/16.f, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, light, skyLight }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(adj.back) {
+            generateQuadMesh(mesh,
+                    { {x,   y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, light, skyLight },
+                    { {x+1, y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, light, skyLight },
+                    { {x+1, y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y}, light, skyLight },
+                    { {x,   y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, light, skyLight }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(adj.left) {
+            generateQuadMesh(mesh,
+                    { {x+7.f/16.f, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, light, skyLight },
+                    { {x+7.f/16.f, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, light, skyLight },
+                    { {x+7.f/16.f, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, light, skyLight },
+                    { {x+7.f/16.f, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, light, skyLight }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        if(adj.top) {
+            generateQuadMesh(mesh,
+                    { {x+9.f/16.f, y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, light, skyLight },
+                    { {x+7.f/16.f,   y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, light, skyLight },
+                    { {x+7.f/16.f,   y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, light, skyLight },
+                    { {x+9.f/16.f, y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, light, skyLight }
+            );
+            DebugStats::triCount += 1;
+        }
+        
+        // // No bottom on torches
+        // if(adj.bottom) {
+        //     float light = getLight(cx, y-1, cz);
+        //     float skyLight = getSkyLight(cx, y-1, cz);
+        //     generateQuadMesh(mesh,
+        //             { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, light, skyLight },
+        //             { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y}, light, skyLight },
+        //             { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y}, light, skyLight },
+        //             { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, light, skyLight }
+        //     );
+        //     DebugStats::triCount += 1;
+        // }
+    }
+
     
     void flushRegularBatch() {
         regularShader->use();
-        transparentShader->setUniform1f(sunUniform, skyBrightness);
+        regularShader->setUniform1f(sunUniform, skyBrightness);
         regularShader->setUniformMat4f(vpUniform, camera->getProjection() * camera->getView());
         regularBatch.flush();
     }

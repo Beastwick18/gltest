@@ -38,6 +38,9 @@ namespace Blocks {
         TexCoords cobblestone = blockAtlas->getSubTexture(3, 26);
         TexCoords planks = blockAtlas->getSubTexture(8, 16);
         TexCoords glowstone = blockAtlas->getSubTexture(14, 22);
+        TexCoords torch = blockAtlas->getSubTexture(20, 24);
+        TexCoords redstoneTorch = blockAtlas->getSubTexture(18, 31);
+        TexCoords glass = blockAtlas->getSubTexture(15, 27);
         
         // TexCoords square = blockAtlas->getSubTexture(30, 13, 2, 2);
         TexCoords white = blockAtlas->getSubTexture(29, 13);
@@ -56,6 +59,9 @@ namespace Blocks {
         Blocks::blocks[10] = Block{ "Cobblestone", { cobblestone }, 10, false, false, true, false, 1.0f, 0.f };
         Blocks::blocks[11] = Block{ "WoodenPlanks", { planks }, 11, false, false, true, false, 1.0f, 0.f };
         Blocks::blocks[12] = Block{ "Lava", { lava }, 12, true, true, true, false, 0.0f, 1.f };
+        Blocks::blocks[13] = Block{ "Torch", { torch }, 13, true, false, true, false, 0.0f, 1.f };
+        Blocks::blocks[14] = Block{ "RedstoneTorch", { redstoneTorch }, 14, true, false, true, false, 0.0f, 0.5f };
+        Blocks::blocks[15] = Block{ "Glass", { glass }, 15, true, false, true, false, 0.0f, 0.0f };
     }
     
     void free() {

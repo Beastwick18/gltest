@@ -25,7 +25,8 @@ namespace CameraConfig {
     bool noclip = false;
     bool jumping = false;
     float orthoZoom = 50.f;
-    bool ortho = false;;
+    bool ortho = false;
+    float guiScale = 20.f;
     
     void setFov(float fov) {
         CameraConfig::fov = fov;

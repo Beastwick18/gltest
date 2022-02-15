@@ -18,7 +18,6 @@ class Shader {
         static std::optional<std::pair<std::string, std::string>> readFile(const char *filepath);
         
         void use() const;
-        void link() const;
         
         void attachShader(GLint shader) const;
         
