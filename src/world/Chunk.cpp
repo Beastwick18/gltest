@@ -154,16 +154,13 @@ void Chunk::generateChunk() {
 }
 
 void Chunk::calculateSkyLighting(int x, int y, int z, float prev) {
-    if(prev * 15 <= skyLight[y][x][z] || prev <= 0|| x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y >= maxY+2 || y >= chunkH || z >= chunkL)
+    if(prev * 15 <= skyLight[y][x][z] || prev <= 0|| x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
         return;
     
     float lb = .2f;
     skyLight[y][x][z] = glm::max(skyLight[y][x][z], (unsigned char)(prev*15));
     if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
-        // skyLight[y][x][z] = (unsigned char)( prev*15 );
         prev = prev - Blocks::getBlockFromID(b).lightBlocking;
-        // skyLight[y][x][z] = prev*15;
-        // calculateLighting(x, y, z, prev);
         if(prev <= 0) return;
     }
     calculateSkyLighting(x, y-1, z, prev);
@@ -175,40 +172,29 @@ void Chunk::calculateSkyLighting(int x, int y, int z, float prev) {
 }
 
 void Chunk::calculateSkyLightingSpread(int x, int y, int z, float prev) {
-    if(prev * 15 <= skyLight[y][x][z] || prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y >= maxY+2 || y >= chunkH || z >= chunkL)
+    if(prev * 15 <= skyLight[y][x][z] || prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
         return;
     float lb = .2f;
     skyLight[y][x][z] = glm::max(skyLight[y][x][z], (unsigned char)(prev*15));
     if(const auto &b = blocks[y][x][z]; !Blocks::getBlockFromID(b).transparent && b != Blocks::nullBlockID) {
-    // if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
-        // light[y][x][z] = (unsigned char)( prev*15 );
-        // lb = glm::max(.2f, Blocks::getBlockFromID(b).lightBlocking);
-    //     // prev = prev - 0.9f;
-        // prev -= lb;
         return;
     }
-    // light[y][x][z] = 15;
     calculateSkyLightingSpread(x, y+1, z, prev - lb);
     calculateSkyLightingSpread(x, y-1, z, prev - lb);
     calculateSkyLightingSpread(x-1, y, z, prev - lb);
     calculateSkyLightingSpread(x+1, y, z, prev - lb);
     calculateSkyLightingSpread(x, y, z-1, prev - lb);
     calculateSkyLightingSpread(x, y, z+1, prev - lb);
-
 }
 
 void Chunk::calculateLighting(int x, int y, int z, float prev) {
-    if(prev * 15 <= light[y][x][z] || prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y >= maxY+2 || y >= chunkH || z >= chunkL)
+    if(prev * 15 <= light[y][x][z] || prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
         return;
     float lb = .15f;
     light[y][x][z] = glm::max(light[y][x][z], (unsigned char)(prev*15));
     // if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
-    if(const auto &b = blocks[y][x][z]; !Blocks::getBlockFromID(b).transparent && b != Blocks::nullBlockID && prev != 1.f) {
-        // light[y][x][z] = (unsigned char)( prev*15 );
-        // lb = Blocks::getBlockFromID(b).lightBlocking;
-    //     // prev = prev - 0.9f;
+    if(const auto &b = blocks[y][x][z]; !Blocks::getBlockFromID(b).transparent && b != Blocks::nullBlockID && prev != 1.f)
         return;
-    }
     // light[y][x][z] = 15;
     calculateLighting(x, y+1, z, prev-lb);
     calculateLighting(x, y-1, z, prev-lb);
@@ -461,6 +447,14 @@ void Chunk::generateTorchMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTe
 // }
 }
 
+bool transparentVisible(BlockID id, BlockID other) {
+    return other != id && Blocks::getBlockFromID(other).transparent;
+}
+
+bool opaqueVisible(BlockID other) {
+    return Blocks::getBlockFromID(other).transparent;
+}
+
 // TODO: Either create a vector of Lights that contains all the lights that spread past the edge of the chunk, or
 // make a way to grab a light value and start another calculateSkyLighting/calculateLighting from that position.
 // TODO: Maybe have multiple meshes so that we only have to rebuild a portion of the chunk, as opposed to meshing
@@ -480,32 +474,49 @@ void Chunk::rebuildMesh() {
     transparentMesh.clear();
     std::vector<Light> lights;
     BlockID id;
-    bool top, bottom, left, right, front, back;
+    bool visible;
     Block b;
     for(int y = 0; y < chunkH; y++)
         for(int x = 0; x < chunkW; x++)
             for(int z = 0; z < chunkL; z++) {
-                light[y][x][z] = skyLight[y][x][z] =  0;
+                light[y][x][z] = skyLight[y][x][z] = 0;
                 id = blocks[y][x][z];
                 if(id == Blocks::airBlockID || id == Blocks::nullBlockID)
                     continue;
                 b = Blocks::getBlockFromID(id);
-                if(b.transparent) {
-                    top = y == chunkH-1 || !blocks[y+1][x][z],
-                    bottom = y != 0 && !blocks[y-1][x][z],
-                    left = x == 0 ? chunks.left && !chunks.left->blocks[y][chunkW-1][z] : !blocks[y][x-1][z],
-                    right = x == chunkW-1 ? chunks.right && !chunks.right->blocks[y][0][z] : !blocks[y][x+1][z],
-                    front = z == chunkL-1 ? chunks.front && !chunks.front->blocks[y][x][0] : !blocks[y][x][z+1],
-                    back = z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1];
-                } else {
-                    top = y == chunkH-1 || Blocks::getBlockFromID(blocks[y+1][x][z]).transparent,
-                    bottom = y != 0 && Blocks::getBlockFromID(blocks[y-1][x][z]).transparent,
-                    left = x == 0 ? chunks.left && Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : Blocks::getBlockFromID(blocks[y][x-1][z]).transparent,
-                    right = x == chunkW-1 ? chunks.right && Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : Blocks::getBlockFromID(blocks[y][x+1][z]).transparent,
-                    front = z == chunkL-1 ? chunks.front && Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : Blocks::getBlockFromID(blocks[y][x][z+1]).transparent,
-                    back = z == 0 ? chunks.back && Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
+                visible = false;
+                if( b.transparent && ( ( y == chunkH-1 || transparentVisible(id, blocks[y+1][x][z]) )
+                    || ( y != 0 && transparentVisible(id, blocks[y-1][x][z]) )
+                    || ( x == 0
+                        ? chunks.left && transparentVisible(id, chunks.left->blocks[y][chunkW-1][z])
+                        : transparentVisible(id, blocks[y][x-1][z]) )
+                    || ( x == chunkW-1
+                        ? chunks.right && transparentVisible(id, chunks.right->blocks[y][0][z])
+                        : transparentVisible(id, blocks[y][x+1][z]) )
+                    || ( z == chunkL-1
+                        ? chunks.front && transparentVisible(id, chunks.front->blocks[y][x][0])
+                        : transparentVisible(id, blocks[y][x][z+1]) )
+                    || ( z == 0
+                        ? chunks.back && transparentVisible(id, chunks.back->blocks[y][x][chunkL-1])
+                        : transparentVisible(id, blocks[y][x][z-1]) ) ) ) {
+                    visible = true;
+                } else if(( y == chunkH-1 || opaqueVisible(blocks[y+1][x][z]) )
+                    || ( y != 0 && opaqueVisible(blocks[y-1][x][z]) )
+                    || ( x == 0
+                        ? chunks.left && opaqueVisible(chunks.left->blocks[y][chunkW-1][z])
+                        : opaqueVisible(blocks[y][x-1][z]) )
+                    || ( x == chunkW-1
+                        ? chunks.right && opaqueVisible(chunks.right->blocks[y][0][z])
+                        : opaqueVisible(blocks[y][x+1][z]) )
+                    || ( z == chunkL-1
+                        ? chunks.front && opaqueVisible(chunks.front->blocks[y][x][0])
+                        : opaqueVisible(blocks[y][x][z+1]) )
+                    || ( z == 0
+                        ? chunks.back && opaqueVisible(chunks.back->blocks[y][x][chunkL-1])
+                        : opaqueVisible(blocks[y][x][z-1]) ) ) {
+                    visible = true;
                 }
-                if(top || bottom || left || right || front || back) {
+                if(visible) {
                     if(y < minY) minY = y;
                     if(y > maxY) maxY = y;
                     
@@ -515,12 +526,11 @@ void Chunk::rebuildMesh() {
             }
     for(int x = 0; x < chunkW; x++)
         for(int z = 0; z < chunkL; z++)
-            calculateSkyLighting(x, maxY+0, z, 1.f);
+            calculateSkyLighting(x, maxY+1, z, 1.f);
     
     for(const auto &p : lights)
         calculateLighting(p.pos.x, p.pos.y, p.pos.z, p.val);
     
-    // float l, sl;
     for(int y = minY; y <= maxY; y++) {
         for(int x = 0; x < chunkW; x++) {
             for(int z = 0; z < chunkL; z++) {
@@ -529,40 +539,50 @@ void Chunk::rebuildMesh() {
                     continue;
                 
                 b = Blocks::getBlockFromID(blocks[y][x][z]);
-                // const float l = (float)(1+light[y][x][z])/16.f;
-                // l = (float)(.5f+light[y][x][z])/15.5f;
-                // sl = (float)(.5f+skyLight[y][x][z])/15.5f;
-                // const float l = Blocks::getBlockFromID(id).lightBlocking;
                 
                 SurroundingBlocks adj;
                 if(b.id == 13 || b.id == 14)
-                    generateTorchMesh(transparentMesh, x, y, z, b.tex, {true, true, true, true, true, true});
+                    generateTorchMesh(transparentMesh, x, y, z, b.tex, adj);
                 else if(b.transparent) {
-                    adj.top = y == chunkH-1 || !blocks[y+1][x][z],
-                    adj.bottom = y != 0 && !blocks[y-1][x][z],
-                    adj.left = x == 0 ? chunks.left && !chunks.left->blocks[y][chunkW-1][z] : !blocks[y][x-1][z],
-                    adj.right = x == chunkW-1 ? chunks.right && !chunks.right->blocks[y][0][z] : !blocks[y][x+1][z],
-                    adj.front = z == chunkL-1 ? chunks.front && !chunks.front->blocks[y][x][0] : !blocks[y][x][z+1],
-                    adj.back = z == 0 ? chunks.back && !chunks.back->blocks[y][x][chunkL-1] : !blocks[y][x][z-1];
+                    adj.top = ( y == chunkH-1 ) || transparentVisible(id, blocks[y+1][x][z]);
+                    adj.bottom = ( y != 0 ) && transparentVisible(id, blocks[y-1][x][z]);
+                    adj.left = ( x == 0 )
+                        ? chunks.left && transparentVisible(id, chunks.left->blocks[y][chunkW-1][z])
+                        : transparentVisible(id, blocks[y][x-1][z]);
+                    adj.right = ( x == chunkW-1 )
+                        ? chunks.right && transparentVisible(id, chunks.right->blocks[y][0][z])
+                        : transparentVisible(id, blocks[y][x+1][z]);
+                    adj.front = ( z == chunkL-1 )
+                        ? chunks.front && transparentVisible(id, chunks.front->blocks[y][x][0])
+                        : transparentVisible(id, blocks[y][x][z+1]);
+                    adj.back = ( z == 0 )
+                        ? chunks.back && transparentVisible(id, chunks.back->blocks[y][x][chunkL-1])
+                        : transparentVisible(id, blocks[y][x][z-1]);
                     
-                    if(top || bottom || left || right || front || back) {
+                    if(adj.top || adj.bottom || adj.left || adj.right || adj.front || adj.back) {
                         if(b.liquid)
                             generateLiquidMesh(transparentMesh, x, y, z, b.tex, adj);
                         else
                             generateCubeMesh(transparentMesh, x, y, z, b.tex, adj);
                     }
                 } else {
-                    adj.top = y == chunkH-1 || Blocks::getBlockFromID(blocks[y+1][x][z]).transparent;
-                    adj.bottom = y != 0 && Blocks::getBlockFromID(blocks[y-1][x][z]).transparent;
-                    adj.left = x == 0 ? chunks.left && Blocks::getBlockFromID(chunks.left->blocks[y][chunkW-1][z]).transparent : Blocks::getBlockFromID(blocks[y][x-1][z]).transparent;
-                    adj.right = x == chunkW-1 ? chunks.right && Blocks::getBlockFromID(chunks.right->blocks[y][0][z]).transparent : Blocks::getBlockFromID(blocks[y][x+1][z]).transparent;
-                    adj.front = z == chunkL-1 ? chunks.front && Blocks::getBlockFromID(chunks.front->blocks[y][x][0]).transparent : Blocks::getBlockFromID(blocks[y][x][z+1]).transparent;
-                    adj.back = z == 0 ? chunks.back && Blocks::getBlockFromID(chunks.back->blocks[y][x][chunkL-1]).transparent : Blocks::getBlockFromID(blocks[y][x][z-1]).transparent;
+                    adj.top = y == chunkH-1 || opaqueVisible(blocks[y+1][x][z]);
+                    adj.bottom = y != 0 && opaqueVisible(blocks[y-1][x][z]);
+                    adj.left = x == 0
+                        ? chunks.left && opaqueVisible(chunks.left->blocks[y][chunkW-1][z])
+                        : opaqueVisible(blocks[y][x-1][z]);
+                    adj.right = x == chunkW-1
+                        ? chunks.right && opaqueVisible(chunks.right->blocks[y][0][z])
+                        : opaqueVisible(blocks[y][x+1][z]);
+                    adj.front = z == chunkL-1
+                        ? chunks.front && opaqueVisible(chunks.front->blocks[y][x][0])
+                        : opaqueVisible(blocks[y][x][z+1]);
+                    adj.back = z == 0
+                        ? chunks.back && opaqueVisible(chunks.back->blocks[y][x][chunkL-1])
+                        : opaqueVisible(blocks[y][x][z-1]);
                     
-                    if(top || bottom || left || right || front || back) {
-                        // Renderer::generateCubeMesh(mesh, {pos.x + x, y, pos.y + z}, b.tex, adj, l, sl);
+                    if(adj.top || adj.bottom || adj.left || adj.right || adj.front || adj.back)
                         generateCubeMesh(mesh, x, y, z, b.tex, adj);
-                    }
                 }
             }
         }

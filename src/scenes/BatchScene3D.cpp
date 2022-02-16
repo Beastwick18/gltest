@@ -62,9 +62,6 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
             World::chunks[World::generateChunkKey({x * Chunk::chunkW, z * Chunk::chunkL})] = c;
         }
     
-    // for(auto &[_, c] : World::chunks) {
-    //     c.calculateSkyLighting();
-    // }
     for(auto &[_, c] : World::chunks)
         meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, &c));
 }
@@ -100,9 +97,8 @@ void BatchScene3D::render() {
         if(c.getStatus() == ChunkStatus::SHOWING) {
             DebugStats::chunksRenderedCount++;
             Renderer::regularBatch.flushMesh(c.getMesh());
-            // Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
         }
-    glDisable(GL_CULL_FACE);
+    // glDisable(GL_CULL_FACE);
     DebugStats::drawTime += glfwGetTime() - drawStart;
     Renderer::transparentShader->use();
     Renderer::transparentShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
@@ -111,13 +107,11 @@ void BatchScene3D::render() {
     for(const auto &[_, c] : World::chunks)
         if(c.getStatus() == ChunkStatus::SHOWING)
             Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
-    glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     
     if(!Input::isKeyDown(GLFW_KEY_X)) {
         glClear(GL_DEPTH_BUFFER_BIT);
-        // glDisable(GL_DEPTH_TEST);
-        // glDepthMask(GL_TRUE);
-        
+            
         if(ray.block.hit) {
             auto pos = ray.block.hitCoords;
             SurroundingBlocks adj = World::getAdjacentBlocks(pos);
@@ -127,24 +121,14 @@ void BatchScene3D::render() {
             adj.right *= !Blocks::getBlockFromID(adj.right).transparent;
             adj.front *= !Blocks::getBlockFromID(adj.front).transparent;
             adj.back *= !Blocks::getBlockFromID(adj.back).transparent;
-            // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
             highlightMesh.clear();
             unsigned int triCount = DebugStats::triCount;
-            // if(ray.block.blockID == 13 || ray.block.blockID == 14)
-            //     Renderer::generateTorchMesh(highlightMesh, pos.x, pos.y, pos.z, Blocks::highlight, !adj, 1.0f, 1.f);
-            // else
-                Renderer::generateCubeMesh(highlightMesh, pos, Blocks::highlight, !adj, 1.0f, 1.f);
+            Renderer::generateCubeMesh(highlightMesh, pos, Blocks::highlight, !adj, 1.0f, 1.f);
             Renderer::regularShader->use();
             Renderer::regularBatch.flushMesh(highlightMesh);
             DebugStats::triCount = triCount;
-            // Renderer::flushRegularBatch();
-            // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         }
-        // if(c.getPos() == hitChunk && ray.block.hit) {
         
-        // glEnable(GL_DEPTH_TEST);
-        // glDepthMask(GL_TRUE);
-        glDisable(GL_CULL_FACE);
         invMesh.clear();
         for(int i = 0; i < invSize; i++) {
             unsigned int triCount = DebugStats::triCount;
@@ -162,7 +146,7 @@ void BatchScene3D::render() {
         glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -1.5f, 0.5f);
         Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
         Renderer::regularBatch.flushMesh(invMesh);
-        glEnable(GL_CULL_FACE);
+        // glEnable(GL_CULL_FACE);
         
         if(!CameraConfig::ortho)
             Renderer::renderCrosshair();
