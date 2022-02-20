@@ -15,7 +15,10 @@ void VAO::addBuffer(const VBO *vbo, const VBlayout &layout) {
     unsigned int i = 0, offset = 0;
     for(const auto &e : layout.getElements()) {
         glVertexArrayAttribBinding(ID, i, 0);
-        glVertexArrayAttribFormat(ID, i, e.count, e.type, e.normalized, offset);
+        if(e.type == GL_INT) {
+            glVertexArrayAttribIFormat(ID, i, e.count, e.type, offset);
+        } else
+            glVertexArrayAttribFormat(ID, i, e.count, e.type, e.normalized, offset);
         offset += e.count * VBelement::getSize(e.type);
         glEnableVertexArrayAttrib(ID, i++);
     }

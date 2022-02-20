@@ -9,6 +9,7 @@
 using namespace MinecraftClone;
 
 int renderDistance = 4;
+bool guiToggle = true;
 BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Input::disableCursor();
     dtSum = 0;
@@ -109,7 +110,10 @@ void BatchScene3D::render() {
             Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
     // glEnable(GL_CULL_FACE);
     
-    if(!Input::isKeyDown(GLFW_KEY_X)) {
+    if(Input::isKeyBeginDown(GLFW_KEY_X)) {
+        guiToggle = !guiToggle;
+    }
+    if(guiToggle) {
         glClear(GL_DEPTH_BUFFER_BIT);
             
         if(ray.block.hit) {
@@ -123,7 +127,7 @@ void BatchScene3D::render() {
             adj.back *= !Blocks::getBlockFromID(adj.back).transparent;
             highlightMesh.clear();
             unsigned int triCount = DebugStats::triCount;
-            Renderer::generateCubeMesh(highlightMesh, pos, Blocks::highlight, !adj, 1.0f, 1.f);
+            Renderer::generateCubeMesh(highlightMesh, pos, Blocks::highlight, !adj, 0xFF);
             Renderer::regularShader->use();
             Renderer::regularBatch.flushMesh(highlightMesh);
             DebugStats::triCount = triCount;

@@ -14,7 +14,8 @@ Chunk::Chunk(int xx, int yy) : pos(xx*chunkW,yy*chunkL) {
         for(int x = 0; x < chunkW; x++)
             for(int z = 0; z < chunkL; z++) {
                 blocks[y][x][z] = 0;
-                skyLight[y][x][z] = 1;
+                // skyLight[y][x][z] = 1;
+                light[y][x][z] = 1;
             }
     status = EMPTY;
     mesh.init(chunkW * chunkH * chunkL / 2);
@@ -154,11 +155,16 @@ void Chunk::generateChunk() {
 }
 
 void Chunk::calculateSkyLighting(int x, int y, int z, float prev) {
-    if(prev * 15 <= skyLight[y][x][z] || prev <= 0|| x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
+    if(prev <= 0|| x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
+        return;
+    unsigned char currLight = light[y][x][z] >> 4;
+    unsigned char newLight = (unsigned char)(prev*15);
+    if(newLight <= currLight)
         return;
     
     float lb = .2f;
-    skyLight[y][x][z] = glm::max(skyLight[y][x][z], (unsigned char)(prev*15));
+    setSkyLight(x, y, z, newLight);
+    // skyLight[y][x][z] = glm::max(skyLight[y][x][z], (unsigned char)(prev*15));
     if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
         prev = prev - Blocks::getBlockFromID(b).lightBlocking;
         if(prev <= 0) return;
@@ -172,10 +178,15 @@ void Chunk::calculateSkyLighting(int x, int y, int z, float prev) {
 }
 
 void Chunk::calculateSkyLightingSpread(int x, int y, int z, float prev) {
-    if(prev * 15 <= skyLight[y][x][z] || prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
+    if(prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
+        return;
+    float currLight = light[y][x][z] >> 4;
+    float newLight = (unsigned char)(prev * 15);
+    if(newLight <= currLight)
         return;
     float lb = .2f;
-    skyLight[y][x][z] = glm::max(skyLight[y][x][z], (unsigned char)(prev*15));
+    setSkyLight(x, y, z, newLight);
+    // skyLight[y][x][z] = glm::max(skyLight[y][x][z], (unsigned char)(prev*15));
     if(const auto &b = blocks[y][x][z]; !Blocks::getBlockFromID(b).transparent && b != Blocks::nullBlockID) {
         return;
     }
@@ -188,10 +199,13 @@ void Chunk::calculateSkyLightingSpread(int x, int y, int z, float prev) {
 }
 
 void Chunk::calculateLighting(int x, int y, int z, float prev) {
-    if(prev * 15 <= light[y][x][z] || prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
+    float newLight = (unsigned char) (prev * 15);
+    float currLight = getLight(x, y, z);
+    if(newLight <= currLight || prev <= 0 || x < 0 || y < minY || y < 0 || z < 0 || x >= chunkW || y > maxY+1 || y >= chunkH || z >= chunkL)
         return;
     float lb = .15f;
-    light[y][x][z] = glm::max(light[y][x][z], (unsigned char)(prev*15));
+    setLight(x, y, z, newLight);
+    // light[y][x][z] = glm::max(light[y][x][z], (unsigned char)(prev*15));
     // if(auto b = blocks[y][x][z]; b != Blocks::airBlockID && b != Blocks::nullBlockID) {
     if(const auto &b = blocks[y][x][z]; !Blocks::getBlockFromID(b).transparent && b != Blocks::nullBlockID && prev != 1.f)
         return;
@@ -217,73 +231,79 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
     float x = pos.x + cx;
     float z = pos.y + cz;
     if(adj.front) {
-        float light = getLight(cx, y, cz+1);
-        float skyLight = getSkyLight(cx, y, cz+1);
+        unsigned char light = getLight(cx, y, cz+1);
+        unsigned char skyLight = getSkyLight(cx, y, cz+1);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-            { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light, skyLight },
-            { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y}, light, skyLight },
-            { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, light, skyLight },
-            { {x+1, y+1, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, light, skyLight }
+            { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, l},
+            { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y}, l},
+            { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, l},
+            { {x+1, y+1, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.right) {
-        float light = getLight(cx+1, y, cz);
-        float skyLight = getSkyLight(cx+1, y, cz);
+        unsigned char light = getLight(cx+1, y, cz);
+        unsigned char skyLight = getSkyLight(cx+1, y, cz);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-            { {x+1, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, light, skyLight },
-            { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, light, skyLight },
-            { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, light, skyLight },
-            { {x+1, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, light, skyLight }
+            { {x+1, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, l},
+            { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, l},
+            { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, l},
+            { {x+1, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.back) {
-        float light = getLight(cx, y, cz-1);
-        float skyLight = getSkyLight(cx, y, cz-1);
+        unsigned char light = getLight(cx, y, cz-1);
+        unsigned char skyLight = getSkyLight(cx, y, cz-1);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-                { {x,   y+1, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, light, skyLight },
-                { {x+1, y+1, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, light, skyLight },
-                { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y}, light, skyLight },
-                { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, light, skyLight }
+                { {x,   y+1, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, l},
+                { {x+1, y+1, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, l},
+                { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y}, l},
+                { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.left) {
-        float light = getLight(cx-1, y, cz);
-        float skyLight = getSkyLight(cx-1, y, cz);
+        unsigned char light = getLight(cx-1, y, cz);
+        unsigned char skyLight = getSkyLight(cx-1, y, cz);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-                { {x, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, light, skyLight },
-                { {x, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, light, skyLight },
-                { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, light, skyLight },
-                { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, light, skyLight }
+                { {x, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, l},
+                { {x, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, l},
+                { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, l},
+                { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.top) {
-        float light = getLight(cx, y+1, cz);
-        float skyLight = getSkyLight(cx, y+1, cz);
+        unsigned char light = getLight(cx, y+1, cz);
+        unsigned char skyLight = getSkyLight(cx, y+1, cz);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-                { {x+1, y+1, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y}, light, skyLight },
-                { {x,   y+1, z},   {0, 1, 0}, {tex.top.x, tex.top.y}, light, skyLight },
-                { {x,   y+1, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h}, light, skyLight },
-                { {x+1, y+1, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, light, skyLight }
+                { {x+1, y+1, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y}, l},
+                { {x,   y+1, z},   {0, 1, 0}, {tex.top.x, tex.top.y}, l},
+                { {x,   y+1, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h}, l},
+                { {x+1, y+1, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.bottom) {
-        float light = getLight(cx, y-1, cz);
-        float skyLight = getSkyLight(cx, y-1, cz);
+        unsigned char light = getLight(cx, y-1, cz);
+        unsigned char skyLight = getSkyLight(cx, y-1, cz);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-                { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, light, skyLight },
-                { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y}, light, skyLight },
-                { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y}, light, skyLight },
-                { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, light, skyLight }
+                { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, l},
+                { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y}, l},
+                { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y}, l},
+                { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, l}
         );
         DebugStats::triCount += 1;
     }
@@ -295,79 +315,84 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
     float z = pos.y + cz;
     float h = 1.f;
     if(adj.top) {
-        float light = getLight(cx, y+1, cz);
-        float skyLight = getSkyLight(cx, y+1, cz);
+        // float light = getLight(cx, y+1, cz);
+        // float skyLight = getSkyLight(cx, y+1, cz);
         tex.left.h *= 15.f/16.f;
         tex.right.h *= 15.f/16.f;
         tex.front.h *= 15.f/16.f;
         tex.back.h *= 15.f/16.f;
         h = 15.f/16.f;
         generateQuadMesh(mesh,
-                { {x+1, y+h, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y}, light, skyLight },
-                { {x,   y+h, z},   {0, 1, 0}, {tex.top.x, tex.top.y}, light, skyLight },
-                { {x,   y+h, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h}, light, skyLight },
-                { {x+1, y+h, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, light, skyLight }
+                { {x+1, y+h, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y}, light[y+1][cx][cz] },
+                { {x,   y+h, z},   {0, 1, 0}, {tex.top.x, tex.top.y}, light[y+1][cx][cz] },
+                { {x,   y+h, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h}, light[y+1][cx][cz] },
+                { {x+1, y+h, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, light[y+1][cx][cz] }
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.front) {
-        float light = getLight(cx, y, cz+1);
-        float skyLight = getSkyLight(cx, y, cz+1);
+        unsigned char light = getLight(cx, y, cz+1);
+        unsigned char skyLight = getSkyLight(cx, y, cz+1);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-            { {x,   y+h, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light, skyLight },
-            { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y}, light, skyLight },
-            { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, light, skyLight },
-            { {x+1, y+h, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, light, skyLight }
+            { {x,   y+h, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, l},
+            { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y}, l},
+            { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, l},
+            { {x+1, y+h, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.right) {
-        float light = getLight(cx+1, y, cz);
-        float skyLight = getSkyLight(cx+1, y, cz);
+        unsigned char light = getLight(cx+1, y, cz);
+        unsigned char skyLight = getSkyLight(cx+1, y, cz);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-            { {x+1, y+h, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, light, skyLight },
-            { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, light, skyLight },
-            { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, light, skyLight },
-            { {x+1, y+h, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, light, skyLight }
+            { {x+1, y+h, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, l},
+            { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, l},
+            { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, l},
+            { {x+1, y+h, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.back) {
-        float light = getLight(cx, y, cz-1);
-        float skyLight = getSkyLight(cx, y, cz-1);
+        unsigned char light = getLight(cx, y, cz-1);
+        unsigned char skyLight = getSkyLight(cx, y, cz-1);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-                { {x,   y+h, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, light, skyLight },
-                { {x+1, y+h, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, light, skyLight },
-                { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y}, light, skyLight },
-                { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, light, skyLight }
+                { {x,   y+h, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, l},
+                { {x+1, y+h, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, l},
+                { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y}, l},
+                { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, l}
         );
         DebugStats::triCount += 1;
     }
     
     if(adj.left) {
-        float light = getLight(cx-1, y, cz);
-        float skyLight = getSkyLight(cx-1, y, cz);
+        unsigned char light = getLight(cx-1, y, cz);
+        unsigned char skyLight = getSkyLight(cx-1, y, cz);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-                { {x, y+h, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, light, skyLight },
-                { {x, y+h, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, light, skyLight },
-                { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, light, skyLight },
-                { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, light, skyLight }
+                { {x, y+h, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, l},
+                { {x, y+h, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, l},
+                { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, l},
+                { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, l}
         );
         DebugStats::triCount += 1;
     }
     
     
     if(adj.bottom) {
-        float light = getLight(cx, y-1, cz);
-        float skyLight = getSkyLight(cx, y-1, cz);
+        unsigned char light = getLight(cx, y-1, cz);
+        unsigned char skyLight = getSkyLight(cx, y-1, cz);
+        unsigned char l = (skyLight << 4) | light;
         generateQuadMesh(mesh,
-                { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, light, skyLight },
-                { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y}, light, skyLight },
-                { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y}, light, skyLight },
-                { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, light, skyLight }
+                { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, l},
+                { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y}, l},
+                { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y}, l},
+                { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, l}
         );
         DebugStats::triCount += 1;
     }
@@ -376,8 +401,9 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
 void Chunk::generateTorchMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTexture tex, SurroundingBlocks adj) {
     float x = pos.x + cx;
     float z = pos.y + cz;
-    float light = getLight(cx, y, cz+1);
-    float skyLight = getSkyLight(cx, y, cz+1);
+    unsigned char light = getLight(cx, y, cz+1);
+    unsigned char skyLight = getSkyLight(cx, y, cz+1);
+    unsigned char l = (skyLight << 4) | light;
     // generateQuadMesh(mesh,
     //         { {x+9.f/16.f, y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, light, skyLight },
     //         { {x+7.f/16.f,   y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, light, skyLight },
@@ -385,51 +411,50 @@ void Chunk::generateTorchMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTe
     //         { {x+9.f/16.f, y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, light, skyLight }
     // );
     generateQuadMesh(mesh,
-        { {x,   y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light, skyLight },
-        { {x,   y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y}, light, skyLight },
-        { {x+1, y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, light, skyLight },
-        { {x+1, y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, light, skyLight }
+        { {x,   y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, l},
+        { {x,   y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y}, l},
+        { {x+1, y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, l},
+        { {x+1, y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, l}
     );
     DebugStats::triCount += 1;
 
-    light = getLight(cx+1, y, cz);
-    skyLight = getSkyLight(cx+1, y, cz);
+    // light = getLight(cx+1, y, cz);
+    // skyLight = getSkyLight(cx+1, y, cz);
     generateQuadMesh(mesh,
-        { {x+9.f/16.f, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, light, skyLight },
-        { {x+9.f/16.f, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, light, skyLight },
-        { {x+9.f/16.f, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, light, skyLight },
-        { {x+9.f/16.f, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, light, skyLight }
+        { {x+9.f/16.f, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, l},
+        { {x+9.f/16.f, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, l},
+        { {x+9.f/16.f, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, l},
+        { {x+9.f/16.f, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, l}
     );
     DebugStats::triCount += 1;
 
-    light = getLight(cx, y, cz-1);
-    skyLight = getSkyLight(cx, y, cz-1);
+    // light = getLight(cx, y, cz-1);
+    // skyLight = getSkyLight(cx, y, cz-1);
     generateQuadMesh(mesh,
-            { {x,   y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, light, skyLight },
-            { {x+1, y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, light, skyLight },
-            { {x+1, y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y}, light, skyLight },
-            { {x,   y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, light, skyLight }
+            { {x,   y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, l},
+            { {x+1, y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, l},
+            { {x+1, y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y}, l},
+            { {x,   y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, l}
     );
     DebugStats::triCount += 1;
 
-    light = getLight(cx-1, y, cz);
-    skyLight = getSkyLight(cx-1, y, cz);
+    // light = getLight(cx-1, y, cz);
+    // skyLight = getSkyLight(cx-1, y, cz);
     generateQuadMesh(mesh,
-            { {x+7.f/16.f, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, light, skyLight },
-            { {x+7.f/16.f, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, light, skyLight },
-            { {x+7.f/16.f, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, light, skyLight },
-            { {x+7.f/16.f, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, light, skyLight }
+            { {x+7.f/16.f, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, l},
+            { {x+7.f/16.f, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, l},
+            { {x+7.f/16.f, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, l},
+            { {x+7.f/16.f, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, l}
     );
     DebugStats::triCount += 1;
 
-    light = getLight(cx, y+1, cz);
-    skyLight = getSkyLight(cx, y+1, cz);
-    float unit = tex.left.w;
+    // light = getLight(cx, y+1, cz);
+    // skyLight = getSkyLight(cx, y+1, cz);
     generateQuadMesh(mesh,
-            { {x+9.f/16.f, y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y + unit * 8.f/16.f}, light, skyLight },
-            { {x+7.f/16.f,   y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x + unit * 7.f/16.f, tex.top.y + unit * 8.f/16.f}, light, skyLight },
-            { {x+7.f/16.f,   y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x + unit * 7.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, light, skyLight },
-            { {x+9.f/16.f, y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, light, skyLight }
+            { {x+9.f/16.f, y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y + tex.top.h * 8.f/16.f}, l},
+            { {x+7.f/16.f,   y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y + tex.top.h * 8.f/16.f}, l},
+            { {x+7.f/16.f,   y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, l},
+            { {x+9.f/16.f, y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, l}
     );
     DebugStats::triCount += 1;
 
@@ -479,7 +504,8 @@ void Chunk::rebuildMesh() {
     for(int y = 0; y < chunkH; y++)
         for(int x = 0; x < chunkW; x++)
             for(int z = 0; z < chunkL; z++) {
-                light[y][x][z] = skyLight[y][x][z] = 0;
+                // light[y][x][z] = skyLight[y][x][z] = 0;
+                light[y][x][z] = 0;
                 id = blocks[y][x][z];
                 if(id == Blocks::airBlockID || id == Blocks::nullBlockID)
                     continue;
@@ -604,7 +630,7 @@ bool Chunk::operator<(const Chunk& other) const {
     return glm::dot(fpos, fpos) < glm::dot(ofpos, ofpos);
 }
 
-float Chunk::getLight(int x, int y, int z) {
+unsigned char Chunk::getLight(int x, int y, int z) {
     if(x < 0)
         x = 0;
     else if(x >= Chunk::chunkW)
@@ -620,11 +646,11 @@ float Chunk::getLight(int x, int y, int z) {
     else if(y >= Chunk::chunkH)
         y = Chunk::chunkH-1;
     
-    return (float)(.5f+light[y][x][z])/15.5f;
+    return light[y][x][z] & 0xF;
 }
 
-float Chunk::getSkyLight(int x, int y, int z) {
-    if(y == maxY+1) return 1.f;
+unsigned char Chunk::getSkyLight(int x, int y, int z) {
+    if(y == maxY+1) return 15;
     if(x < 0)
         x = 0;
     else if(x >= Chunk::chunkW)
@@ -640,5 +666,15 @@ float Chunk::getSkyLight(int x, int y, int z) {
     else if(y >= Chunk::chunkH)
         y = Chunk::chunkH-1;
     
-    return (float)(.5f+skyLight[y][x][z])/15.5f;
+    return light[y][x][z] >> 4;
+}
+
+void Chunk::setLight(int x, int y, int z, unsigned char value) {
+    light[y][x][z] &= 0xF0;
+    light[y][x][z] |= value & 0xF;
+}
+
+void Chunk::setSkyLight(int x, int y, int z, unsigned char value) {
+    light[y][x][z] &= 0xF;
+    light[y][x][z] |= value << 4;
 }

@@ -51,9 +51,11 @@ public:
     inline const Mesh<Vertex>& getTransparentMesh() const { return transparentMesh; }
     inline glm::ivec2 getPos() const { return pos; }
     inline ChunkStatus getStatus() const { return status; }
-    float getLight(int x, int y, int z);
-    float getSkyLight(int x, int y, int z);
-    static const int chunkW = 32, chunkL = 32, chunkH = 150;
+    unsigned char getLight(int x, int y, int z);
+    unsigned char getSkyLight(int x, int y, int z);
+    void setLight(int x, int y, int z, unsigned char value);
+    void setSkyLight(int x, int y, int z, unsigned char value);
+    static const int chunkW = 32, chunkL = 32, chunkH = 256;
     // static const int chunkW = 8, chunkL = 8, chunkH = 150;
     // static const int chunkW = 16, chunkL = 16, chunkH = 256;
 private:
@@ -63,11 +65,10 @@ private:
     ChunkStatus status;
     BlockID blocks[chunkH][chunkW][chunkL];
     
-    // Can fit 0-15 in 4 bits, consider packing two values into one byte
-    // Shift byte, use 15 (0b1111) as a mask
-    // Do this for both light and skyLight
+    // Change to unsigned int. Then put color data in the other
+    // 3 bytes. Send this to the shader to create colored lighting
+    // (maybe idk if this is a good idea)
     unsigned char light[chunkH][chunkW][chunkL];
-    unsigned char skyLight[chunkH][chunkW][chunkL];
     int maxY, minY;
 };
 

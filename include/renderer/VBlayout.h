@@ -10,7 +10,7 @@ typedef struct _VBelement {
     static unsigned int getSize(GLenum type) {
         switch (type) {
             case GL_FLOAT:          return 4;
-            case GL_UNSIGNED_INT:   return 4;
+            case GL_INT:            return 4;
             case GL_UNSIGNED_BYTE:  return 1;
         }
         fprintf(stderr, "Non fatal: Unrecognized type [in file %s line %d]\n", __FILE__, __LINE__);

@@ -4,8 +4,9 @@
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTex;
-layout (location = 3) in float aLight;
-layout (location = 4) in float aSkyLight;
+layout (location = 3) in int aLight;
+// layout (location = 3) in float aLight;
+// layout (location = 4) in float aSkyLight;
 
 // uniform vec3 chunkPosition; // take in chunk position. "position" would then be relative to the chunk position
 
@@ -26,8 +27,10 @@ void main() {
     gl_Position = viewProj * model * vec4(aPosition.x, height, aPosition.z, 1.0);
     vTexCoord = aTex;
     vNormal = aNormal;
-    vLight = aLight;
-    vSkyLight = aSkyLight;
+    // vLight = aLight;
+    // vSkyLight = aSkyLight;
+    vSkyLight = (float( aLight & 0xF ) + .5f) / 15.5f;
+    vLight = (float( ( aLight & 0xF0 ) >> 4 ) + .5f) / 15.5f;
 }
 
 #type fragment
@@ -37,7 +40,7 @@ layout (location = 0) out vec4 outColor;
 
 in vec2 vTexCoord;
 in vec3 vNormal;
-in float vLight;
+in int vLight;
 in float vSkyLight;
 
 uniform float skyBrightness;
@@ -52,7 +55,10 @@ void main() {
     vec3 lightDir = normalize(sunDirection);
     float diff = max(dot(vNormal, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
+    // float l = vLight & 0xF;
+    // float sl = ( vLight & 0xF0 ) >> 4;
     float light = max(vLight, vSkyLight * skyBrightness);
+    // float light = max( (l + .5f) / 15.5f , ((sl + .5f) / 15.5f) * skyBrightness);
     outColor = vec4(min((diffuse + ambient), 1.0), 1.0) * texture(tex0, vTexCoord) * vec4(light, light, light, 1.0);
     if (outColor.a == 0) { discard; }
     // float f = float(vLight);

@@ -13,7 +13,8 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texCoords;
-    float light, skyLight;
+    int light2;
+    // float light, skyLight;
 };
 
 struct Vertex2D {
