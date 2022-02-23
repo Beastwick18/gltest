@@ -162,11 +162,11 @@ namespace Renderer {
         newMesh.addVertex(v0);
     }
 
-    void generateCubeMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, unsigned char light) {
+    void generateCubeMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, LightData light) {
         generateCubeMesh(mesh, pos.x, pos.y, pos.z, tex, surr.top, surr.bottom, surr.left, surr.right, surr.front, surr.back, light);
     }
     
-    void generateCubeMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, unsigned char light) {
+    void generateCubeMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, LightData light) {
         if(front) {
             generateQuadMesh(mesh,
                 { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light },
@@ -228,11 +228,11 @@ namespace Renderer {
         }
     }
     
-    void generateLiquidMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, unsigned char light) {
+    void generateLiquidMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, LightData light) {
         generateLiquidMesh(mesh, pos.x, pos.y, pos.z, tex, surr.top, surr.bottom, surr.left, surr.right, surr.front, surr.back, light);
     }
     
-    void generateLiquidMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, unsigned char light) {
+    void generateLiquidMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, LightData light) {
         float h = 1.f;
         if(top) {
             tex.left.h *= 15.f/16.f;
@@ -302,7 +302,7 @@ namespace Renderer {
 
     }
         
-    void generateTorchMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, unsigned char light) {
+    void generateTorchMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, LightData light) {
         if(adj.front) {
             generateQuadMesh(mesh,
                 { {x,   y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light },

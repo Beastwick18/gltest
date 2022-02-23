@@ -1,6 +1,3 @@
-// TODO: Each block rendered IS NOT another instance of a class. Each block class will have info about the block, plus a list of all occurences of the block
-// within the view distance.
-
 #include "world/Block.h"
 
 BlockTexture::BlockTexture(TexCoords allSides) : top(allSides), bottom(allSides), left(allSides), right(allSides), front(allSides), back(allSides) {}
@@ -9,20 +6,16 @@ BlockTexture::BlockTexture(TexCoords top, TexCoords bottom, TexCoords left, TexC
 BlockTexture::BlockTexture() {}
 
 namespace Blocks {
-    Block blocks[256];
-    BlockID airBlockID = 0;
-    Block airBlock { "Air", {}, 0, true, false, false, false, 0.f, 0.f };
-    BlockID nullBlockID = 255;
-    Block nullBlock { "Null", {}, 255, true, false, false, false, 0.f, 0.f };
+    Block blocks[numBlocks];
     SpriteSheet *blockAtlas = nullptr;
     BlockTexture highlight;
     
     // TODO: Load this from a config file
     void init() {
-        blockAtlas = SpriteSheet::loadFromImageFile("assets/textures/block_atlas.png", 32, 32);
+        blockAtlas = SpriteSheet::loadFromImageFile("assets/textures/block_atlas_tp2.png", 32, 32);
         TexCoords null = blockAtlas->getSubTexture(29, 14);
-        Blocks::nullBlock.tex = null;
-        std::fill(blocks, blocks+256, nullBlock);
+        Block nullBlock { .name = "Null", .tex = null, .id = NULL_BLOCK, .transparent = true };
+        std::fill(blocks, blocks+numBlocks, nullBlock);
         
         TexCoords grassSide = blockAtlas->getSubTexture(1, 21);
         TexCoords grassTop = blockAtlas->getSubTexture(4, 21);
@@ -46,22 +39,22 @@ namespace Blocks {
         TexCoords white = blockAtlas->getSubTexture(29, 13);
         highlight = { white };
         
-        Blocks::blocks[0] = Blocks::airBlock;
-        Blocks::blocks[1] = Block{ "Grass", { grassTop, dirt, grassSide }, 1, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[2] = Block{ "Dirt", { dirt }, 2, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[3] = Block{ "Stone", { stone }, 3, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[4] = Block{ "Log", { logTop, logTop, logSide }, 4, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[5] = Block{ "Leaves", { leaves }, 5, true, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[6] = Block{ "Sand", { sand }, 6, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[7] = Block{ "Water", { water }, 7, true, true, true, false, 0.2f, 0.f };
-        Blocks::blocks[8] = Block{ "Glowstone", { glowstone }, 8, false, false, true, false, 1.0f, 1.f };
-        Blocks::blocks[9] = Block{ "Bedrock", { bedrock }, 9, false, false, false, false, 1.0f, 0.f };
-        Blocks::blocks[10] = Block{ "Cobblestone", { cobblestone }, 10, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[11] = Block{ "WoodenPlanks", { planks }, 11, false, false, true, false, 1.0f, 0.f };
-        Blocks::blocks[12] = Block{ "Lava", { lava }, 12, true, true, true, false, 0.0f, 1.f };
-        Blocks::blocks[13] = Block{ "Torch", { torch }, 13, true, false, true, false, 0.0f, 1.f };
-        Blocks::blocks[14] = Block{ "RedstoneTorch", { redstoneTorch }, 14, true, false, true, false, 0.0f, 0.5f };
-        Blocks::blocks[15] = Block{ "Glass", { glass }, 15, true, false, true, false, 0.0f, 0.0f };
+        blocks[AIR_BLOCK] = { .name = "Air", .id = AIR_BLOCK, .transparent = true };
+        blocks[GRASS] = Block{ .name = "Grass", .tex = { grassTop, dirt, grassSide }, .id = GRASS };
+        blocks[DIRT] = Block{ .name = "Dirt", .tex = { dirt }, .id = DIRT };
+        blocks[STONE] = Block{ .name = "Stone", .tex = { stone }, .id = STONE };
+        blocks[LOG] = Block{ .name = "Log", .tex = { logTop, logTop, logSide }, .id = LOG };
+        blocks[LEAVES] = Block{ .name = "Leaves", .tex = { leaves }, .id = LEAVES, .transparent = true };
+        blocks[SAND] = Block{ .name = "Sand", .tex = { sand }, .id = SAND, };
+        blocks[WATER] = Block{ .name = "Water", .tex = { water }, .id = WATER, .liquid = true, .transparent = true, .lightBlocking = 0.2f };
+        blocks[GLOWSTONE] = Block{ .name = "Glowstone", .tex = { glowstone }, .id = GLOWSTONE, .lightEmit = 1.f };
+        blocks[BEDROCK] = Block{ .name = "Bedrock", .tex = { bedrock }, .id = BEDROCK, .breakable = false };
+        blocks[COBBLESTONE] = Block{ .name = "Cobblestone", .tex = { cobblestone }, .id = COBBLESTONE };
+        blocks[WOODEN_PLANKS] = Block{ .name = "WoodenPlanks", .tex = { planks }, .id = WOODEN_PLANKS };
+        blocks[LAVA] = Block{ .name = "Lava", .tex = { lava }, .id = LAVA, .liquid = true, .transparent = true, .lightEmit = 1.f };
+        blocks[TORCH] = Block{ .name = "Torch", .tex = { torch }, .id = TORCH, .transparent = true, .lightEmit = 1.f };
+        blocks[REDSTONE_TORCH] = Block{ .name = "RedstoneTorch", .tex = { redstoneTorch }, .id = REDSTONE_TORCH, .transparent = true, .lightEmit = 0.5f };
+        blocks[GLASS] = Block{ .name = "Glass", .tex = { glass }, .id = GLASS, .transparent = true };
     }
     
     void free() {
@@ -69,15 +62,13 @@ namespace Blocks {
     }
     
     const Block &getBlockFromID(BlockID id) {
-        // if(id >= 0 && id <= 255)
-            return blocks[id];
-        // return nullBlock;
+        return blocks[id];
     }
     
     BlockID getIdFromName(std::string name) {
         for(const auto &b : blocks)
             if(b.name == name)
                 return b.id;
-        return nullBlockID;
+        return NULL_BLOCK;
     }
 }

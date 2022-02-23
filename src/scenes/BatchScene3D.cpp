@@ -99,7 +99,7 @@ void BatchScene3D::render() {
             DebugStats::chunksRenderedCount++;
             Renderer::regularBatch.flushMesh(c.getMesh());
         }
-    // glDisable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
     DebugStats::drawTime += glfwGetTime() - drawStart;
     Renderer::transparentShader->use();
     Renderer::transparentShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
@@ -108,7 +108,7 @@ void BatchScene3D::render() {
     for(const auto &[_, c] : World::chunks)
         if(c.getStatus() == ChunkStatus::SHOWING)
             Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
-    // glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     
     if(Input::isKeyBeginDown(GLFW_KEY_X)) {
         guiToggle = !guiToggle;
@@ -137,7 +137,7 @@ void BatchScene3D::render() {
         for(int i = 0; i < invSize; i++) {
             unsigned int triCount = DebugStats::triCount;
             const Block &b = Blocks::getBlockFromID(inv[i]);
-            if(b.id == 13 || b.id == 14)
+            if(b.id == Blocks::TORCH || b.id == Blocks::REDSTONE_TORCH)
                 Renderer::generateTorchMesh(invMesh, -i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f, b.tex, invSides);
             else if(b.liquid)
                 Renderer::generateLiquidMesh(invMesh, {-i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f}, b.tex, invSides);

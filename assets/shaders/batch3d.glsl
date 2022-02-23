@@ -43,7 +43,8 @@ uniform sampler2D tex0;
 
 vec3 sunDirection = normalize(vec3(-0.27, 0.57, -0.57));
 vec3 lightColor = vec3(1.0, 1.0, 1.0);
-vec3 lightCol = vec3(1.0, 0.0, 0.0);
+// vec3 lightCol = vec3(1.f, .0, .0f);
+vec3 lightCol = vec3(1.f, .95f, .6f);
 float ambientStrength = 0.6;
 
 void main() {
@@ -56,6 +57,6 @@ void main() {
     vec3 diffuse = diff * lightColor;
     // // This works for colored lighting
     // vec3 light = mix(vLight*lightCol, vSkyLight * skyBrightness * lightColor, .5);
-    float light = max(vLight, vSkyLight * skyBrightness);
+    vec3 light = max(vLight*lightCol, vSkyLight * lightColor* skyBrightness);
     outColor = vec4(min((diffuse + ambient), 1.0) * tex.rgb * light, tex.a);
 }

@@ -23,8 +23,8 @@ namespace World {
     RaycastResults raycast(const glm::vec3 startPos, const glm::vec3 dir, const float length) {
         RaycastResults result;
         result.block.hit = false;
-        result.liquid.blockID = Blocks::nullBlockID;
-        result.block.blockID = Blocks::nullBlockID;
+        result.liquid.blockID = Blocks::NULL_BLOCK;
+        result.block.blockID = Blocks::NULL_BLOCK;
         
         glm::vec3 tMax, tDelta, pos, step;
         
@@ -39,22 +39,20 @@ namespace World {
         float min;
         
         if((result.liquid.hit = Blocks::getBlockFromID(blockID).liquid)) {
-            result.liquid = {true, pos, {0, 0, 0}, blockID};
-            blockID = Blocks::airBlockID;
+            result.liquid = {.hitCoords = pos, .hitSide = {0, 0, 0}, .blockID = blockID};
+            blockID = Blocks::AIR_BLOCK;
         }
         
-        while(currChunk && glm::distance(startPos, pos) <= length && blockID == Blocks::airBlockID && blockID != Blocks::nullBlockID) {
+        while(currChunk && glm::distance(startPos, pos) <= length && blockID == Blocks::AIR_BLOCK && blockID != Blocks::NULL_BLOCK) {
             min = glm::min(tMax.x, glm::min(tMax.y, tMax.z));
-            for(int i = 0; i < tMax.length(); i++)
-                if(tMax[i] == min) {
-                    pos[i] += step[i];
-                    tMax[i] += tDelta[i];
-                    side = i;
+            for(side = 0; side < tMax.length(); side++)
+                if(tMax[side] == min) {
+                    pos[side] += step[side];
+                    tMax[side] += tDelta[side];
                     break;
                 }
             
-            const auto &cpos = toChunkCoords(pos);
-            if(cpos != currChunk->getPos())
+            if(auto cpos = toChunkCoords(pos); cpos != currChunk->getPos())
                 currChunk = getChunk(cpos);
             blockID = getBlock(currChunk, pos.x, pos.y, pos.z);
             if(Blocks::getBlockFromID(blockID).liquid) {
@@ -62,11 +60,11 @@ namespace World {
                     result.liquid = {true, pos, glm::ivec3(0), blockID};
                     result.liquid.hitSide[side] = -step[side];
                 }
-                blockID = Blocks::airBlockID;
+                blockID = Blocks::AIR_BLOCK;
             }
         }
         
-        if(blockID != Blocks::nullBlockID && blockID != Blocks::airBlockID && !Blocks::getBlockFromID(blockID).liquid) {
+        if(blockID != Blocks::NULL_BLOCK && blockID != Blocks::AIR_BLOCK && !Blocks::getBlockFromID(blockID).liquid) {
             result.block = { true, pos, glm::ivec3(0), blockID };
             result.block.hitSide[side] = -step[side];
         }
@@ -90,7 +88,7 @@ namespace World {
     }
     
     BlockID getBlock(const Chunk *chunk, const int x, const int y, const int z) {
-        if(chunk == nullptr) return Blocks::nullBlockID;
+        if(chunk == nullptr) return Blocks::NULL_BLOCK;
         
         const auto &pos = chunk->getPos();
         return chunk->getBlock(x - pos.x, y, z - pos.y);
@@ -102,7 +100,7 @@ namespace World {
     
     BlockID getBlock(const int x, const int y, const int z) {
         auto chunk = getChunk(x, z);
-        if(chunk == nullptr) return Blocks::nullBlockID;
+        if(chunk == nullptr) return Blocks::NULL_BLOCK;
         return getBlock(chunk, x, y, z);
     }
     
