@@ -1,18 +1,19 @@
 #ifndef MINECRAFT_CLONE_BLOCK_H
 #define MINECRAFT_CLONE_BLOCK_H
 
+#include "renderer/Batch.hpp"
 #include "renderer/spriteSheet.h"
 
 typedef uint8_t BlockID;
 typedef uint8_t LightData;
 
-enum BlockOrientation : unsigned char {
-    WEST    = 0,
-    EAST    = 1,
-    UP      = 2,
-    DOWN    = 3,
-    NORTH   = 4,
-    SOUTH   = 5
+enum BlockOrientation : unsigned int {
+    WEST    = 3,
+    EAST    = 0,
+    UP      = 1,
+    DOWN    = 4,
+    NORTH   = 5,
+    SOUTH   = 2
 };
 
 struct BlockData {
@@ -47,6 +48,7 @@ struct Block {
     bool rotatable = false;
     float lightBlocking = 1.f;
     float lightEmit = 0.f;
+    MeshType render = MeshType::CUBE;
 };
 
 namespace Blocks {
@@ -70,6 +72,8 @@ namespace Blocks {
         TORCH = 13,
         REDSTONE_TORCH = 14,
         GLASS = 15,
+        TALL_GRASS = 16,
+        ROSE = 17,
     };
     extern Block blocks[numBlocks];
     extern SpriteSheet *blockAtlas;

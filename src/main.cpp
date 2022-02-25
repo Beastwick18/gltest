@@ -8,7 +8,6 @@
 #include "scenes/ClearColorScene.h"
 #include "scenes/OriginalScene.h"
 #include "scenes/QuadScene.h"
-#include "scenes/BatchRendering2DScene.h"
 #include "scenes/BatchScene3D.h"
 #include "utils/DebugStats.h"
 

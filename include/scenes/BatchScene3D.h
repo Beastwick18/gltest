@@ -36,7 +36,7 @@ class BatchScene3D : public Scene {
         Mesh<Vertex> invMesh;
         
         int blockInHand;
-        static const int invSize = 15;
+        static const int invSize = 17;
         BlockID inv[invSize];
         
         std::vector<std::future<void>> meshFutures;

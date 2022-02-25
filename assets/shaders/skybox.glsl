@@ -23,9 +23,9 @@ uniform float time;
 uniform samplerCube skybox;
 
 // const vec4 skytop = vec4(0.0f, 0.0f, 1.0f, 1.0f);
-const vec4 skytop = vec4(0.01f, 0.66f, 0.96f, 1.0f);
+const vec4 skytop = vec4(0.0f, 0.36, 1.0, 1.0f);
 // const vec4 skyhorizon = vec4(0.3294f, 0.92157f, 1.0f, 1.0f);
-const vec4 skyhorizon = vec4(0.92157f, 0.92157f, 1.0f, 1.0f);
+const vec4 skyhorizon = vec4(0.9f, 0.9f, 0.95f, 1.0f);
 const vec4 night = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 const vec4 sunsetColor = vec4(0.99f, 0.37f, 0.33f, 1.0f);
 

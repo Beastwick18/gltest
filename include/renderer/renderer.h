@@ -10,6 +10,8 @@
 namespace Renderer {
     extern Shader *regularShader, *transparentShader;
     extern GLint vpUniform, wVpUniform;
+    extern GLint texUniform;
+    extern int frame;
     extern GLint waveUniform;
     extern GLint sunUniform, wSunUniform;
     extern Batch<Vertex> regularBatch;

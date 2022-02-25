@@ -37,6 +37,7 @@ public:
     void generateCubeMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, SurroundingBlocks adj);
     void generateLiquidMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, SurroundingBlocks adj);
     void generateTorchMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, SurroundingBlocks adj);
+    void generateCrossMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, SurroundingBlocks adj);
     void rebuildMesh();
     BlockID getBlock(int x, int y, int z) const;
     void addBlock(BlockID id, int x, int y, int z);

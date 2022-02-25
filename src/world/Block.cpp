@@ -7,12 +7,19 @@ BlockTexture::BlockTexture() {}
 
 namespace Blocks {
     Block blocks[numBlocks];
-    SpriteSheet *blockAtlas = nullptr;
+    SpriteSheet *blockAtlas = nullptr, *blockAtlas1 = nullptr, *blockAtlas2 = nullptr, *blockAtlas3 = nullptr;
     BlockTexture highlight;
     
     // TODO: Load this from a config file
     void init() {
         blockAtlas = SpriteSheet::loadFromImageFile("assets/textures/block_atlas_tp2.png", 32, 32);
+        blockAtlas1 = SpriteSheet::loadFromImageFile("assets/textures/block_atlas_tp2-1.png", 32, 32);
+        blockAtlas2 = SpriteSheet::loadFromImageFile("assets/textures/block_atlas_tp2-2.png", 32, 32);
+        blockAtlas3 = SpriteSheet::loadFromImageFile("assets/textures/block_atlas_tp2-3.png", 32, 32);
+        blockAtlas->bind(0);
+        blockAtlas1->bind(1);
+        blockAtlas2->bind(2);
+        blockAtlas3->bind(3);
         TexCoords null = blockAtlas->getSubTexture(29, 14);
         Block nullBlock { .name = "Null", .tex = null, .id = NULL_BLOCK, .transparent = true };
         std::fill(blocks, blocks+numBlocks, nullBlock);
@@ -34,6 +41,8 @@ namespace Blocks {
         TexCoords torch = blockAtlas->getSubTexture(20, 24);
         TexCoords redstoneTorch = blockAtlas->getSubTexture(18, 31);
         TexCoords glass = blockAtlas->getSubTexture(15, 27);
+        TexCoords tallGrass = blockAtlas->getSubTexture(20, 28);
+        TexCoords rose = blockAtlas->getSubTexture(14, 28);
         
         // TexCoords square = blockAtlas->getSubTexture(30, 13, 2, 2);
         TexCoords white = blockAtlas->getSubTexture(29, 13);
@@ -46,19 +55,24 @@ namespace Blocks {
         blocks[LOG] = Block{ .name = "Log", .tex = { logTop, logTop, logSide }, .id = LOG };
         blocks[LEAVES] = Block{ .name = "Leaves", .tex = { leaves }, .id = LEAVES, .transparent = true };
         blocks[SAND] = Block{ .name = "Sand", .tex = { sand }, .id = SAND, };
-        blocks[WATER] = Block{ .name = "Water", .tex = { water }, .id = WATER, .liquid = true, .transparent = true, .lightBlocking = 0.2f };
+        blocks[WATER] = Block{ .name = "Water", .tex = { water }, .id = WATER, .liquid = true, .transparent = true, .lightBlocking = 0.2f, .render = LIQUID };
         blocks[GLOWSTONE] = Block{ .name = "Glowstone", .tex = { glowstone }, .id = GLOWSTONE, .lightEmit = 1.f };
         blocks[BEDROCK] = Block{ .name = "Bedrock", .tex = { bedrock }, .id = BEDROCK, .breakable = false };
         blocks[COBBLESTONE] = Block{ .name = "Cobblestone", .tex = { cobblestone }, .id = COBBLESTONE };
         blocks[WOODEN_PLANKS] = Block{ .name = "WoodenPlanks", .tex = { planks }, .id = WOODEN_PLANKS };
-        blocks[LAVA] = Block{ .name = "Lava", .tex = { lava }, .id = LAVA, .liquid = true, .transparent = true, .lightEmit = 1.f };
-        blocks[TORCH] = Block{ .name = "Torch", .tex = { torch }, .id = TORCH, .transparent = true, .lightEmit = 1.f };
-        blocks[REDSTONE_TORCH] = Block{ .name = "RedstoneTorch", .tex = { redstoneTorch }, .id = REDSTONE_TORCH, .transparent = true, .lightEmit = 0.5f };
+        blocks[LAVA] = Block{ .name = "Lava", .tex = { lava }, .id = LAVA, .liquid = true, .transparent = true, .lightEmit = 1.f, .render = LIQUID };
+        blocks[TORCH] = Block{ .name = "Torch", .tex = { torch }, .id = TORCH, .transparent = true, .lightEmit = 1.f, .render = MeshType::TORCH };
+        blocks[REDSTONE_TORCH] = Block{ .name = "RedstoneTorch", .tex = { redstoneTorch }, .id = REDSTONE_TORCH, .transparent = true, .lightEmit = 0.5f, .render = MeshType::TORCH };
         blocks[GLASS] = Block{ .name = "Glass", .tex = { glass }, .id = GLASS, .transparent = true };
+        blocks[TALL_GRASS] = Block{ .name = "TallGrass", .tex = { tallGrass }, .id = TALL_GRASS, .transparent = true, .render = CROSS };
+        blocks[ROSE] = Block{ .name = "Rose", .tex = { rose }, .id = ROSE, .transparent = true, .render = CROSS };
     }
     
     void free() {
         SpriteSheet::free(blockAtlas);
+        SpriteSheet::free(blockAtlas1);
+        SpriteSheet::free(blockAtlas2);
+        SpriteSheet::free(blockAtlas3);
     }
     
     const Block &getBlockFromID(BlockID id) {

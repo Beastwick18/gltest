@@ -11,9 +11,9 @@
 
 struct Vertex {
     glm::vec3 position;
-    glm::vec3 normal;
+    // glm::vec3 normal;
     glm::vec2 texCoords;
-    int light2;
+    unsigned int data;
     // float light, skyLight;
 };
 
@@ -22,6 +22,12 @@ struct Vertex2D {
     glm::vec2 texCoords;
 };
 
+enum MeshType {
+    CUBE,
+    LIQUID,
+    TORCH,
+    CROSS
+};
 template<typename T>
 struct Mesh {
     Vertex *data;

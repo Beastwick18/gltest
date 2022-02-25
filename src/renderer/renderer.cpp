@@ -8,6 +8,7 @@
 namespace Renderer {
     Shader *regularShader, *transparentShader, *cubemapShader, *crosshairShader;
     GLint vpUniform, wVpUniform;
+    GLint texUniform;
     GLint waveUniform;
     GLint sunUniform, wSunUniform;
     GLint cmView, cmProj, cmTime;
@@ -27,6 +28,7 @@ namespace Renderer {
     const MinecraftClone::Window *window;
     
     float wave = 0;
+    int frame = 0;
     
     static const float skyboxVertices[] = {
         -1.0f,  1.0f, -1.0f,
@@ -95,7 +97,7 @@ namespace Renderer {
         
         VBlayout layout;
         layout.push<float>(3);
-        layout.push<float>(3);
+        // layout.push<float>(3);
         layout.push<float>(2);
         layout.push<int>(1);
         // layout.push<float>(1);
@@ -120,10 +122,11 @@ namespace Renderer {
         
         regularShader = Shader::createShader("assets/shaders/batch3d.glsl");
         regularShader->use();
-        regularShader->setUniform1i("tex0", 0);
+        regularShader->setUniform1i("selTex", 0);
         regularShader->setUniformMat4f("model", glm::mat4(1.f));
         sunUniform = regularShader->getUniformLocation("skyBrightness");
         vpUniform = regularShader->getUniformLocation("viewProj");
+        texUniform = regularShader->getUniformLocation("selTex");
         
         transparentShader = Shader::createShader("assets/shaders/waveyBlock.glsl");
         transparentShader->use();
@@ -168,61 +171,67 @@ namespace Renderer {
     
     void generateCubeMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, LightData light) {
         if(front) {
+            unsigned int data = light | (BlockOrientation::SOUTH << 8);
             generateQuadMesh(mesh,
-                { {x,   y+1, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light },
-                { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y}, light },
-                { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, light },
-                { {x+1, y+1, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, light }
+                { {x,   y+1, z+1}, {tex.front.x, tex.front.y+tex.front.h}, data },
+                { {x,   y,   z+1}, {tex.front.x, tex.front.y}, data },
+                { {x+1, y,   z+1}, {tex.front.x+tex.front.w, tex.front.y}, data },
+                { {x+1, y+1, z+1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(right) {
+            unsigned int data = light | (BlockOrientation::EAST << 8);
             generateQuadMesh(mesh,
-                { {x+1, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, light },
-                { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, light },
-                { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, light },
-                { {x+1, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, light }
+                { {x+1, y+1, z+1}, {tex.left.x, tex.left.y+tex.left.h}, data },
+                { {x+1, y,   z+1}, {tex.left.x, tex.left.y}, data },
+                { {x+1, y,   z},   {tex.left.x+tex.left.w, tex.left.y}, data },
+                { {x+1, y+1, z},   {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(back) {
+            unsigned int data = light | (BlockOrientation::NORTH << 8);
             generateQuadMesh(mesh,
-                    { {x,   y+1, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, light },
-                    { {x+1, y+1, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, light },
-                    { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y}, light },
-                    { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, light }
+                    { {x,   y+1, z},   {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, data },
+                    { {x+1, y+1, z},   {tex.back.x, tex.back.y+tex.back.h}, data },
+                    { {x+1, y,   z},   {tex.back.x, tex.back.y}, data },
+                    { {x,   y,   z},   {tex.back.x+tex.back.w, tex.back.y}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(left) {
+            unsigned int data = light | (BlockOrientation::WEST << 8);
             generateQuadMesh(mesh,
-                    { {x, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, light },
-                    { {x, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, light },
-                    { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, light },
-                    { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, light }
+                    { {x, y+1, z+1},   {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, data },
+                    { {x, y+1, z},     {tex.right.x, tex.right.y+tex.right.h}, data },
+                    { {x, y,   z},     {tex.right.x, tex.right.y}, data },
+                    { {x, y,   z+1},   {tex.right.x+tex.right.w, tex.right.y}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(top) {
+            unsigned int data = light | (BlockOrientation::UP << 8);
             generateQuadMesh(mesh,
-                    { {x+1, y+1, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y}, light },
-                    { {x,   y+1, z},   {0, 1, 0}, {tex.top.x, tex.top.y}, light },
-                    { {x,   y+1, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h}, light },
-                    { {x+1, y+1, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, light }
+                    { {x+1, y+1, z},   {tex.top.x+tex.top.w, tex.top.y}, data },
+                    { {x,   y+1, z},   {tex.top.x, tex.top.y}, data },
+                    { {x,   y+1, z+1}, {tex.top.x, tex.top.y+tex.top.h}, data },
+                    { {x+1, y+1, z+1}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(bottom) {
+            unsigned int data = light | (BlockOrientation::DOWN << 8);
             generateQuadMesh(mesh,
-                    { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, light },
-                    { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y}, light },
-                    { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y}, light },
-                    { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, light }
+                    { {x,   y, z+1},  {tex.bottom.x, tex.bottom.y+tex.bottom.h}, data },
+                    { {x,   y, z},    {tex.bottom.x, tex.bottom.y}, data },
+                    { {x+1, y, z},    {tex.bottom.x+tex.bottom.w, tex.bottom.y}, data },
+                    { {x+1, y, z+1},  {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, data }
             );
             DebugStats::triCount += 1;
         }
@@ -240,62 +249,68 @@ namespace Renderer {
             tex.front.h *= 15.f/16.f;
             tex.back.h *= 15.f/16.f;
             h = 15.f/16.f;
+            unsigned int data = light | (BlockOrientation::UP << 8);
             generateQuadMesh(mesh,
-                    { {x+1, y+h, z},   {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y}, light },
-                    { {x,   y+h, z},   {0, 1, 0}, {tex.top.x, tex.top.y}, light },
-                    { {x,   y+h, z+1}, {0, 1, 0}, {tex.top.x, tex.top.y+tex.top.h}, light },
-                    { {x+1, y+h, z+1}, {0, 1, 0}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, light }
+                    { {x+1, y+h, z},   {tex.top.x+tex.top.w, tex.top.y}, data },
+                    { {x,   y+h, z},   {tex.top.x, tex.top.y}, data },
+                    { {x,   y+h, z+1}, {tex.top.x, tex.top.y+tex.top.h}, data },
+                    { {x+1, y+h, z+1}, {tex.top.x+tex.top.w, tex.top.y+tex.top.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(front) {
+            unsigned int data = light | (BlockOrientation::SOUTH << 8);
             generateQuadMesh(mesh,
-                { {x,   y+h, z+1}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light },
-                { {x,   y,   z+1}, {0, 0, -1}, {tex.front.x, tex.front.y}, light },
-                { {x+1, y,   z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, light },
-                { {x+1, y+h, z+1}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, light }
+                { {x,   y+h, z+1},  {tex.front.x, tex.front.y+tex.front.h}, data },
+                { {x,   y,   z+1},  {tex.front.x, tex.front.y}, data },
+                { {x+1, y,   z+1},  {tex.front.x+tex.front.w, tex.front.y}, data },
+                { {x+1, y+h, z+1},  {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(right) {
+            unsigned int data = light | (BlockOrientation::EAST << 8);
             generateQuadMesh(mesh,
-                { {x+1, y+h, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, light },
-                { {x+1, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, light },
-                { {x+1, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, light },
-                { {x+1, y+h, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, light }
+                { {x+1, y+h, z+1},  {tex.left.x, tex.left.y+tex.left.h}, data },
+                { {x+1, y,   z+1},  {tex.left.x, tex.left.y}, data },
+                { {x+1, y,   z},    {tex.left.x+tex.left.w, tex.left.y}, data },
+                { {x+1, y+h, z},    {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(back) {
+            unsigned int data = light | (BlockOrientation::NORTH << 8);
             generateQuadMesh(mesh,
-                    { {x,   y+h, z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, light },
-                    { {x+1, y+h, z},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, light },
-                    { {x+1, y,   z},   {0, 0, 1}, {tex.back.x, tex.back.y}, light },
-                    { {x,   y,   z},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, light }
+                    { {x,   y+h, z},   {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, data },
+                    { {x+1, y+h, z},   {tex.back.x, tex.back.y+tex.back.h}, data },
+                    { {x+1, y,   z},   {tex.back.x, tex.back.y}, data },
+                    { {x,   y,   z},   {tex.back.x+tex.back.w, tex.back.y}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(left) {
+            unsigned int data = light | (BlockOrientation::WEST << 8);
             generateQuadMesh(mesh,
-                    { {x, y+h, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, light },
-                    { {x, y+h, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, light },
-                    { {x, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, light },
-                    { {x, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, light }
+                    { {x, y+h, z+1},   {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, data },
+                    { {x, y+h, z},     {tex.right.x, tex.right.y+tex.right.h}, data },
+                    { {x, y,   z},     {tex.right.x, tex.right.y}, data },
+                    { {x, y,   z+1},   {tex.right.x+tex.right.w, tex.right.y}, data }
             );
             DebugStats::triCount += 1;
         }
         
         
         if(bottom) {
+            unsigned int data = light | (BlockOrientation::DOWN << 8);
             generateQuadMesh(mesh,
-                    { {x,   y, z+1}, {0, -1, 0}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, light },
-                    { {x,   y, z},   {0, -1, 0}, {tex.bottom.x, tex.bottom.y}, light },
-                    { {x+1, y, z},   {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y}, light },
-                    { {x+1, y, z+1}, {0, -1, 0}, {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, light }
+                    { {x,   y, z+1},  {tex.bottom.x, tex.bottom.y+tex.bottom.h}, data },
+                    { {x,   y, z},    {tex.bottom.x, tex.bottom.y}, data },
+                    { {x+1, y, z},    {tex.bottom.x+tex.bottom.w, tex.bottom.y}, data },
+                    { {x+1, y, z+1},  {tex.bottom.x+tex.bottom.w, tex.bottom.y+tex.bottom.h}, data }
             );
             DebugStats::triCount += 1;
         }
@@ -304,51 +319,56 @@ namespace Renderer {
         
     void generateTorchMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, LightData light) {
         if(adj.front) {
+            unsigned int data = light | (BlockOrientation::SOUTH << 8);
             generateQuadMesh(mesh,
-                { {x,   y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y+tex.front.h}, light },
-                { {x,   y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x, tex.front.y}, light },
-                { {x+1, y,   z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y}, light },
-                { {x+1, y+1, z+9.f/16.f}, {0, 0, -1}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, light }
+                { {x,   y+1, z+9.f/16.f},  {tex.front.x, tex.front.y+tex.front.h}, data },
+                { {x,   y,   z+9.f/16.f},  {tex.front.x, tex.front.y}, data },
+                { {x+1, y,   z+9.f/16.f},  {tex.front.x+tex.front.w, tex.front.y}, data },
+                { {x+1, y+1, z+9.f/16.f},  {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(adj.right) {
+            unsigned int data = light | (BlockOrientation::EAST << 8);
             generateQuadMesh(mesh,
-                { {x+9.f/16.f, y+1, z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y+tex.left.h}, light },
-                { {x+9.f/16.f, y,   z+1}, {-1, 0, 0}, {tex.left.x, tex.left.y}, light },
-                { {x+9.f/16.f, y,   z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y}, light },
-                { {x+9.f/16.f, y+1, z},   {-1, 0, 0}, {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, light }
+                { {x+9.f/16.f, y+1, z+1},  {tex.left.x, tex.left.y+tex.left.h}, data },
+                { {x+9.f/16.f, y,   z+1},  {tex.left.x, tex.left.y}, data },
+                { {x+9.f/16.f, y,   z},    {tex.left.x+tex.left.w, tex.left.y}, data },
+                { {x+9.f/16.f, y+1, z},    {tex.left.x+tex.left.w, tex.left.y+tex.left.h}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(adj.back) {
+            unsigned int data = light | (BlockOrientation::NORTH << 8);
             generateQuadMesh(mesh,
-                    { {x,   y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, light },
-                    { {x+1, y+1, z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y+tex.back.h}, light },
-                    { {x+1, y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x, tex.back.y}, light },
-                    { {x,   y,   z+7.f/16.f},   {0, 0, 1}, {tex.back.x+tex.back.w, tex.back.y}, light }
+                    { {x,   y+1, z+7.f/16.f},   {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, data },
+                    { {x+1, y+1, z+7.f/16.f},   {tex.back.x, tex.back.y+tex.back.h}, data },
+                    { {x+1, y,   z+7.f/16.f},   {tex.back.x, tex.back.y}, data },
+                    { {x,   y,   z+7.f/16.f},   {tex.back.x+tex.back.w, tex.back.y}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(adj.left) {
+            unsigned int data = light | (BlockOrientation::WEST << 8);
             generateQuadMesh(mesh,
-                    { {x+7.f/16.f, y+1, z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, light },
-                    { {x+7.f/16.f, y+1, z},     {1, 0, 0}, {tex.right.x, tex.right.y+tex.right.h}, light },
-                    { {x+7.f/16.f, y,   z},     {1, 0, 0}, {tex.right.x, tex.right.y}, light },
-                    { {x+7.f/16.f, y,   z+1},   {1, 0, 0}, {tex.right.x+tex.right.w, tex.right.y}, light }
+                    { {x+7.f/16.f, y+1, z+1},   {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, data },
+                    { {x+7.f/16.f, y+1, z},     {tex.right.x, tex.right.y+tex.right.h}, data },
+                    { {x+7.f/16.f, y,   z},     {tex.right.x, tex.right.y}, data },
+                    { {x+7.f/16.f, y,   z+1},   {tex.right.x+tex.right.w, tex.right.y}, data }
             );
             DebugStats::triCount += 1;
         }
         
         if(adj.top) {
+            unsigned int data = light | (BlockOrientation::UP << 8);
             generateQuadMesh(mesh,
-                    { {x+9.f/16.f, y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, light },
-                    { {x+7.f/16.f,   y+10.f/16.f, z+7.f/16.f},   {0, 1, 0}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, light },
-                    { {x+7.f/16.f,   y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, light },
-                    { {x+9.f/16.f, y+10.f/16.f, z+9.f/16.f}, {0, 1, 0}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, light }
+                    { {x+9.f/16.f, y+10.f/16.f, z+7.f/16.f},   {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, data },
+                    { {x+7.f/16.f,   y+10.f/16.f, z+7.f/16.f}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y + tex.top.w * 8.f/16.f}, data },
+                    { {x+7.f/16.f,   y+10.f/16.f, z+9.f/16.f}, {tex.top.x + tex.top.w * 7.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, data },
+                    { {x+9.f/16.f, y+10.f/16.f, z+9.f/16.f}, {tex.top.x+tex.top.w * 9.f/16.f, tex.top.y+tex.top.h * 10.f/16.f}, data }
             );
             DebugStats::triCount += 1;
         }
@@ -466,11 +486,18 @@ namespace Renderer {
         
     }
     
+    double sum = 0.0;
+    
     void update(double deltaTime) {
+        sum += deltaTime;
+        if(sum > 1) {
+            frame = ( frame + 1 ) % 4;
+            sum = 0;
+        }
         wave += (float)deltaTime*1.5f;
         if(wave > 2*glm::pi<float>())
-
             wave = 0;
+        
         if(MinecraftClone::Input::isKeyDown(GLFW_KEY_R))
             printf("%f\n",wave);
     }

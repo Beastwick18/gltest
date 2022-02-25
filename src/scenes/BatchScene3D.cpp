@@ -94,6 +94,7 @@ void BatchScene3D::render() {
     Renderer::regularShader->use();
     Renderer::regularShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
     Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+    Renderer::regularShader->setUniform1i(Renderer::texUniform, Renderer::frame);
     for(const auto &[_, c] : World::chunks)
         if(c.getStatus() == ChunkStatus::SHOWING) {
             DebugStats::chunksRenderedCount++;
@@ -101,10 +102,10 @@ void BatchScene3D::render() {
         }
     glDisable(GL_CULL_FACE);
     DebugStats::drawTime += glfwGetTime() - drawStart;
-    Renderer::transparentShader->use();
-    Renderer::transparentShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
-    Renderer::transparentShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
-    Renderer::transparentShader->setUniform1f(Renderer::waveUniform, Renderer::wave);
+    // Renderer::transparentShader->use();
+    // Renderer::transparentShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
+    // Renderer::transparentShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+    // Renderer::transparentShader->setUniform1f(Renderer::waveUniform, Renderer::wave);
     for(const auto &[_, c] : World::chunks)
         if(c.getStatus() == ChunkStatus::SHOWING)
             Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
