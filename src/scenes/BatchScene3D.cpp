@@ -38,8 +38,10 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     
     // int maxChunkX = 20;
     // int maxChunkZ = 20;
-    int maxChunkX = 10;
-    int maxChunkZ = 10;
+    // int maxChunkX = 10;
+    // int maxChunkZ = 10;
+    int maxChunkX = 15;
+    int maxChunkZ = 15;
     // int maxChunkX = 40;
     // int maxChunkZ = 40;
     
@@ -91,25 +93,36 @@ void BatchScene3D::render() {
     
     double drawStart = glfwGetTime();
     
-    Renderer::regularShader->use();
-    Renderer::regularShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
-    Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
-    Renderer::regularShader->setUniform1i(Renderer::texUniform, Renderer::frame);
-    for(const auto &[_, c] : World::chunks)
-        if(c.getStatus() == ChunkStatus::SHOWING) {
-            DebugStats::chunksRenderedCount++;
-            Renderer::regularBatch.flushMesh(c.getMesh());
-        }
+    if(!Input::isKeyDown(GLFW_KEY_V)) {
+        Renderer::regularShader->use();
+        Renderer::regularShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
+        Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+        Renderer::regularShader->setUniform1i(Renderer::texUniform, Renderer::frame);
+        for(const auto &[_, c] : World::chunks)
+            if(c.getStatus() == ChunkStatus::SHOWING) {
+                DebugStats::chunksRenderedCount++;
+                Renderer::regularBatch.flushMesh(c.getMesh());
+            }
+    }
     glDisable(GL_CULL_FACE);
-    DebugStats::drawTime += glfwGetTime() - drawStart;
     // Renderer::transparentShader->use();
     // Renderer::transparentShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
     // Renderer::transparentShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
     // Renderer::transparentShader->setUniform1f(Renderer::waveUniform, Renderer::wave);
-    for(const auto &[_, c] : World::chunks)
-        if(c.getStatus() == ChunkStatus::SHOWING)
-            Renderer::transparentBatch.flushMesh(c.getTransparentMesh());
+
+    if(!Input::isKeyDown(GLFW_KEY_B)) {
+        Renderer::transparentShader->use();
+        Renderer::transparentShader->setUniform1f(Renderer::wSunUniform, Renderer::skyBrightness);
+        Renderer::transparentShader->setUniform1f(Renderer::waveUniform, Renderer::wave);
+        Renderer::transparentShader->setUniformMat4f(Renderer::wVpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+        Renderer::transparentShader->setUniform1i(Renderer::wTexUniform, Renderer::frame);
+        for(const auto &[_, c] : World::chunks)
+            if(c.getStatus() == ChunkStatus::SHOWING)
+                Renderer::transparentBatch.flushMesh(c.getWaterMesh());
+    }
     glEnable(GL_CULL_FACE);
+    
+    DebugStats::drawTime += glfwGetTime() - drawStart;
     
     if(Input::isKeyBeginDown(GLFW_KEY_X)) {
         guiToggle = !guiToggle;
@@ -134,13 +147,16 @@ void BatchScene3D::render() {
             DebugStats::triCount = triCount;
         }
         
+        glDisable(GL_CULL_FACE);
         invMesh.clear();
         for(int i = 0; i < invSize; i++) {
             unsigned int triCount = DebugStats::triCount;
             const Block &b = Blocks::getBlockFromID(inv[i]);
-            if(b.id == Blocks::TORCH || b.id == Blocks::REDSTONE_TORCH)
+            if(b.render == CROSS)
+                Renderer::generateCrossMesh(invMesh, -i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f, b.tex, invSides);
+            else if(b.render == TORCH)
                 Renderer::generateTorchMesh(invMesh, -i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f, b.tex, invSides);
-            else if(b.liquid)
+            else if(b.render == LIQUID)
                 Renderer::generateLiquidMesh(invMesh, {-i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f}, b.tex, invSides);
             else
                 Renderer::generateCubeMesh(invMesh, {-i * 1.1f, ( blockInHand == i ) * .5f, i * 1.1f}, b.tex, invSides);
@@ -148,17 +164,14 @@ void BatchScene3D::render() {
         }
         Renderer::regularShader->use();
         float ratio = (float)window->getWidth() / window->getHeight();
-        glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -1.5f, 0.5f);
+        glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -4.5f, 3.5f);
         Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
         Renderer::regularBatch.flushMesh(invMesh);
-        // glEnable(GL_CULL_FACE);
+        glEnable(GL_CULL_FACE);
         
         if(!CameraConfig::ortho)
             Renderer::renderCrosshair();
     }
-    // glClear(GL_DEPTH_BUFFER_BIT);
-    // glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-    // glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 
 void BatchScene3D::guiRender() {

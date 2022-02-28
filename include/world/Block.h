@@ -19,7 +19,6 @@ enum BlockOrientation : unsigned int {
 struct BlockData {
     BlockID id;
     BlockOrientation orientation;
-    LightData light;
 };
 
 
@@ -46,8 +45,8 @@ struct Block {
     bool transparent = false;
     bool breakable = true;
     bool rotatable = false;
-    float lightBlocking = 1.f;
-    float lightEmit = 0.f;
+    LightData lightBlocking = 15;
+    LightData lightEmit = 0;
     MeshType render = MeshType::CUBE;
 };
 
@@ -73,7 +72,14 @@ namespace Blocks {
         REDSTONE_TORCH = 14,
         GLASS = 15,
         TALL_GRASS = 16,
-        ROSE = 17,
+        VERY_TALL_GRASS = 17,
+        VERY_TALL_GRASS_TOP = 18,
+        ROSE = 19,
+        DANDELION = 20,
+        WHITE_TULIP = 21,
+        RED_MUSHROOM = 22,
+        BROWN_MUSHROOM = 23,
+        SUGAR_CANE = 24,
     };
     extern Block blocks[numBlocks];
     extern SpriteSheet *blockAtlas;
@@ -82,7 +88,7 @@ namespace Blocks {
     void init();
     void free();
     const Block &getBlockFromID(BlockID id);
-    BlockID getIdFromName(std::string name);
+    BlockID getIdFromName(const std::string &name);
 }
 
 #endif

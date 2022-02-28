@@ -1,19 +1,14 @@
 #type vertex
-#version 330 core
+#version 430 core
 
 layout (location = 0) in vec3 aPosition;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTex;
-layout (location = 3) in int aLight;
-// layout (location = 3) in float aLight;
-// layout (location = 4) in float aSkyLight;
+layout (location = 1) in vec2 aTexCoord;
+layout (location = 2) in uint aData;
 
 // uniform vec3 chunkPosition; // take in chunk position. "position" would then be relative to the chunk position
 
 out vec2 vTexCoord;
-out vec3 vNormal;
-out float vLight;
-out float vSkyLight;
+flat out uint vData;
 
 uniform mat4 model;
 uniform mat4 viewProj;
@@ -25,43 +20,55 @@ void main() {
     float height = aPosition.y;
     // float height = aPosition.y+ waveHeight*sin(aPosition.x + aPosition.z + waveOffset);
     gl_Position = viewProj * model * vec4(aPosition.x, height, aPosition.z, 1.0);
-    vTexCoord = aTex;
-    vNormal = aNormal;
-    // vLight = aLight;
-    // vSkyLight = aSkyLight;
-    vSkyLight = (float( aLight & 0xF ) + .5f) / 15.5f;
-    vLight = (float( ( aLight & 0xF0 ) >> 4 ) + .5f) / 15.5f;
+    vTexCoord = aTexCoord;
+    vData = aData;
 }
 
 #type fragment
-#version 330 core
+#version 430 core
 
 layout (location = 0) out vec4 outColor;
 
 in vec2 vTexCoord;
-in vec3 vNormal;
-in int vLight;
-in float vSkyLight;
+flat in uint vData;
 
 uniform float skyBrightness;
-uniform sampler2D tex0;
+uniform sampler2D selTex;
 
 vec3 sunDirection = normalize(vec3(-0.27, 0.57, -0.57));
-vec3 lightColor = vec3(1.0, 1.0, 1.0);
+vec3 skyLightColor = vec3(1.0, 1.0, 1.0);
+vec3 lightColor = vec3(1.f, .95f, .6f);
+// vec3 lightColor = vec3(0.0f, .05f, .6f);
 float ambientStrength = 0.6;
 
+const vec3 normals[] = vec3[](
+    vec3(1f, 0f, 0f),
+    vec3(0f, 1f, 0f),
+    vec3(0f, 0f, 1f),
+    vec3(-1f, 0f, 0f),
+    vec3(0f, -1f, 0f),
+    vec3(0f, 0f, -1f)
+);
+
 void main() {
-    vec3 ambient = ambientStrength * lightColor;
+    vec4 tex = texture(selTex, vTexCoord);
+    if(tex.a == 0)
+        discard;
+    
+    float light = (float( vData & 0xF ) + 2.0f) / 17.0f;
+    float skyLight = (float( ( vData & 0xF0 ) >> 4 ) + 2.0f) / 17.0f;
+    skyLight = skyLight * skyLight;
+    light = light * light;
+    uint normalIndex = (vData & 0x700) >> 8;
+    
+    vec3 ambient = ambientStrength * skyLightColor;
     vec3 lightDir = normalize(sunDirection);
-    float diff = max(dot(vNormal, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
-    // float l = vLight & 0xF;
-    // float sl = ( vLight & 0xF0 ) >> 4;
-    float light = max(vLight, vSkyLight * skyBrightness);
-    // float light = max( (l + .5f) / 15.5f , ((sl + .5f) / 15.5f) * skyBrightness);
-    outColor = vec4(min((diffuse + ambient), 1.0), 1.0) * texture(tex0, vTexCoord) * vec4(light, light, light, 1.0);
-    if (outColor.a == 0) { discard; }
-    // float f = float(vLight);
-    // float light = f / 15.0;
-    // outColor = texture(tex0, vTexCoord) * vec4(vLight, vLight, vLight, 1.0);
+    float diff = max(dot(normals[normalIndex], lightDir), 0.0);
+    // float diff = 1.0f;
+    vec3 diffuse = diff * skyLightColor;
+    // // This works for colored lighting
+    // vec3 light = mix(vLight*lightColor, vSkyLight * skyBrightness * skyLightColor, .5);
+    
+    vec3 maxLight = max(light*lightColor, skyLight * skyLightColor* skyBrightness);
+    outColor = vec4(min((diffuse + ambient), 1.0) * tex.rgb * maxLight, tex.a);
 }

@@ -42,9 +42,15 @@ namespace Blocks {
         TexCoords redstoneTorch = blockAtlas->getSubTexture(18, 31);
         TexCoords glass = blockAtlas->getSubTexture(15, 27);
         TexCoords tallGrass = blockAtlas->getSubTexture(20, 28);
+        TexCoords veryTallGrass = blockAtlas->getSubTexture(10, 31);
+        TexCoords veryTallGrassTop = blockAtlas->getSubTexture(10, 30);
         TexCoords rose = blockAtlas->getSubTexture(14, 28);
+        TexCoords dandelion = blockAtlas->getSubTexture(13, 24);
+        TexCoords whiteTulip = blockAtlas->getSubTexture(14, 24);
+        TexCoords sugarCane = blockAtlas->getSubTexture(18, 30);
+        TexCoords redMushroom = blockAtlas->getSubTexture(5, 17);
+        TexCoords brownMushroom = blockAtlas->getSubTexture(4, 17);
         
-        // TexCoords square = blockAtlas->getSubTexture(30, 13, 2, 2);
         TexCoords white = blockAtlas->getSubTexture(29, 13);
         highlight = { white };
         
@@ -53,19 +59,26 @@ namespace Blocks {
         blocks[DIRT] = Block{ .name = "Dirt", .tex = { dirt }, .id = DIRT };
         blocks[STONE] = Block{ .name = "Stone", .tex = { stone }, .id = STONE };
         blocks[LOG] = Block{ .name = "Log", .tex = { logTop, logTop, logSide }, .id = LOG };
-        blocks[LEAVES] = Block{ .name = "Leaves", .tex = { leaves }, .id = LEAVES, .transparent = true };
+        blocks[LEAVES] = Block{ .name = "Leaves", .tex = { leaves }, .id = LEAVES, .transparent = true, .lightBlocking = 3 };
         blocks[SAND] = Block{ .name = "Sand", .tex = { sand }, .id = SAND, };
-        blocks[WATER] = Block{ .name = "Water", .tex = { water }, .id = WATER, .liquid = true, .transparent = true, .lightBlocking = 0.2f, .render = LIQUID };
-        blocks[GLOWSTONE] = Block{ .name = "Glowstone", .tex = { glowstone }, .id = GLOWSTONE, .lightEmit = 1.f };
+        blocks[WATER] = Block{ .name = "Water", .tex = { water }, .id = WATER, .liquid = true, .transparent = true, .lightBlocking = 1, .lightEmit = 0, .render = LIQUID };
+        blocks[GLOWSTONE] = Block{ .name = "Glowstone", .tex = { glowstone }, .id = GLOWSTONE, .lightEmit = 15 };
         blocks[BEDROCK] = Block{ .name = "Bedrock", .tex = { bedrock }, .id = BEDROCK, .breakable = false };
         blocks[COBBLESTONE] = Block{ .name = "Cobblestone", .tex = { cobblestone }, .id = COBBLESTONE };
         blocks[WOODEN_PLANKS] = Block{ .name = "WoodenPlanks", .tex = { planks }, .id = WOODEN_PLANKS };
-        blocks[LAVA] = Block{ .name = "Lava", .tex = { lava }, .id = LAVA, .liquid = true, .transparent = true, .lightEmit = 1.f, .render = LIQUID };
-        blocks[TORCH] = Block{ .name = "Torch", .tex = { torch }, .id = TORCH, .transparent = true, .lightEmit = 1.f, .render = MeshType::TORCH };
-        blocks[REDSTONE_TORCH] = Block{ .name = "RedstoneTorch", .tex = { redstoneTorch }, .id = REDSTONE_TORCH, .transparent = true, .lightEmit = 0.5f, .render = MeshType::TORCH };
-        blocks[GLASS] = Block{ .name = "Glass", .tex = { glass }, .id = GLASS, .transparent = true };
-        blocks[TALL_GRASS] = Block{ .name = "TallGrass", .tex = { tallGrass }, .id = TALL_GRASS, .transparent = true, .render = CROSS };
-        blocks[ROSE] = Block{ .name = "Rose", .tex = { rose }, .id = ROSE, .transparent = true, .render = CROSS };
+        blocks[LAVA] = Block{ .name = "Lava", .tex = { lava }, .id = LAVA, .liquid = true, .transparent = true, .lightEmit = 15, .render = LIQUID };
+        blocks[TORCH] = Block{ .name = "Torch", .tex = { torch }, .id = TORCH, .transparent = true, .lightBlocking = 0, .lightEmit = 15, .render = MeshType::TORCH };
+        blocks[REDSTONE_TORCH] = Block{ .name = "RedstoneTorch", .tex = { redstoneTorch }, .id = REDSTONE_TORCH, .transparent = true, .lightEmit = 7, .render = MeshType::TORCH };
+        blocks[GLASS] = Block{ .name = "Glass", .tex = { glass }, .id = GLASS, .transparent = true, .lightBlocking = 0 };
+        blocks[TALL_GRASS] = Block{ .name = "TallGrass", .tex = { tallGrass }, .id = TALL_GRASS, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[VERY_TALL_GRASS] = Block{ .name = "VeryTallGrass", .tex = { veryTallGrass }, .id = TALL_GRASS, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[VERY_TALL_GRASS_TOP] = Block{ .name = "VeryTallGrassTop", .tex = { veryTallGrassTop }, .id = TALL_GRASS, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[ROSE] = Block{ .name = "Rose", .tex = { rose }, .id = ROSE, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[DANDELION] = Block{ .name = "Dandelion", .tex = { dandelion }, .id = DANDELION, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[WHITE_TULIP] = Block{ .name = "WhiteTulip", .tex = { whiteTulip }, .id = WHITE_TULIP, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[RED_MUSHROOM] = Block{ .name = "SugarCane", .tex = { redMushroom }, .id = RED_MUSHROOM, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[BROWN_MUSHROOM] = Block{ .name = "SugarCane", .tex = { brownMushroom }, .id = BROWN_MUSHROOM, .transparent = true, .lightBlocking = 0, .render = CROSS };
+        blocks[SUGAR_CANE] = Block{ .name = "SugarCane", .tex = { sugarCane }, .id = SUGAR_CANE, .transparent = true, .lightBlocking = 0, .render = CROSS };
     }
     
     void free() {
@@ -79,7 +92,7 @@ namespace Blocks {
         return blocks[id];
     }
     
-    BlockID getIdFromName(std::string name) {
+    BlockID getIdFromName(const std::string &name) {
         for(const auto &b : blocks)
             if(b.name == name)
                 return b.id;

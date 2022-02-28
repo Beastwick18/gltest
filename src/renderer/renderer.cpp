@@ -8,7 +8,7 @@
 namespace Renderer {
     Shader *regularShader, *transparentShader, *cubemapShader, *crosshairShader;
     GLint vpUniform, wVpUniform;
-    GLint texUniform;
+    GLint texUniform, wTexUniform;
     GLint waveUniform;
     GLint sunUniform, wSunUniform;
     GLint cmView, cmProj, cmTime;
@@ -130,11 +130,12 @@ namespace Renderer {
         
         transparentShader = Shader::createShader("assets/shaders/waveyBlock.glsl");
         transparentShader->use();
-        transparentShader->setUniform1i("tex0", 0);
+        transparentShader->setUniform1i("selTex", 0);
         transparentShader->setUniformMat4f("model", glm::mat4(1.f));
         wSunUniform = transparentShader->getUniformLocation("skyBrightness");
         wVpUniform = transparentShader->getUniformLocation("viewProj");
         waveUniform = transparentShader->getUniformLocation("waveOffset");
+        wTexUniform = regularShader->getUniformLocation("selTex");
     }
     
     void free() {
@@ -386,6 +387,29 @@ namespace Renderer {
         //     DebugStats::triCount += 1;
         // }
     }
+    
+    void generateCrossMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, LightData light) {
+        const static float off = glm::sqrt(2.f) / 4.f;
+        // const static float off = .5;
+        
+        unsigned int data = light;
+        data |= BlockOrientation::NORTH << 8;
+        generateQuadMesh(mesh,
+            { {x+.5f-off,   y+1, z+.5f - off}, {tex.front.x, tex.front.y+tex.front.h}, data},
+            { {x+.5f-off,   y,   z+.5f - off}, {tex.front.x, tex.front.y}, data},
+            { {x+.5f+off, y,   z+.5f + off}, {tex.front.x+tex.front.w, tex.front.y}, data},
+            { {x+.5f+off, y+1, z+.5f + off}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, data}
+        );
+        DebugStats::triCount += 1;
+
+        generateQuadMesh(mesh,
+            { {x+.5f-off,   y+1, z+.5f + off}, {tex.front.x, tex.front.y+tex.front.h}, data},
+            { {x+.5f-off,   y,   z+.5f + off}, {tex.front.x, tex.front.y}, data},
+            { {x+.5f+off, y,   z+.5f - off}, {tex.front.x+tex.front.w, tex.front.y}, data},
+            { {x+.5f+off, y+1, z+.5f - off}, {tex.front.x+tex.front.w, tex.front.y+tex.front.h}, data}
+        );
+        DebugStats::triCount += 1;
+    }
 
     
     void flushRegularBatch() {
@@ -396,11 +420,11 @@ namespace Renderer {
     }
     
     void flushTransparentBatch() {
-        if(transparentBatch.isEmpty())
-            return;
+        // if(transparentBatch.isEmpty())
+        //     return;
         
         // glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
+        // glDisable(GL_CULL_FACE);
         // transparentShader->use();
         transparentShader->use();
         transparentShader->setUniform1f(wSunUniform, skyBrightness);
@@ -408,7 +432,7 @@ namespace Renderer {
         transparentShader->setUniformMat4f(wVpUniform, camera->getProjection() * camera->getView());
         transparentBatch.flush();
         // glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
+        // glEnable(GL_CULL_FACE);
     }
 
     void renderMesh(const Vertex *mesh, const size_t size) {

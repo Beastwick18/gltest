@@ -10,7 +10,7 @@
 namespace Renderer {
     extern Shader *regularShader, *transparentShader;
     extern GLint vpUniform, wVpUniform;
-    extern GLint texUniform;
+    extern GLint texUniform, wTexUniform;
     extern int frame;
     extern GLint waveUniform;
     extern GLint sunUniform, wSunUniform;
@@ -29,6 +29,7 @@ namespace Renderer {
     void generateLiquidMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, LightData light = 0xFF);
     void generateLiquidMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, LightData light = 0xFF);
     void generateTorchMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, LightData light = 0xFF);
+    void generateCrossMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, LightData light = 0xFF);
     void renderMesh(const Vertex *mesh, const size_t size);
     void renderTransparentMesh(const Vertex *mesh, const size_t size);
     void render();
