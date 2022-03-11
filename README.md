@@ -17,7 +17,7 @@ It is very Minecraft-like with blocks that can be placed and broken at will.
 - Use a noise algorithm that allows for seeds and more interesting terrain generation.
 - A proper GUI system other than ImGUI.
 - A proper collision system.
-- Make lighting system light each face of a voxel independently.
+- ~~Make lighting system light each face of a voxel independently.~~ Done ✅
 
 ## Installation and Running
 - If you for some reason want to install this program, I would recommend installing it on Linux. I have managed to get it running on Windows but it is a pain because it requires MinGW as well as GLFW and OpenGL installed on MinGW. Both must be accessable to the compiler. Posix threads must be enabled in MinGW, because the program uses the mutex header. 
