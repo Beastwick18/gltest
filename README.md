@@ -14,6 +14,7 @@ It is very Minecraft-like with blocks that can be placed and broken at will.
 - Recursive lighting, including variable skylight (adjustable in config GUI)
 
 ## Todo
+- Greedy Meshing by combining block faces of same texture and light value.
 - Use a noise algorithm that allows for seeds and more interesting terrain generation.
 - A proper GUI system other than ImGUI.
 - A proper collision system.
