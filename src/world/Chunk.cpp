@@ -228,7 +228,13 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
         // LightData light = getLight(cx, y, cz+1);
         // LightData skyLight = getSkyLight(cx, y, cz+1);
         // LightData lightData = (skyLight << 4) | light;
-        unsigned int data = getLightData(cx, y, cz+1);
+        unsigned int data = 0xF0;
+        if(cz >= chunkW) {
+            Chunk *c = World::getChunk(pos.x, pos.y+1);
+            if(c != nullptr)
+                data = c->getLightData(x, y, 0);
+        } else
+            data = getLightData(cx, y, cz+1);
         data |= BlockOrientation::SOUTH << 8;
         generateQuadMesh(mesh,
             { {x,   y+1, z+1}, {tex.front.x, tex.front.y+tex.front.h}, data},
@@ -243,7 +249,13 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
         // LightData light = getLight(cx+1, y, cz);
         // LightData skyLight = getSkyLight(cx+1, y, cz);
         // LightData lightData = (skyLight << 4) | light;
-        unsigned int data = getLightData(cx+1, y, cz);
+        unsigned int data = 0xF0;
+        if(cx >= chunkW) {
+            Chunk *c = World::getChunk(pos.x+1, pos.y);
+            if(c != nullptr)
+                data = c->getLightData(0, y, z);
+        } else
+            data = getLightData(cx+1, y, cz);
         data |= BlockOrientation::EAST << 8;
         generateQuadMesh(mesh,
             { {x+1, y+1, z+1}, {tex.left.x, tex.left.y+tex.left.h}, data},
@@ -258,7 +270,13 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
         // LightData light = getLight(cx, y, cz-1);
         // LightData skyLight = getSkyLight(cx, y, cz-1);
         // LightData lightData = (skyLight << 4) | light;
-        unsigned int data = getLightData(cx, y, cz-1);
+        unsigned int data = 0xF0;
+        if(cz < 0) {
+            Chunk *c = World::getChunk(pos.x, pos.y-1);
+            if(c != nullptr)
+                data = c->getLightData(x, y, chunkW-1);
+        } else
+            data = getLightData(cx, y, cz-1);
         data |= BlockOrientation::NORTH << 8;
         generateQuadMesh(mesh,
                 { {x,   y+1, z}, {tex.back.x+tex.back.w, tex.back.y+tex.back.h}, data},
@@ -273,7 +291,13 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
         // LightData light = getLight(cx-1, y, cz);
         // LightData skyLight = getSkyLight(cx-1, y, cz);
         // LightData lightData = (skyLight << 4) | light;
-        unsigned int data = getLightData(cx-1, y, cz);
+        unsigned int data = 0xF0;
+        if(cx < 0) {
+            Chunk *c = World::getChunk(pos.x-1, pos.y);
+            if(c != nullptr)
+                data = c->getLightData(chunkW-1, y, z);
+        } else
+            data = getLightData(cx-1, y, cz);
         data |= BlockOrientation::WEST << 8;
         generateQuadMesh(mesh,
                 { {x, y+1, z+1}, {tex.right.x+tex.right.w, tex.right.y+tex.right.h}, data},
@@ -288,7 +312,11 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
         // LightData light = getLight(cx, y+1, cz);
         // LightData skyLight = getSkyLight(cx, y+1, cz);
         // LightData lightData = (skyLight << 4) | light;
-        unsigned int data = getLightData(cx, y+1, cz);
+        unsigned int data;
+        if(y >= chunkH)
+            data = 0xF0;
+        else
+            data = getLightData(cx, y+1, cz);
         data |= BlockOrientation::UP << 8;
         generateQuadMesh(mesh,
                 { {x+1, y+1, z},   {tex.top.x+tex.top.w, tex.top.y}, data},
@@ -303,7 +331,11 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
         // LightData light = getLight(cx, y-1, cz);
         // LightData skyLight = getSkyLight(cx, y-1, cz);
         // LightData lightData = (skyLight << 4) | light;
-        unsigned int data = getLightData(cx, y-1, cz);
+        unsigned int data;
+        if(y < 0)
+            data = 0x00;
+        else
+            data = getLightData(cx, y-1, cz);
         data |= BlockOrientation::DOWN << 8;
         generateQuadMesh(mesh,
                 { {x,   y, z+1}, {tex.bottom.x, tex.bottom.y+tex.bottom.h}, data},
