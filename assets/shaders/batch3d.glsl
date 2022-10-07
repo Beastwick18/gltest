@@ -40,12 +40,12 @@ vec3 lightColor = vec3(1.f, .95f, .6f);
 float ambientStrength = 0.6;
 
 const vec3 normals[] = vec3[](
-    vec3(1f, 0f, 0f),
-    vec3(0f, 1f, 0f),
-    vec3(0f, 0f, 1f),
-    vec3(-1f, 0f, 0f),
-    vec3(0f, -1f, 0f),
-    vec3(0f, 0f, -1f)
+    vec3(1.0, 0.0, 0.0),
+    vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 0.0, 1.0),
+    vec3(-1.0, 0.0, 0.0),
+    vec3(0.0, -1.0, 0.0),
+    vec3(0.0, 0.0, -1.0)
 );
 
 void main() {
