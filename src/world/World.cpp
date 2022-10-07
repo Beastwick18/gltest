@@ -150,22 +150,18 @@ namespace World {
         int rz = z - pos.y;
         chunk->addBlock(id, rx, y, rz);
         // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, chunk));
-        chunk->rebuildMesh();
+        chunk->fullRebuildMesh();
         bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
         if(left || right || front || back) {
             AdjChunks adj = getAdjacentChunks(pos);
             if(left && adj.left)
-                adj.left->rebuildMesh();
-                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.left));
+                adj.left->fullRebuildMesh();
             if(right && adj.right)
-                adj.right->rebuildMesh();
-                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.right));
+                adj.right->fullRebuildMesh();
             if(front && adj.front)
-                adj.front->rebuildMesh();
-                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.front));
+                adj.front->fullRebuildMesh();
             if(back && adj.back)
-                adj.back->rebuildMesh();
-                // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, adj.back));
+                adj.back->fullRebuildMesh();
         }
         
     }
@@ -191,18 +187,18 @@ namespace World {
         int rx = x - pos.x;
         int rz = z - pos.y;
         chunk->removeBlock(rx, y, rz);
-        chunk->rebuildMesh();
+        chunk->fullRebuildMesh();
         bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
         if(left || right || front || back) {
             AdjChunks adj = getAdjacentChunks(pos);
             if(left && adj.left)
-                adj.left->rebuildMesh();
+                adj.left->fullRebuildMesh();
             if(right && adj.right)
-                adj.right->rebuildMesh();
+                adj.right->fullRebuildMesh();
             if(front && adj.front)
-                adj.front->rebuildMesh();
+                adj.front->fullRebuildMesh();
             if(back && adj.back)
-                adj.back->rebuildMesh();
+                adj.back->fullRebuildMesh();
         }
     }
     

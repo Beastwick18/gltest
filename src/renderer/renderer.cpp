@@ -524,5 +524,11 @@ namespace Renderer {
         
         if(MinecraftClone::Input::isKeyDown(GLFW_KEY_R))
             printf("%f\n",wave);
+        
+        for(auto &c : World::chunks) {
+            if(c.second.isDirty()) {
+                c.second.rebuildMesh();
+            }
+        }
     }
 }

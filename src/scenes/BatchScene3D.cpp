@@ -65,8 +65,13 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
             World::chunks[World::generateChunkKey({x * Chunk::chunkW, z * Chunk::chunkL})] = c;
         }
     
+    for(auto &[_, c] : World::chunks) {
+        c.findMaxMin();
+        c.recalculateLighting();
+    }
     for(auto &[_, c] : World::chunks)
-        meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, &c));
+        c.rebuildMesh();
+        // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, &c));
 }
 
 BatchScene3D::~BatchScene3D() {
