@@ -45,6 +45,7 @@ public:
     void rebuildMesh();
     void recalculateLighting();
     void recalculateBleedLighting();
+    void recalculateFullBleedLighting();
     // void fakeRecalculateLighting(LightData ***buffer);
     void recalculateSurroundingLighting();
     BlockID getBlock(int x, int y, int z) const;

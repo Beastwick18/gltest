@@ -67,10 +67,11 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     for(auto &[_, c] : World::chunks) {
         c.findMaxMin();
         c.recalculateLighting();
+        c.recalculateFullBleedLighting();
     }
     for(auto &[_, c] : World::chunks)
-        c.rebuildMesh();
-        // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, &c));
+        meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, &c));
+        // c.rebuildMesh();
 }
 
 BatchScene3D::~BatchScene3D() {

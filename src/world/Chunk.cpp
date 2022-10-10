@@ -764,6 +764,7 @@ int Chunk::findMinY() {
 void Chunk::fullRebuildMesh() {
     findMaxMin();
     recalculateLighting();
+    recalculateFullBleedLighting();
     rebuildMesh();
 }
 
@@ -796,13 +797,101 @@ void Chunk::recalculateBleedLighting() {
     AdjChunks adj = World::getAdjacentChunks(pos);
     if(rightDirty) {
         Chunk *r = adj.right;
+        if(r != nullptr) {
+            for(int y = 0; y < chunkH; y++) {
+                for(int z = 0; z < chunkW; z++) {
+                    BlockID b = r->blocks[y][0][z].id;
+                    LightData data = r->light[y][0][z];
+                    LightData s = data >> 4;
+                    LightData l = data & 0xF;
+                    LightData lb = 1;
+                    if(b != Blocks::AIR_BLOCK)
+                        lb = Blocks::getBlockFromID(b).lightBlocking;
+                    if(s != 0)
+                        calculateSkyLighting(chunkW-1, y, z, s - lb);
+                    if(l != 0)
+                        calculateLighting(chunkW-1, y, z, l - lb);
+                }
+            }
+        }
+        rightDirty = false;
+    }
+    if(leftDirty) {
+        Chunk *left = adj.left;
+        if(left != nullptr) {
+            for(int y = 0; y < chunkH; y++) {
+                for(int z = 0; z < chunkW; z++) {
+                    BlockID b = left->blocks[y][chunkW-1][z].id;
+                    LightData data = left->light[y][chunkW-1][z];
+                    LightData s = data >> 4;
+                    LightData l = data & 0xF;
+                    LightData lb = 1;
+                    if(b != Blocks::AIR_BLOCK)
+                        lb = Blocks::getBlockFromID(b).lightBlocking;
+                    if(s != 0)
+                        calculateSkyLighting(0, y, z, s - lb);
+                    if(l != 0)
+                        calculateLighting(0, y, z, l - lb);
+                }
+            }
+        }
+        leftDirty = false;
+    }
+    if(frontDirty) {
+        Chunk *f = adj.front;
+        if(f != nullptr) {
+            for(int y = 0; y < chunkH; y++) {
+                for(int x = 0; x < chunkW; x++) {
+                    BlockID b = f->blocks[y][x][0].id;
+                    LightData data = f->light[y][x][0];
+                    LightData s = data >> 4;
+                    LightData l = data & 0xF;
+                    LightData lb = 1;
+                    if(b != Blocks::AIR_BLOCK)
+                        lb = Blocks::getBlockFromID(b).lightBlocking;
+                    if(s != 0)
+                        calculateSkyLighting(x, y, chunkW-1, s - lb);
+                    if(l != 0)
+                        calculateLighting(x, y, chunkW-1, l - lb);
+                }
+            }
+        }
+        frontDirty = false;
+    }
+    if(backDirty) {
+        Chunk *back = adj.back;
+        if(back != nullptr) {
+            for(int y = 0; y < chunkH; y++) {
+                for(int x = 0; x < chunkW; x++) {
+                    BlockID b = back->blocks[y][x][chunkW-1].id;
+                    LightData data = back->light[y][x][chunkW-1];
+                    LightData s = data >> 4;
+                    LightData l = data & 0xF;
+                    LightData lb = 1;
+                    if(b != Blocks::AIR_BLOCK)
+                        lb = Blocks::getBlockFromID(b).lightBlocking;
+                    if(s != 0)
+                        calculateSkyLighting(x, y, 0, s - lb);
+                    if(l != 0)
+                        calculateLighting(x, y, 0, l - lb);
+                }
+            }
+        }
+        backDirty = false;
+    }
+}
+
+void Chunk::recalculateFullBleedLighting() {
+    AdjChunks adj = World::getAdjacentChunks(pos);
+    Chunk *r = adj.right;
+    if(r != nullptr) {
         for(int y = 0; y < chunkH; y++) {
             for(int z = 0; z < chunkW; z++) {
-                BlockID b = r->blocks[y][chunkW-1][z].id;
-                LightData data = r->light[y][chunkW-1][z];
+                BlockID b = r->blocks[y][0][z].id;
+                LightData data = r->light[y][0][z];
                 LightData s = data >> 4;
                 LightData l = data & 0xF;
-                LightData lb = 0;
+                LightData lb = 1;
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
@@ -812,15 +901,16 @@ void Chunk::recalculateBleedLighting() {
             }
         }
     }
-    if(leftDirty) {
-        Chunk *left = adj.left;
+    rightDirty = false;
+    Chunk *left = adj.left;
+    if(left != nullptr) {
         for(int y = 0; y < chunkH; y++) {
             for(int z = 0; z < chunkW; z++) {
                 BlockID b = left->blocks[y][chunkW-1][z].id;
                 LightData data = left->light[y][chunkW-1][z];
                 LightData s = data >> 4;
                 LightData l = data & 0xF;
-                LightData lb = 0;
+                LightData lb = 1;
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
@@ -830,15 +920,16 @@ void Chunk::recalculateBleedLighting() {
             }
         }
     }
-    if(frontDirty) {
-        Chunk *f = adj.front;
+    leftDirty = false;
+    Chunk *f = adj.front;
+    if(f != nullptr) {
         for(int y = 0; y < chunkH; y++) {
             for(int x = 0; x < chunkW; x++) {
-                BlockID b = f->blocks[y][x][chunkW-1].id;
-                LightData data = f->light[y][x][chunkW-1];
+                BlockID b = f->blocks[y][x][0].id;
+                LightData data = f->light[y][x][0];
                 LightData s = data >> 4;
                 LightData l = data & 0xF;
-                LightData lb = 0;
+                LightData lb = 1;
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
@@ -848,15 +939,16 @@ void Chunk::recalculateBleedLighting() {
             }
         }
     }
-    if(backDirty) {
-        Chunk *back = adj.back;
+    frontDirty = false;
+    Chunk *back = adj.back;
+    if(back != nullptr) {
         for(int y = 0; y < chunkH; y++) {
             for(int x = 0; x < chunkW; x++) {
                 BlockID b = back->blocks[y][x][chunkW-1].id;
                 LightData data = back->light[y][x][chunkW-1];
                 LightData s = data >> 4;
                 LightData l = data & 0xF;
-                LightData lb = 0;
+                LightData lb = 1;
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
@@ -866,6 +958,7 @@ void Chunk::recalculateBleedLighting() {
             }
         }
     }
+    backDirty = false;
 }
 
 // void Chunk::fakeRecalculateLighting(LightData ***buffer) {

@@ -186,20 +186,26 @@ namespace World {
         const auto &pos = chunk->getPos();
         int rx = x - pos.x;
         int rz = z - pos.y;
+        bool light = Blocks::getBlockFromID(chunk->getBlock(rx, y, rz)).lightEmit > 0;
+        printf("%d\n", light);
         chunk->removeBlock(rx, y, rz);
-        chunk->fullRebuildMesh();
+        // chunk->fullRebuildMesh();
+        chunk->findMaxMin();
+        chunk->recalculateLighting();
         bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
         if(left || right || front || back) {
             AdjChunks adj = getAdjacentChunks(pos);
-            if(left && adj.left)
+            if((left || light) && adj.left) // Do same to rest
                 adj.left->fullRebuildMesh();
-            if(right && adj.right)
+            if(right && (adj.right || light))
                 adj.right->fullRebuildMesh();
-            if(front && adj.front)
+            if(front && (adj.front || light))
                 adj.front->fullRebuildMesh();
-            if(back && adj.back)
+            if(back && (adj.back || light))
                 adj.back->fullRebuildMesh();
         }
+        chunk->recalculateBleedLighting();
+        chunk->rebuildMesh();
     }
     
     void removeBlock(const glm::ivec3 pos) {
