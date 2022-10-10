@@ -12,7 +12,6 @@ int renderDistance = 4;
 bool guiToggle = true;
 BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Input::disableCursor();
-    dtSum = 0;
     
     glLineWidth(2.0f);
     glEnable(GL_LINE_SMOOTH);
@@ -290,9 +289,8 @@ void BatchScene3D::update(double deltaTime) {
     }
     
     for(int i = 0; i < 9; i++)
-        if(Input::isKeyBeginDown(GLFW_KEY_1+i)) {
+        if(Input::isKeyBeginDown(GLFW_KEY_1+i))
             blockInHand = i;
-        }
     
     if(!Input::cursorEnabled) {
         // TODO: https://antongerdelan.net/opengl/raycasting.html
@@ -313,8 +311,14 @@ void BatchScene3D::update(double deltaTime) {
                 World::removeBlock(ray.block.hitCoords);
             else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_RIGHT))
                 World::addBlock(inv[blockInHand], ray.block.hitCoords + ray.block.hitSide);
-            else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_3))
-                inv[blockInHand] = ray.block.blockID;
+            else if(Input::isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_3)) {
+                auto begin =  std::begin(inv), end=std::end(inv);
+                auto idx = std::find(begin, end, ray.block.blockID);
+                if(idx != end)
+                    blockInHand = idx-begin;
+                else
+                    inv[blockInHand] = ray.block.blockID;
+            }
         }
     }
     if(CameraConfig::ortho)

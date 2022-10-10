@@ -19,7 +19,7 @@ bool fullscreen = false, vsync = true;
 double targetFramerate = 120.0;
 
 void readArguments(int argc, char **argv) {
-    for(int i = 0; i < argc; i++) {
+    for(int i = 1; i < argc; i++) {
         char *str = argv[i];
         size_t len = strlen(str);
         if(len >= 3 && str[0] == '-' && str[1] == '-') {
@@ -34,20 +34,13 @@ void readArguments(int argc, char **argv) {
                 vsync = true;
             } else { // Check for "--command=value" commands
                 size_t commandLen = strlen(commandString);
-                bool foundValue = false;
-                char *value;
-                for(size_t j = 0; j < commandLen; j++) {
-                    if(commandString[j] == '=') {
-                        foundValue = true;
-                        commandString[j] = 0;
-                        value = &commandString[j+1];
-                        break;
-                    }
-                }
-                if(!foundValue) {
+                char *idx = std::find(commandString, commandString+commandLen, '=');
+                if(idx == commandString+commandLen) {
                     printf("Not recognized: %s\n", commandString);
                     continue;
                 }
+                *idx = 0;
+                char *value = idx+1;
                 if(std::strcmp(commandString, "width") == 0) {
                     windowWidth = atoi(value);
                 } else if(std::strcmp(commandString, "height") == 0) {
@@ -70,6 +63,7 @@ int main(int argc, char **argv) {
     readArguments(argc, argv);
     
     Window *window = Window::createWindow(windowWidth, windowHeight, windowTitle, fullscreen);
+    // Window *window = Window::createWindow(960, 720, "test", false);
     if(window == nullptr) {
         fprintf(stderr, "Fatal: Failed to create window [failed in %s at line %d]\n", __FILE__, __LINE__ - 2);
         return -1;

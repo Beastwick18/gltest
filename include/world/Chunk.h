@@ -44,6 +44,7 @@ public:
     void fullRebuildMesh();
     void rebuildMesh();
     void recalculateLighting();
+    void recalculateBleedLighting();
     // void fakeRecalculateLighting(LightData ***buffer);
     void recalculateSurroundingLighting();
     BlockID getBlock(int x, int y, int z) const;
@@ -59,8 +60,12 @@ public:
     inline const Mesh<Vertex>& getWaterMesh() const { return waterMesh; }
     inline glm::ivec2 getPos() const { return pos; }
     inline ChunkStatus getStatus() const { return status; }
-    inline bool isDirty() { return dirty; }
+    inline bool isDirty() { return leftDirty || rightDirty || frontDirty || backDirty; }
     inline void setDirty(bool dan) { dirty = dan; }
+    inline void setDirtyLeft(bool dan) { leftDirty = dan; }
+    inline void setDirtyRight(bool dan) { rightDirty = dan; }
+    inline void setDirtyFront(bool dan) { frontDirty = dan; }
+    inline void setDirtyBack(bool dan) { backDirty = dan; }
     LightData getLight(int x, int y, int z);
     LightData getSkyLight(int x, int y, int z);
     LightData getLightData(int x, int y, int z);
@@ -89,6 +94,7 @@ private:
     BlockData blocks[chunkH][chunkW][chunkL];
     
     bool dirty;
+    bool leftDirty, rightDirty, frontDirty, backDirty;
     
     // Change to unsigned int. Then put color data in the other
     // 3 bytes. Send this to the shader to create colored lighting

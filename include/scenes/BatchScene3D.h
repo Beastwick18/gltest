@@ -31,7 +31,6 @@ class BatchScene3D : public Scene {
         RaycastResults ray;
         glm::mat4 blockView;
         float guiScale;
-        double dtSum;
         Mesh<Vertex> highlightMesh;
         Mesh<Vertex> invMesh;
         
