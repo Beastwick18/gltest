@@ -9,19 +9,23 @@ layout (location = 2) in uint aData;
 
 out vec2 vTexCoord;
 flat out uint vData;
+smooth out vec4 ioEyeSpacePosition;
 
 uniform mat4 model;
-uniform mat4 viewProj;
+uniform mat4 view;
+uniform mat4 proj;
 uniform float waveOffset;
 
 float waveHeight = .05;
 
 void main() {
+    mat4 mvMatrix = view * model;
     float height = aPosition.y;
     // float height = aPosition.y+ waveHeight*sin(aPosition.x + aPosition.z + waveOffset);
-    gl_Position = viewProj * model * vec4(aPosition.x, height, aPosition.z, 1.0);
+    gl_Position = proj * mvMatrix * vec4(aPosition.x, height, aPosition.z, 1.0);
     vTexCoord = aTexCoord;
     vData = aData;
+    ioEyeSpacePosition = mvMatrix * vec4(aPosition, 1.0);
 }
 
 #type fragment
@@ -31,6 +35,7 @@ layout (location = 0) out vec4 outColor;
 
 in vec2 vTexCoord;
 flat in uint vData;
+smooth in vec4 ioEyeSpacePosition;
 
 uniform float skyBrightness;
 uniform sampler2D selTex;
@@ -49,6 +54,36 @@ const vec3 normals[] = vec3[](
     vec3(0.0, -1.0, 0.0),
     vec3(0.0, 0.0, -1.0)
 );
+
+struct FogParameters {
+	vec3 color;
+	float linearStart;
+	float linearEnd;
+	float density;
+	
+	int equation;
+	bool isEnabled;
+};
+
+float getFogFactor(FogParameters params, float fogCoordinate) {
+	float result = 0.0;
+	if(params.equation == 0)
+	{
+		float fogLength = params.linearEnd - params.linearStart;
+		result = (params.linearEnd - fogCoordinate) / fogLength;
+	}
+	else if(params.equation == 1) {
+		result = exp(-params.density * fogCoordinate);
+	}
+	else if(params.equation == 2) {
+		result = exp(-pow(params.density * fogCoordinate, 2.0));
+	}
+	
+	result = 1.0 - clamp(result, 0.0, 1.0);
+	return result;
+}
+
+const FogParameters fogParams = {vec3(168.0/255.0, 228.0/255.0, 240.0/255.0), 40.0, 80.0, 0.01, 0, true};
 
 void main() {
     vec4 tex = texture(selTex, vTexCoord);
@@ -71,4 +106,8 @@ void main() {
     
     vec3 maxLight = max(light*lightColor, skyLight * skyLightColor* skyBrightness);
     outColor = vec4(min((diffuse + ambient), 1.0) * tex.rgb * maxLight, tex.a);
+    if(fogParams.isEnabled) {
+        float fogCoordinate = abs(ioEyeSpacePosition.z / ioEyeSpacePosition.w);
+        outColor = mix(outColor, vec4(fogParams.color * skyBrightness, 1.0), getFogFactor(fogParams, fogCoordinate));
+    }
 }

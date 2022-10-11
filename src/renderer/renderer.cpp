@@ -7,7 +7,7 @@
 
 namespace Renderer {
     Shader *regularShader, *transparentShader, *cubemapShader, *crosshairShader;
-    GLint vpUniform, wVpUniform;
+    GLint viewUniform, wViewUniform, projUniform, wProjUniform;
     GLint texUniform, wTexUniform;
     GLint waveUniform;
     GLint sunUniform, wSunUniform;
@@ -125,7 +125,8 @@ namespace Renderer {
         regularShader->setUniform1i("selTex", 0);
         regularShader->setUniformMat4f("model", glm::mat4(1.f));
         sunUniform = regularShader->getUniformLocation("skyBrightness");
-        vpUniform = regularShader->getUniformLocation("viewProj");
+        viewUniform = regularShader->getUniformLocation("view");
+        projUniform = regularShader->getUniformLocation("proj");
         texUniform = regularShader->getUniformLocation("selTex");
         
         transparentShader = Shader::createShader("assets/shaders/waveyBlock.glsl");
@@ -133,7 +134,8 @@ namespace Renderer {
         transparentShader->setUniform1i("selTex", 0);
         transparentShader->setUniformMat4f("model", glm::mat4(1.f));
         wSunUniform = transparentShader->getUniformLocation("skyBrightness");
-        wVpUniform = transparentShader->getUniformLocation("viewProj");
+        wViewUniform = transparentShader->getUniformLocation("view");
+        wProjUniform = transparentShader->getUniformLocation("proj");
         waveUniform = transparentShader->getUniformLocation("waveOffset");
         wTexUniform = regularShader->getUniformLocation("selTex");
     }
@@ -415,7 +417,8 @@ namespace Renderer {
     void flushRegularBatch() {
         regularShader->use();
         regularShader->setUniform1f(sunUniform, skyBrightness);
-        regularShader->setUniformMat4f(vpUniform, camera->getProjection() * camera->getView());
+        regularShader->setUniformMat4f(viewUniform, camera->getView());
+        regularShader->setUniformMat4f(projUniform, camera->getProjection());
         regularBatch.flush();
     }
     
@@ -429,7 +432,8 @@ namespace Renderer {
         transparentShader->use();
         transparentShader->setUniform1f(wSunUniform, skyBrightness);
         transparentShader->setUniform1f(waveUniform, wave);
-        transparentShader->setUniformMat4f(wVpUniform, camera->getProjection() * camera->getView());
+        transparentShader->setUniformMat4f(wViewUniform, camera->getView());
+        transparentShader->setUniformMat4f(wProjUniform, camera->getProjection());
         transparentBatch.flush();
         // glEnable(GL_DEPTH_TEST);
         // glEnable(GL_CULL_FACE);

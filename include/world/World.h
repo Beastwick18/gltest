@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <map>
+#include "ctpl/ctpl_stl.h"
 #include "world/Chunk.h"
 
 struct RaycastResult {
@@ -27,6 +28,7 @@ struct SurroundingBlocks {
 namespace World {
     extern std::map<std::string, Chunk> chunks;
     extern std::mutex chunkMutex;
+    extern ctpl::thread_pool pool;
     
     RaycastResults raycast(const glm::vec3 startPos, const glm::vec3 dir, const float length);
     
@@ -56,6 +58,7 @@ namespace World {
     
     std::string generateChunkKey(const glm::ivec2 pos);
     AdjChunks getAdjacentChunks(const glm::ivec2 chunkPos);
+    std::vector<Chunk *> getAllSurroundingChunks(const glm::ivec2 chunkPos);
 }
 
 #endif

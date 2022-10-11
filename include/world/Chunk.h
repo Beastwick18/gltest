@@ -82,7 +82,7 @@ public:
     int findMaxY();
     int findMinY();
     void findMaxMin();
-    static const int chunkW = 32, chunkL = 32, chunkH = 256;
+    static const int chunkW = 16, chunkL = 16, chunkH = 256;
     // static const int chunkW = 8, chunkL = 8, chunkH = 150;
     // static const int chunkW = 16, chunkL = 16, chunkH = 256;
     // static const int chunkW = 64, chunkL = 64, chunkH = 256;

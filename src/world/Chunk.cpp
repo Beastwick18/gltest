@@ -282,7 +282,7 @@ void Chunk::calculateSkyLighting(int x, int y, int z, LightData prev) {
 // }
 
 void Chunk::calculateLighting(int x, int y, int z, LightData prev) {
-    if(prev > 15 || y < minY || y < 0 || y > maxY+1 || y >= chunkH)
+    if(prev > 15 || y < 0 || y >= chunkH || prev < (light[y][x][z] & 0xF))
         return;
     
     if(x < 0) {
@@ -1020,7 +1020,7 @@ void Chunk::rebuildMesh() {
     BlockID id;
     Block b;
     
-    for(int y = minY; y <= maxY; y++) {
+    for(int y = 0; y < chunkH; y++) {
         for(int x = 0; x < chunkW; x++) {
             for(int z = 0; z < chunkL; z++) {
                 id = blocks[y][x][z].id;

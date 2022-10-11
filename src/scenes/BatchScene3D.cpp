@@ -39,8 +39,8 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     // int maxChunkZ = 20;
     // int maxChunkX = 10;
     // int maxChunkZ = 10;
-    int maxChunkX = 15;
-    int maxChunkZ = 15;
+    int maxChunkX = 30;
+    int maxChunkZ = 30;
     // int maxChunkX = 40;
     // int maxChunkZ = 40;
     
@@ -101,7 +101,8 @@ void BatchScene3D::render() {
     if(!Input::isKeyDown(GLFW_KEY_V)) {
         Renderer::regularShader->use();
         Renderer::regularShader->setUniform1f(Renderer::sunUniform, Renderer::skyBrightness);
-        Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+        Renderer::regularShader->setUniformMat4f(Renderer::viewUniform, Renderer::camera->getView());
+        Renderer::regularShader->setUniformMat4f(Renderer::projUniform, Renderer::camera->getProjection());
         Renderer::regularShader->setUniform1i(Renderer::texUniform, Renderer::frame);
         for(const auto &[_, c] : World::chunks)
             if(c.getStatus() == ChunkStatus::SHOWING) {
@@ -119,7 +120,8 @@ void BatchScene3D::render() {
         Renderer::transparentShader->use();
         Renderer::transparentShader->setUniform1f(Renderer::wSunUniform, Renderer::skyBrightness);
         Renderer::transparentShader->setUniform1f(Renderer::waveUniform, Renderer::wave);
-        Renderer::transparentShader->setUniformMat4f(Renderer::wVpUniform, Renderer::camera->getProjection() * Renderer::camera->getView());
+        Renderer::transparentShader->setUniformMat4f(Renderer::wViewUniform, Renderer::camera->getView());
+        Renderer::transparentShader->setUniformMat4f(Renderer::wProjUniform, Renderer::camera->getProjection());
         Renderer::transparentShader->setUniform1i(Renderer::wTexUniform, Renderer::frame);
         for(const auto &[_, c] : World::chunks)
             if(c.getStatus() == ChunkStatus::SHOWING)
@@ -170,7 +172,8 @@ void BatchScene3D::render() {
         Renderer::regularShader->use();
         float ratio = (float)window->getWidth() / window->getHeight();
         glm::mat4 proj = glm::ortho(0.f, ratio*guiScale, 0.f, guiScale, -4.5f, 3.5f);
-        Renderer::regularShader->setUniformMat4f(Renderer::vpUniform, proj * blockView);
+        Renderer::regularShader->setUniformMat4f(Renderer::viewUniform, blockView);
+        Renderer::regularShader->setUniformMat4f(Renderer::projUniform, proj);
         Renderer::regularBatch.flushMesh(invMesh);
         glEnable(GL_CULL_FACE);
         

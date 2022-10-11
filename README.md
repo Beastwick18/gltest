@@ -45,6 +45,7 @@ The controls are curreltly all over the place. They are as follows:
 - 1-9 - Select corresponding block in inventory
 
 ## Screenshots
+![Fog Graphics](./screenshots/fog.png)
 ![Fancy Graphics](./screenshots/fancyGraphics.png)
 ![Lighting](./screenshots/lighting.png)
 ![Orthographic](./screenshots/orthographic.png)

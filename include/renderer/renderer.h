@@ -9,7 +9,7 @@
 
 namespace Renderer {
     extern Shader *regularShader, *transparentShader;
-    extern GLint vpUniform, wVpUniform;
+    extern GLint viewUniform, wViewUniform, projUniform, wProjUniform;
     extern GLint texUniform, wTexUniform;
     extern int frame;
     extern GLint waveUniform;
