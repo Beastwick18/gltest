@@ -160,12 +160,15 @@ namespace Renderer {
     }
     
     void generateQuadMesh(Mesh<Vertex> &newMesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
-        newMesh.addVertex(v0);
-        newMesh.addVertex(v1);
-        newMesh.addVertex(v2);
-        newMesh.addVertex(v2);
-        newMesh.addVertex(v3);
-        newMesh.addVertex(v0);
+        Vertex arr[4] = {v0, v1, v2, v3};
+        GLuint idc[6] = {0, 1, 2, 2, 3 ,0};
+        newMesh.addVertices(arr, 4, idc, 6);
+        // newMesh.addVertex(v0);
+        // newMesh.addVertex(v1);
+        // newMesh.addVertex(v2);
+        // newMesh.addVertex(v2);
+        // newMesh.addVertex(v3);
+        // newMesh.addVertex(v0);
     }
 
     void generateCubeMesh(Mesh<Vertex> &mesh, glm::vec3 pos, BlockTexture tex, SurroundingBlocks surr, LightData light) {
@@ -439,7 +442,7 @@ namespace Renderer {
         // glEnable(GL_CULL_FACE);
     }
 
-    void renderMesh(const Vertex *mesh, const size_t size) {
+    void renderMesh(const Vertex *mesh, const size_t size, const GLuint *indices, const size_t idc_size) {
         if(!regularBatch.hasRoomFor(size)) {
             flushRegularBatch();
             if(!regularBatch.hasRoomFor(size)) {
@@ -447,17 +450,17 @@ namespace Renderer {
                 return;
             }
         }
-        regularBatch.addVertices(mesh, size);
+        regularBatch.addVertices(mesh, size, indices, idc_size);
     }
 
-    void renderTransparentMesh(const Vertex *mesh, const size_t size) {
+    void renderTransparentMesh(const Vertex *mesh, const size_t size, const GLuint *indices, const size_t idc_size) {
         if(!transparentBatch.hasRoomFor(size))
             flushTransparentBatch();
         if(!regularBatch.isEmpty()) // Ensure we're rendering over opaque blocks
             flushRegularBatch();
         
         if(transparentBatch.hasRoomFor(size))
-            transparentBatch.addVertices(mesh, size);
+            transparentBatch.addVertices(mesh, size, indices, idc_size);
         else
             fprintf(stderr, "Mesh too big for batch\n");
     }
@@ -529,11 +532,11 @@ namespace Renderer {
         if(MinecraftClone::Input::isKeyDown(GLFW_KEY_R))
             printf("%f\n",wave);
         
-        for(auto &c : World::chunks) {
-            if(c.second.isDirty()) {
-                c.second.recalculateBleedLighting();
-                c.second.rebuildMesh();
-            }
-        }
+        // for(auto &c : World::chunks) {
+        //     if(c.second.isDirty()) {
+        //         c.second.recalculateBleedLighting();
+        //         c.second.rebuildMesh();
+        //     }
+        // }
     }
 }

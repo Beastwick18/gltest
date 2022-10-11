@@ -24,8 +24,8 @@ BatchScene3D::BatchScene3D(Window *window) : window(window) {
     Blocks::init();
     Blocks::blockAtlas->bind();
     
-    invMesh.init(18 * invSize);
-    highlightMesh.init(36);
+    invMesh.init(12 * invSize, 18 * invSize);
+    highlightMesh.init(24, 36);
     
     blockInHand = 0;
     

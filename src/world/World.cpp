@@ -151,53 +151,21 @@ namespace World {
         int rx = x - pos.x;
         int rz = z - pos.y;
         chunk->addBlock(id, rx, y, rz);
-        // meshFutures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, chunk));
-        // chunk->fullRebuildMesh();
-        // chunk->findMaxMin();
-        // chunk->recalculateLighting();
         auto l = getAllSurroundingChunks(pos);
-        std::vector<std::future<void>> futures;
-        // pool.push([chunk, l](int id) {
-            chunk->findMaxMin();
-            chunk->recalculateLighting();
-            for(auto &c : l) {
-                c->findMaxMin();
-                c->recalculateLighting();
-                // c->recalculateLighting();
-                // futures.push_back(std::async(std::launch::async, &Chunk::recalculateLighting, c));
-            }
-            // for(const auto &f : futures)
-            //     f.wait();
-            
-            for(const auto &c : l) {
-                // c->recalculateFullBleedLighting();
-                // c->rebuildMesh();
-                // futures.push_back(std::async(std::launch::async, &Chunk::recalculateBleedLighting, c));
-                // futures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, c));
-                c->recalculateBleedLighting();
-                c->rebuildMesh();
-            }
-            // for(const auto &f : futures)
-            //     f.wait();
-            
-            chunk->recalculateBleedLighting();
-            chunk->rebuildMesh();
-        // });
-        // chunk->recalculateBleedLighting();
-        // chunk->rebuildMesh();
-        // futures.push_back(std::async(std::launch::async, &Chunk::rebuildMesh, chunk));
-        // bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
-        // if(left || right || front || back) {
-        //     AdjChunks adj = getAdjacentChunks(pos);
-        //     if(left && adj.left)
-        //         adj.left->fullRebuildMesh();
-        //     if(right && adj.right)
-        //         adj.right->fullRebuildMesh();
-        //     if(front && adj.front)
-        //         adj.front->fullRebuildMesh();
-        //     if(back && adj.back)
-        //         adj.back->fullRebuildMesh();
-        // }
+        chunk->findMaxMin();
+        chunk->recalculateLighting();
+        for(auto &c : l) {
+            c->findMaxMin();
+            c->recalculateLighting();
+        }
+        
+        for(const auto &c : l) {
+            c->recalculateBleedLighting();
+            c->rebuildMesh();
+        }
+        
+        chunk->recalculateBleedLighting();
+        chunk->rebuildMesh();
     }
     
     void addBlock(const BlockID id, const glm::ivec3 pos) {
@@ -220,12 +188,8 @@ namespace World {
         const auto &pos = chunk->getPos();
         int rx = x - pos.x;
         int rz = z - pos.y;
-        bool light = Blocks::getBlockFromID(chunk->getBlock(rx, y, rz)).lightEmit > 0;
-        printf("%d\n", light);
+        // bool light = Blocks::getBlockFromID(chunk->getBlock(rx, y, rz)).lightEmit > 0;
         chunk->removeBlock(rx, y, rz);
-        // chunk->fullRebuildMesh();
-        // bool left = rx == 0, right = rx == Chunk::chunkW-1, back = rz == 0, front = rz == Chunk::chunkL-1;
-        // AdjChunks adj = getAdjacentChunks(pos);
         chunk->findMaxMin();
         chunk->recalculateLighting();
         auto l = getAllSurroundingChunks(pos);
@@ -239,38 +203,6 @@ namespace World {
         }
         chunk->recalculateBleedLighting();
         chunk->rebuildMesh();
-        // if(light) {
-            // Chunk *tl = World::getChunk(pos.x - Chunk::chunkW, pos.y + Chunk::chunkW);
-            // Chunk *tr = World::getChunk(pos.x + Chunk::chunkW, pos.y + Chunk::chunkW);
-            // Chunk *bl = World::getChunk(pos.x - Chunk::chunkW, pos.y - Chunk::chunkW);
-            // Chunk *br = World::getChunk(pos.x + Chunk::chunkW, pos.y - Chunk::chunkW);
-            // if(adj.left) { adj.left->findMaxMin(); adj.left->recalculateLighting(); }
-            // if(adj.right) { adj.right->findMaxMin(); adj.right->recalculateLighting(); }
-            // if(adj.front) { adj.front->findMaxMin(); adj.front->recalculateLighting(); }
-            // if(adj.back) { adj.back->findMaxMin(); adj.back->recalculateLighting(); }
-            // if(tl) { tl->findMaxMin(); tl->recalculateLighting(); }
-            // if(tr) { tr->findMaxMin(); tr->recalculateLighting(); }
-            // if(bl) { bl->findMaxMin(); bl->recalculateLighting(); }
-            // if(br) { br->findMaxMin(); br->recalculateLighting(); }
-            
-            // if(adj.left) { adj.left->recalculateFullBleedLighting(); adj.left->rebuildMesh(); }
-            // if(adj.right) { adj.right->recalculateFullBleedLighting(); adj.right->rebuildMesh(); }
-            // if(adj.front) { adj.front->recalculateFullBleedLighting(); adj.front->rebuildMesh(); }
-            // if(adj.back) { adj.back->recalculateFullBleedLighting(); adj.back->rebuildMesh(); }
-            // if(tl) { tl->recalculateFullBleedLighting(); tl->rebuildMesh(); }
-            // if(tr) { tr->recalculateFullBleedLighting(); tr->rebuildMesh(); }
-            // if(bl) { bl->recalculateFullBleedLighting(); bl->rebuildMesh(); }
-            // if(br) { br->recalculateFullBleedLighting(); br->rebuildMesh(); }
-        // } else if(left || right || front || back) {
-        //     if(left && adj.left)
-        //         adj.left->fullRebuildMesh();
-        //     if(right && adj.right)
-        //         adj.right->fullRebuildMesh();
-        //     if(front && adj.front)
-        //         adj.front->fullRebuildMesh();
-        //     if(back && adj.back)
-        //         adj.back->fullRebuildMesh();
-        // }
     }
     
     void removeBlock(const glm::ivec3 pos) {

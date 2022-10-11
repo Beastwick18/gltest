@@ -30,8 +30,8 @@ namespace Renderer {
     void generateLiquidMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, bool top, bool bottom, bool left, bool right, bool front, bool back, LightData light = 0xFF);
     void generateTorchMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, LightData light = 0xFF);
     void generateCrossMesh(Mesh<Vertex> &mesh, float x, float y, float z, BlockTexture tex, SurroundingBlocks adj, LightData light = 0xFF);
-    void renderMesh(const Vertex *mesh, const size_t size);
-    void renderTransparentMesh(const Vertex *mesh, const size_t size);
+    void renderMesh(const Vertex *mesh, const size_t size, const GLuint *indices, const size_t idc_size);
+    void renderTransparentMesh(const Vertex *mesh, const size_t size, const GLuint *indices, const size_t idc_size);
     void render();
     void renderCubemap();
     void renderCrosshair();

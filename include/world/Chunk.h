@@ -33,6 +33,8 @@ public:
     
     void calculateSkyLighting(int x = 0, int y = chunkH-1, int z = 0, LightData prev = 15);
     void calculateLighting(int x = 0, int y = 0, int z = 0, LightData prev = 15);
+    // void calculateSkyLightingQuick(int x = 0, int y = chunkH-1, int z = 0, LightData prev = 15);
+    // void calculateLightingQuick(int x = 0, int y = 0, int z = 0, LightData prev = 15);
     // void calculateSkyLighting(LightData ***buffer, int x = 0, int y = chunkH-1, int z = 0, LightData prev = 15);
     // void calculateLighting(LightData ***buffer, int x = 0, int y = 0, int z = 0, LightData prev = 15);
     
@@ -46,6 +48,7 @@ public:
     void recalculateLighting();
     void recalculateBleedLighting();
     void recalculateFullBleedLighting();
+    // void recalculateFullBleedLightingQuick();
     // void fakeRecalculateLighting(LightData ***buffer);
     void recalculateSurroundingLighting();
     BlockID getBlock(int x, int y, int z) const;
