@@ -748,6 +748,12 @@ void Chunk::findMaxMin() {
     if(minY < 0) minY = 0;
 }
 
+void Chunk::clearLighting() {
+    for(int y = minY; y < maxY; y++)
+        for(int x = 0; x < chunkW; x++)
+            memset(light[y][x], 0, chunkL);
+}
+
 void Chunk::recalculateLighting() {
     Block b;
     std::vector<Light> lights;

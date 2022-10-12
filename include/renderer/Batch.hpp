@@ -165,15 +165,11 @@ class Batch {
         }
         
         void free() {
-            // if(vertices != nullptr) {
-                // std::free(vertices);
-                // vertices = nullptr;
-                // vertexCount = 0;
-                VAO::free(vao);
-                VBO::free(vbo);
-                EBO::free(ebo);
-            // }
-                mesh.free();
+            VAO::free(vao);
+            VBO::free(vbo);
+            EBO::free(ebo);
+            
+            mesh.free();
         }
         inline bool isFull() const {
             return mesh.fUll();

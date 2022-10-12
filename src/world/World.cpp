@@ -152,17 +152,19 @@ namespace World {
         int rz = z - pos.y;
         chunk->addBlock(id, rx, y, rz);
         auto l = getAllSurroundingChunks(pos);
+        for(auto &c : l) {
+            c->clearLighting();
+            c->setDirty(true);
+            // c->findMaxMin();
+            // c->recalculateLighting();
+        }
         chunk->findMaxMin();
         chunk->recalculateLighting();
-        for(auto &c : l) {
-            c->findMaxMin();
-            c->recalculateLighting();
-        }
         
-        for(const auto &c : l) {
-            c->recalculateBleedLighting();
-            c->rebuildMesh();
-        }
+        // for(const auto &c : l) {
+        //     c->recalculateBleedLighting();
+        //     c->rebuildMesh();
+        // }
         
         chunk->recalculateBleedLighting();
         chunk->rebuildMesh();
@@ -190,19 +192,22 @@ namespace World {
         int rz = z - pos.y;
         // bool light = Blocks::getBlockFromID(chunk->getBlock(rx, y, rz)).lightEmit > 0;
         chunk->removeBlock(rx, y, rz);
-        chunk->findMaxMin();
-        chunk->recalculateLighting();
         auto l = getAllSurroundingChunks(pos);
         for(const auto &c : l) {
-            c->findMaxMin();
-            c->recalculateLighting();
+            c->clearLighting();
+            c->setDirty(true);
+            // c->findMaxMin();
+            // c->recalculateLighting();
         }
-        for(const auto &c : l) {
-            c->recalculateFullBleedLighting();
-            c->rebuildMesh();
-        }
-        chunk->recalculateBleedLighting();
-        chunk->rebuildMesh();
+        // for(const auto &c : l) {
+        //     c->recalculateFullBleedLighting();
+        //     c->rebuildMesh();
+        // }
+        // chunk->findMaxMin();
+        // chunk->recalculateLighting();
+        // chunk->recalculateBleedLighting();
+        // chunk->rebuildMesh();
+        chunk->fullRebuildMesh();
     }
     
     void removeBlock(const glm::ivec3 pos) {

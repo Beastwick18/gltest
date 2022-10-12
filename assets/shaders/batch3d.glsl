@@ -82,7 +82,7 @@ float getFogFactor(FogParameters params, float fogCoordinate) {
 	return result;
 }
 
-const FogParameters fogParams = {vec3(168.0/255.0, 228.0/255.0, 240.0/255.0), 40.0, 80.0, 0.05, 0, true};
+const FogParameters fogParams = {vec3(0.85, 0.85, 0.95), 40.0, 80.0, 0.05, 0, true};
 
 void main() {
     vec4 tex = texture(selTex, vTexCoord);

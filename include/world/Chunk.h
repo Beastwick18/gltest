@@ -45,6 +45,7 @@ public:
     void generateCrossMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, unsigned char adj);
     void fullRebuildMesh();
     void rebuildMesh();
+    void clearLighting();
     void recalculateLighting();
     void recalculateBleedLighting();
     void recalculateFullBleedLighting();
@@ -64,7 +65,7 @@ public:
     inline const Mesh<Vertex>& getWaterMesh() const { return waterMesh; }
     inline glm::ivec2 getPos() const { return pos; }
     inline ChunkStatus getStatus() const { return status; }
-    inline bool isDirty() { return leftDirty || rightDirty || frontDirty || backDirty; }
+    inline bool isDirty() { return dirty; }
     inline void setDirty(bool dan) { dirty = dan; }
     inline void setDirtyLeft(bool dan) { leftDirty = dan; }
     inline void setDirtyRight(bool dan) { rightDirty = dan; }
@@ -104,10 +105,7 @@ private:
     // 3 bytes. Send this to the shader to create colored lighting
     // (maybe idk if this is a good idea)
     // LightData ***light;
-    // LightData ***lightL;
-    // LightData ***lightR;
-    // LightData ***lightU;
-    // LightData ***lightD;
+    // LightData ***lightBleed;
     LightData light[chunkH][chunkW][chunkL];
     // LightData lightL[chunkH][chunkW][chunkL];
     // LightData lightR[chunkH][chunkW][chunkL];
