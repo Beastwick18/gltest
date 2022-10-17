@@ -60,6 +60,17 @@
 - go through all chunks, generate, calc static lighting, then do bleed lighting
 - finally do rebuildmesh
 - should lead to perfect lighting on world load
+    
+# After done
+- Rewrite whole game after this is implemented
+- Try to move on to collision
+- Make block objects more complicated
+    - onRightClick, etc.
+        - idea for onRightClick: pass pointer reference to blockdata stored in chunk
+        - that way it can modify things about the block, like orientation
+        - idk if i should use lambdas, or just create a struct that inherits from block for each block
+            - inheriting would probably be cleaner
+    - add doors and other interactable blocks
 
 <!-- # Actually... -->
 <!-- - Clear adj lightBleed arrays -->
