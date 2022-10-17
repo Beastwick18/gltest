@@ -31,8 +31,10 @@ public:
     
     void generateChunk();
     
-    void calculateSkyLighting(int x = 0, int y = chunkH-1, int z = 0, LightData prev = 15);
-    void calculateLighting(int x = 0, int y = 0, int z = 0, LightData prev = 15);
+    void calculateSkyLighting(int x, int y, int z, LightData prev, bool *modified, LightData ***light);
+    void calculateLighting(int x, int y, int z, LightData prev, bool *modified, LightData ***light);
+    void calculateSkyLighting(int x, int y, int z, LightData prev, bool *modified = NULL);
+    void calculateLighting(int x, int y, int z, LightData prev, bool *modified = NULL);
     // void calculateSkyLightingQuick(int x = 0, int y = chunkH-1, int z = 0, LightData prev = 15);
     // void calculateLightingQuick(int x = 0, int y = 0, int z = 0, LightData prev = 15);
     // void calculateSkyLighting(LightData ***buffer, int x = 0, int y = chunkH-1, int z = 0, LightData prev = 15);
@@ -70,8 +72,8 @@ public:
     // LightData getSkyLight(LightData ***buffer, int x, int y, int z);
     // LightData getLightData(LightData ***buffer, int x, int y, int z);
     
-    void setLight(int x, int y, int z, LightData value);
-    void setSkyLight(int x, int y, int z, LightData value);
+    void setLight(LightData ***light, int x, int y, int z, LightData value);
+    void setSkyLight(LightData ***light, int x, int y, int z, LightData value);
     // void setLight(LightData ***buffer, int x, int y, int z, LightData value);
     // void setSkyLight(LightData ***buffer, int x, int y, int z, LightData value);
     
@@ -102,9 +104,10 @@ private:
     // Change to unsigned int. Then put color data in the other
     // 3 bytes. Send this to the shader to create colored lighting
     // (maybe idk if this is a good idea)
-    // LightData ***light;
-    // LightData ***lightBleed;
-    LightData light[chunkH][chunkW][chunkL];
+    LightData ***light;
+    LightData ***lightBleed;
+    // LightData light[chunkH][chunkW][chunkL];
+    // LightData lightBleed[chunkH][chunkW][chunkL];
     int maxY, minY;
 };
 
