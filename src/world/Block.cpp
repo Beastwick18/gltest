@@ -21,7 +21,7 @@ namespace Blocks {
         blockAtlas2->bind(2);
         blockAtlas3->bind(3);
         TexCoords null = blockAtlas->getSubTexture(29, 14);
-        Block nullBlock { .name = "Null", .tex = null, .id = NULL_BLOCK, .transparent = true };
+        Block nullBlock { .name = "Null", .tex = null, .id = NULL_BLOCK, .transparent = false };
         std::fill(blocks, blocks+numBlocks, nullBlock);
         
         TexCoords grassSide = blockAtlas->getSubTexture(1, 21);
@@ -59,7 +59,7 @@ namespace Blocks {
         blocks[DIRT] = Block{ .name = "Dirt", .tex = { dirt }, .id = DIRT };
         blocks[STONE] = Block{ .name = "Stone", .tex = { stone }, .id = STONE };
         blocks[LOG] = Block{ .name = "Log", .tex = { logTop, logTop, logSide }, .id = LOG };
-        blocks[LEAVES] = Block{ .name = "Leaves", .tex = { leaves }, .id = LEAVES, .transparent = true, .lightBlocking = 3 };
+        blocks[LEAVES] = Block{ .name = "Leaves", .tex = { leaves }, .id = LEAVES, .transparent = true, .lightBlocking = 1 };
         blocks[SAND] = Block{ .name = "Sand", .tex = { sand }, .id = SAND, };
         blocks[WATER] = Block{ .name = "Water", .tex = { water }, .id = WATER, .liquid = true, .transparent = true, .lightBlocking = 1, .lightEmit = 0, .render = LIQUID };
         blocks[GLOWSTONE] = Block{ .name = "Glowstone", .tex = { glowstone }, .id = GLOWSTONE, .lightEmit = 15 };

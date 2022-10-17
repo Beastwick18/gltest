@@ -153,21 +153,21 @@ namespace World {
         chunk->addBlock(id, rx, y, rz);
         auto l = getAllSurroundingChunks(pos);
         for(auto &c : l) {
-            c->clearLighting();
+            // c->clearLighting();
             c->setDirty(true);
             // c->findMaxMin();
             // c->recalculateLighting();
         }
-        chunk->findMaxMin();
-        chunk->recalculateLighting();
+        // chunk->findMaxMin();
+        // chunk->recalculateLighting();
         
         // for(const auto &c : l) {
         //     c->recalculateBleedLighting();
         //     c->rebuildMesh();
         // }
         
-        chunk->recalculateBleedLighting();
-        chunk->rebuildMesh();
+        // chunk->recalculateFullBleedLighting();
+        chunk->fullRebuildMesh();
     }
     
     void addBlock(const BlockID id, const glm::ivec3 pos) {
@@ -194,7 +194,7 @@ namespace World {
         chunk->removeBlock(rx, y, rz);
         auto l = getAllSurroundingChunks(pos);
         for(const auto &c : l) {
-            c->clearLighting();
+            // c->clearLighting();
             c->setDirty(true);
             // c->findMaxMin();
             // c->recalculateLighting();

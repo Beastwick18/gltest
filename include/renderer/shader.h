@@ -53,7 +53,8 @@ class Shader {
         void setUniform1f(const char *name, GLfloat v1) const;
         void setUniform1f(const int location, GLfloat v1) const;
         // void setUniform2f(const char *name, GLfloat v1, GLfloat v2);
-        // void setUniform3f(const char *name, GLfloat v1, GLfloat v2, GLfloat v3);
+        void setUniform3f(const int location, const GLfloat v1, const GLfloat v2, const GLfloat v3) const;
+        void setUniform3f(const int location, const glm::vec3 v) const;
         // void setUniform4f(const char *name, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4);
         
         // void setUniform1fv(const char *name, GLfloat *value);

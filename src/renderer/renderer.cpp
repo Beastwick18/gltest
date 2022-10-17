@@ -11,6 +11,10 @@ namespace Renderer {
     GLint texUniform, wTexUniform;
     GLint waveUniform;
     GLint sunUniform, wSunUniform;
+    
+    GLint fogColorUniform, fogStartUniform, fogEndUniform, fogDensityUniform, fogEquationUniform, fogEnabledUniform;
+    GLint wFogColorUniform, wFogStartUniform, wFogEndUniform, wFogDensityUniform, wFogEquationUniform, wFogEnabledUniform;
+    
     GLint cmView, cmProj, cmTime;
     Batch<Vertex> regularBatch;
     Batch<Vertex> transparentBatch;
@@ -129,6 +133,15 @@ namespace Renderer {
         projUniform = regularShader->getUniformLocation("proj");
         texUniform = regularShader->getUniformLocation("selTex");
         
+        // extern GLint fogColorUniform, fogStart, fogEndUniform, fogDensityUniform, fogEquationUniform, fogEnabledUniform;
+        fogColorUniform = regularShader->getUniformLocation("fogParams.color");
+        fogStartUniform = regularShader->getUniformLocation("fogParams.linearStart");
+        fogEndUniform = regularShader->getUniformLocation("fogParams.linearEnd");
+        fogDensityUniform = regularShader->getUniformLocation("fogParams.density");
+        fogEquationUniform = regularShader->getUniformLocation("fogParams.equation");
+        fogEnabledUniform = regularShader->getUniformLocation("fogParams.isEnabled");
+        
+        
         transparentShader = Shader::createShader("assets/shaders/waveyBlock.glsl");
         transparentShader->use();
         transparentShader->setUniform1i("selTex", 0);
@@ -138,6 +151,13 @@ namespace Renderer {
         wProjUniform = transparentShader->getUniformLocation("proj");
         waveUniform = transparentShader->getUniformLocation("waveOffset");
         wTexUniform = regularShader->getUniformLocation("selTex");
+        
+        wFogColorUniform = transparentShader->getUniformLocation("fogParams.color");
+        wFogStartUniform = transparentShader->getUniformLocation("fogParams.linearStart");
+        wFogEndUniform = transparentShader->getUniformLocation("fogParams.linearEnd");
+        wFogDensityUniform = transparentShader->getUniformLocation("fogParams.density");
+        wFogEquationUniform = transparentShader->getUniformLocation("fogParams.equation");
+        wFogEnabledUniform = transparentShader->getUniformLocation("fogParams.isEnabled");
     }
     
     void free() {
@@ -422,6 +442,13 @@ namespace Renderer {
         regularShader->setUniform1f(sunUniform, skyBrightness);
         regularShader->setUniformMat4f(viewUniform, camera->getView());
         regularShader->setUniformMat4f(projUniform, camera->getProjection());
+        
+        regularShader->setUniform1f(fogDensityUniform, CameraConfig::fogDensity);
+        regularShader->setUniform1f(fogStartUniform, CameraConfig::fogStart);
+        regularShader->setUniform1f(fogEndUniform, CameraConfig::fogEnd);
+        regularShader->setUniform1i(fogEquationUniform, CameraConfig::fogEqn);
+        regularShader->setUniform1i(fogEnabledUniform, CameraConfig::fogEnabled);
+        regularShader->setUniform3f(fogColorUniform, CameraConfig::fogColor);
         regularBatch.flush();
     }
     
@@ -437,6 +464,13 @@ namespace Renderer {
         transparentShader->setUniform1f(waveUniform, wave);
         transparentShader->setUniformMat4f(wViewUniform, camera->getView());
         transparentShader->setUniformMat4f(wProjUniform, camera->getProjection());
+        
+        transparentShader->setUniform1f(wFogDensityUniform, CameraConfig::fogDensity);
+        transparentShader->setUniform1f(wFogStartUniform, CameraConfig::fogStart);
+        transparentShader->setUniform1f(wFogEndUniform, CameraConfig::fogEnd);
+        transparentShader->setUniform1i(wFogEquationUniform, CameraConfig::fogEqn);
+        transparentShader->setUniform1i(wFogEnabledUniform, CameraConfig::fogEnabled);
+        transparentShader->setUniform3f(wFogColorUniform, CameraConfig::fogColor);
         transparentBatch.flush();
         // glEnable(GL_DEPTH_TEST);
         // glEnable(GL_CULL_FACE);

@@ -1,3 +1,76 @@
+# New idea for lighting accurately
+- calcSun/Light return true if any light changed, false otherwise
+- when recalculating bleed lighting, scan edge of adj chunks, then do recursive lighting but allow moving between chunks (combine the two)
+    - ONLY scan light array for new bleed, not lightBleed. lightBleed should be empty
+    - curr chunk lightbleed array will be used for recalc bleed lighting
+        - scan edge, calcbleedlight/sunlight (stored in lightbleed)
+- when calling calclighting for other chunk, if it returns true mark other chunk as dirty
+- bleed lighting held in seperate array from normal lighting
+- light value of current block is just max between light/lightBleed
+- this way we only have to clear lightBleed and recalc it instead of all lights
+- dont have to worry about normal light bleed, as we will scan over adj chunks
+- this way we also dont have to update all surrounding chunks every time we update chunk
+    - only dirty will update, and much smaller update
+- when rebuilding chunk in multithread, do not recalc bleed
+    - otherwise, many threads could be in eachothers crit region, causing deadlock
+- Clear adj chunk lightbleed array BEFORE recalculating current chunk
+    - lightbleed that might wrap around will be recalculated when current chunk bleeds into adj ones
+- Only 1 chunk rebuild per update
+- dont have to do full rebuild on dirty chunks. only rebuildmesh
+- fix occurences of light\[y\]\[x\]\[z\] because those will not take into account lightBleed
+    - they will likely have to use getLight
+    - obv same for sunlight too
+- Probably make seperate methods `calculateBleedLighting` and `calculateBleedSkyLighting`
+    - These just use lightBleed array
+    - maybe make universal calculateLightingBuffer, which takes in light array
+        - then both calclight and calcbleedlight wont have dup code
+- do NOT clear adj chunk light array when rebuilding. should not ever be affected
+- chunk that is modified will have full rebuild, adj ones that have updated lightBleeds will only rebuildmesh as only thing that changes for them is their lightBleed array
+- circular lighting should work for any amount of chunk border hops because rec bleed
+- basically
+    - light: static, within chunk
+        - only ever changes when add/remove block
+    - lightBleed: dynamic, flows between chunks
+        - can change from adj chunk updates
+
+# Basically...
+- Step by step for add/remove block
+- fullrebuild curr chunk
+    - findminmax curr chunk
+    - recalclighting for current chunk (static lighting)
+    - clear each adj chunk lightbleed (including tl, tr, bl, br)
+    - recalcbleedlighting for curr chunk (flow lighting)
+        - this scans edge chunk lighting, starts rec lighting (using lightbleed arr)
+        - marks chunks that we flow into as dirty (only if any changes were made to their lightBleed arr)
+    - rebuildmesh for curr chunk
+- next update tick should find next dirty chunk
+    - recalcbleedlighting AND rebuildmesh on dirty chunk
+        - redundant, but will handle bleed coming from chunks other than main chunk where we did rec bleed into dirty. bc we cleared it, the chunks adj to dirty wont have any light bleeding into dirty
+    - mark as no longer dirty
+    - repeat for next update tick
+- update order does not matter for adj chunks because we can flow between them in calclight
+- recalcbleedlighting on dirty chunks can also mark others as dirty, causing chain reaction
+    - but only if actual changes made to avoid infinite loops
+    - this shouldn't lead to chunks outside the adj being affected
+    - only spreading should be happening within the adj
+    - also never should cause main (center) chunk to be dirty
+
+
+- These ideas can apply to world gen light baking
+- go through all chunks, generate, calc static lighting, then do bleed lighting
+- finally do rebuildmesh
+- should lead to perfect lighting on world load
+
+<!-- # Actually... -->
+<!-- - Clear adj lightBleed arrays -->
+<!-- - Do static lighting on updated chunk -->
+<!--     - scan edges too (scan their static lighting) -->
+<!-- - go do recalcbleed on all surrounding chunks (including corner chunks) -->
+<!-- - don't use rec func that flows, just stay within chunk -->
+<!-- - mark all adj as dirty -->
+<!-- - on update tick, get next dirty, recalcbleedlight (once again), then rebuildMesh -->
+<!-- - for recalcbleedlight, stop if either light or lightBleed greater than prev -->
+
 gltest
 - struct containing norm direction (or just enum for which face), x y z position, texture id, and light value (width and height too?)
 - these structs will be generated as intermittent objects for greedy meshing

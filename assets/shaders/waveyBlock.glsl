@@ -45,6 +45,8 @@ vec3 skyLightColor = vec3(1.0, 1.0, 1.0);
 vec3 lightColor = vec3(1.f, .95f, .6f);
 // vec3 lightColor = vec3(0.0f, .05f, .6f);
 float ambientStrength = 0.6;
+const vec4 sunsetColor = vec4(0.99f, 0.37f, 0.33f, 1.0f);
+const vec4 night = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 const vec3 normals[] = vec3[](
     vec3(1.0, 0.0, 0.0),
@@ -83,7 +85,9 @@ float getFogFactor(FogParameters params, float fogCoordinate) {
 	return result;
 }
 
-const FogParameters fogParams = {vec3(0.85, 0.85, 0.95), 40.0, 80.0, 0.05, 0, true};
+// const FogParameters fogParams = {vec3(0.85, 0.85, 0.95), 20.0, 80.0, 0.12, 2, true};
+// uniform FogParameters fogParams = {vec3(0.25, 0.25, 0.95), 20.0, 80.0, 0.12, 2, true};
+uniform FogParameters fogParams;
 
 void main() {
     vec4 tex = texture(selTex, vTexCoord);
@@ -107,7 +111,12 @@ void main() {
     vec3 maxLight = max(light*lightColor, skyLight * skyLightColor* skyBrightness);
     outColor = vec4(min((diffuse + ambient), 1.0) * tex.rgb * maxLight, tex.a);
     if(fogParams.isEnabled) {
+        float s= .7f * exp(-pow((10 * skyBrightness - 2) * (10 * skyBrightness - 2), 2));
+        vec4 horizon = mix(vec4(fogParams.color, 1.0), sunsetColor, s);
+        vec4 fogColor = mix(night, horizon, skyBrightness);
         float fogCoordinate = abs(ioEyeSpacePosition.z / ioEyeSpacePosition.w);
-        outColor = mix(outColor, vec4(fogParams.color * skyBrightness, 1.0), getFogFactor(fogParams, fogCoordinate));
+        float factor = getFogFactor(fogParams, fogCoordinate);
+        outColor = mix(outColor, fogColor, factor);
+        // outColor.a = outColor.a * 1-factor;
     }
 }

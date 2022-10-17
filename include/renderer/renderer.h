@@ -14,6 +14,8 @@ namespace Renderer {
     extern int frame;
     extern GLint waveUniform;
     extern GLint sunUniform, wSunUniform;
+    extern GLint fogColorUniform, fogStartUniform, fogEndUniform, fogDensityUniform, fogEquationUniform, fogEnabledUniform;
+    extern GLint wFogColorUniform, wFogStartUniform, wFogEndUniform, wFogDensityUniform, wFogEquationUniform, wFogEnabledUniform;
     extern Batch<Vertex> regularBatch;
     extern Batch<Vertex> transparentBatch;
     extern float skyBrightness, wave;

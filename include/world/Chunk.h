@@ -41,17 +41,13 @@ public:
     void generateQuadMesh(Mesh<Vertex> &mesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3);
     void generateCubeMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, unsigned char adj);
     void generateLiquidMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, unsigned char adj);
-    void generateTorchMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, unsigned char adj);
-    void generateCrossMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex, unsigned char adj);
+    void generateTorchMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex);
+    void generateCrossMesh(Mesh<Vertex> &mesh, int x, int y, int z, BlockTexture tex);
     void fullRebuildMesh();
     void rebuildMesh();
     void clearLighting();
     void recalculateLighting();
-    void recalculateBleedLighting();
     void recalculateFullBleedLighting();
-    // void recalculateFullBleedLightingQuick();
-    // void fakeRecalculateLighting(LightData ***buffer);
-    void recalculateSurroundingLighting();
     BlockID getBlock(int x, int y, int z) const;
     void addBlock(BlockID id, int x, int y, int z);
     void removeBlock(int x, int y, int z);
@@ -67,10 +63,6 @@ public:
     inline ChunkStatus getStatus() const { return status; }
     inline bool isDirty() { return dirty; }
     inline void setDirty(bool dan) { dirty = dan; }
-    inline void setDirtyLeft(bool dan) { leftDirty = dan; }
-    inline void setDirtyRight(bool dan) { rightDirty = dan; }
-    inline void setDirtyFront(bool dan) { frontDirty = dan; }
-    inline void setDirtyBack(bool dan) { backDirty = dan; }
     LightData getLight(int x, int y, int z);
     LightData getSkyLight(int x, int y, int z);
     LightData getLightData(int x, int y, int z);
@@ -86,6 +78,13 @@ public:
     int findMaxY();
     int findMinY();
     void findMaxMin();
+    
+    SurroundingBlocks getAdjacentBlocks(AdjChunks &chunks, const int x, const int y, const int z);
+    static bool transparentVisible(BlockID id, BlockID other);
+    static bool opaqueVisible(BlockID other);
+    static unsigned char transparentVisible(BlockID id, SurroundingBlocks s);
+    static unsigned char opaqueVisible(SurroundingBlocks s);
+    
     static const int chunkW = 16, chunkL = 16, chunkH = 256;
     // static const int chunkW = 8, chunkL = 8, chunkH = 150;
     // static const int chunkW = 16, chunkL = 16, chunkH = 256;
@@ -99,7 +98,6 @@ private:
     BlockData blocks[chunkH][chunkW][chunkL];
     
     bool dirty;
-    bool leftDirty, rightDirty, frontDirty, backDirty;
     
     // Change to unsigned int. Then put color data in the other
     // 3 bytes. Send this to the shader to create colored lighting
@@ -107,10 +105,6 @@ private:
     // LightData ***light;
     // LightData ***lightBleed;
     LightData light[chunkH][chunkW][chunkL];
-    // LightData lightL[chunkH][chunkW][chunkL];
-    // LightData lightR[chunkH][chunkW][chunkL];
-    // LightData lightU[chunkH][chunkW][chunkL];
-    // LightData lightD[chunkH][chunkW][chunkL];
     int maxY, minY;
 };
 

@@ -13,17 +13,14 @@ Chunk::Chunk(int xx, int yy) : pos(xx*chunkW,yy*chunkL) {
     maxY = 0;
     minY = Chunk::chunkH;
     for(int y = 0; y < chunkH; y++)
-        for(int x = 0; x < chunkW; x++)
-            for(int z = 0; z < chunkL; z++) {
-                blocks[y][x][z].id = 0;
-                // skyLight[y][x][z] = 1;
-                light[y][x][z] = 1;
-            }
+        for(int x = 0; x < chunkW; x++) {
+            memset(blocks[y][x], 0, sizeof(BlockData) * chunkL);
+            memset(light[y][x], 0, sizeof(LightData) * chunkL);
+        }
     status = EMPTY;
     mesh.init(24 * (chunkW * chunkH * chunkL / 2), 36 * (chunkW * chunkH * chunkL / 2));
     waterMesh.init(24 * (chunkW * chunkH * chunkL / 2), 36 * (chunkW * chunkH * chunkL / 2));
     dirty = false;
-    leftDirty = rightDirty = frontDirty = backDirty = false;
 }
 
 Chunk::Chunk() {
@@ -178,58 +175,9 @@ void Chunk::generateChunk() {
     status = BUILT;
 }
 
-// void Chunk::calculateSkyLighting(int x, int y, int z, LightData prev) {
-//     if(prev > 15 || y < minY || y < 0 || y > maxY || y >= chunkH)
-//         return;
-    
-//     if(x < 0) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyRight(true);
-//         }
-//         return;
-//     } else if(x >= Chunk::chunkW) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyLeft(true);
-//         }
-//         return;
-//     } else if(z < 0) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyFront(true);
-//         }
-//         return;
-//     } else if(z >= Chunk::chunkW) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyBack(true);
-//         }
-//         return;
-//     }
-//     if(prev <= (light[y][x][z] >> 4))
-//         return;
-    
-//     setSkyLight(x, y, z, prev);
-    
-//     if(auto b = blocks[y][x][z].id; b != Blocks::AIR_BLOCK)
-//         prev = prev - Blocks::getBlockFromID(b).lightBlocking;
-    
-//     LightData lb = 1;
-//     LightData hlb = (y != maxY) * lb;
-//     LightData vlb = (prev != 15) * lb;
-//     calculateSkyLighting(x, y-1, z, prev - vlb);
-//     calculateSkyLighting(x-1, y, z, prev - hlb);
-//     calculateSkyLighting(x+1, y, z, prev - hlb);
-//     calculateSkyLighting(x, y, z-1, prev - hlb);
-//     calculateSkyLighting(x, y, z+1, prev - hlb);
-// }
-
 void Chunk::calculateSkyLighting(int x, int y, int z, LightData prev) {
-    if(prev > 15 || y < minY || y < 0 || y > maxY || y >= chunkH)
-        return;
-    
-    if(x < 0 || x >= Chunk::chunkW || z < 0 || z >= Chunk::chunkW) 
+    if(prev > 15 || y < minY || y < 0 || y > maxY || y >= chunkH
+        || x < 0 || x >= Chunk::chunkW || z < 0 || z >= Chunk::chunkW) 
         return;
     
     if(prev <= (light[y][x][z] >> 4))
@@ -237,13 +185,13 @@ void Chunk::calculateSkyLighting(int x, int y, int z, LightData prev) {
     
     setSkyLight(x, y, z, prev);
     
+    LightData lb = (prev != 15);
+    LightData hlb = (y != maxY);
     if(auto b = blocks[y][x][z].id; b != Blocks::AIR_BLOCK)
-        prev = prev - Blocks::getBlockFromID(b).lightBlocking;
+        hlb = lb = Blocks::getBlockFromID(b).lightBlocking;
     
-    LightData lb = 1;
-    LightData hlb = (y != maxY) * lb;
-    LightData vlb = (prev != 15) * lb;
-    calculateSkyLighting(x, y-1, z, prev - vlb);
+    calculateSkyLighting(x, y+1, z, prev - lb);
+    calculateSkyLighting(x, y-1, z, prev - lb);
     calculateSkyLighting(x-1, y, z, prev - hlb);
     calculateSkyLighting(x+1, y, z, prev - hlb);
     calculateSkyLighting(x, y, z-1, prev - hlb);
@@ -274,120 +222,16 @@ void Chunk::calculateLighting(int x, int y, int z, LightData prev) {
     calculateLighting(x, y, z-1, prev-lb);
 }
 
-// void Chunk::calculateLighting(int x, int y, int z, LightData prev) {
-//     if(prev > 15 || y < 0 || y >= chunkH || prev < (light[y][x][z] & 0xF))
-//         return;
-    
-//     if(x < 0) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyRight(true);
-//         }
-//         return;
-//     } else if(x >= Chunk::chunkW) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyLeft(true);
-//         }
-//         return;
-//     } else if(z < 0) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyFront(true);
-//         }
-//         return;
-//     } else if(z >= Chunk::chunkW) {
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             c->setDirtyBack(true);
-//         }
-//         return;
-//     }
-    
-//     if(prev <= getLight(x, y, z))
-//         return;
-    
-//     setLight(x, y, z, prev);
-    
-//     if(const auto &b = blocks[y][x][z].id; !Blocks::getBlockFromID(b).transparent && b != Blocks::NULL_BLOCK && prev != 15)
-//         return;
-    
-//     LightData lb = 1;
-//     calculateLighting(x, y+1, z, prev-lb);
-//     calculateLighting(x, y-1, z, prev-lb);
-//     calculateLighting(x+1, y, z, prev-lb);
-//     calculateLighting(x-1, y, z, prev-lb);
-//     calculateLighting(x, y, z+1, prev-lb);
-//     calculateLighting(x, y, z-1, prev-lb);
-// }
-
-// void Chunk::calculateLighting(LightData ***buffer, int x, int y, int z, LightData prev) {
-//     if(prev > 15 || y < minY || y < 0 || y > maxY+1 || y >= chunkH)
-//         return;
-    
-//     if(x < 0 || z < 0 || x >= chunkW || z >= chunkL) {
-//         printf("PP\n");
-//         Chunk *c = World::getChunk(x + pos.x, z + pos.y);
-//         if(c)
-//             printf("%d\n", c->getStatus());
-//         if(c != nullptr && c->getStatus() > BUILT) {
-//             if(x >= chunkW) {
-//                 x -= chunkW;
-//             } else if(x < 0) {
-//                 x += chunkW;
-//             }
-//             if(z >= chunkW) {
-//                 z -= chunkW;
-//             } else if(z < 0) {
-//                 z += chunkW;
-//             }
-//             if(auto b = c->blocks[y][x][z].id; b != Blocks::AIR_BLOCK)
-//                 prev = prev - Blocks::getBlockFromID(b).lightBlocking;
-            
-//             LightData lb = 1;
-//             printf("%d, %d, %d, %d\n", x, y, z, prev - lb);
-//             c->calculateLighting(x, y, z, prev - lb);
-//             // no dirty
-//         }
-//         return;
-//     }
-    
-//     if(prev <= getLight(x, y, z))
-//         return;
-    
-//     setLight(buffer, x, y, z, prev);
-    
-//     if(const auto &b = blocks[y][x][z].id; !Blocks::getBlockFromID(b).transparent && b != Blocks::NULL_BLOCK && prev != 15)
-//         return;
-    
-//     LightData lb = 1;
-//     calculateLighting(x, y+1, z, prev-lb);
-//     calculateLighting(x, y-1, z, prev-lb);
-//     calculateLighting(x+1, y, z, prev-lb);
-//     calculateLighting(x-1, y, z, prev-lb);
-//     calculateLighting(x, y, z+1, prev-lb);
-//     calculateLighting(x, y, z-1, prev-lb);
-// }
-
 void Chunk::generateQuadMesh(Mesh<Vertex> &mesh, Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
     Vertex arr[4] = {v0, v1, v2, v3};
     GLuint idc[6] = {0, 1, 2, 2, 3 ,0};
     mesh.addVertices(arr, 4, idc, 6);
-    // mesh.addVertex(v0);
-    // mesh.addVertex(v1);
-    // mesh.addVertex(v2);
-    // mesh.addVertex(v2);
-    // mesh.addVertex(v3);
-    // mesh.addVertex(v0);
 }
 
 void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTexture tex, unsigned char adj) {
     float x = pos.x + cx;
     float z = pos.y + cz;
     if(adj & 16) {
-        // LightData light = getLight(cx, y, cz+1);
-        // LightData skyLight = getSkyLight(cx, y, cz+1);
-        // LightData lightData = (skyLight << 4) | light;
         unsigned int data = 0xF0;
         if(cz >= chunkW-1) {
             Chunk *c = World::getChunk(pos.x, pos.y+chunkW);
@@ -407,9 +251,6 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
     }
     
     if(adj & 8) {
-        // LightData light = getLight(cx+1, y, cz);
-        // LightData skyLight = getSkyLight(cx+1, y, cz);
-        // LightData lightData = (skyLight << 4) | light;
         unsigned int data = 0xF0;
         if(cx >= chunkW-1) {
             Chunk *c = World::getChunk(pos.x+chunkW, pos.y);
@@ -429,9 +270,6 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
     }
     
     if(adj & 32) {
-        // LightData light = getLight(cx, y, cz-1);
-        // LightData skyLight = getSkyLight(cx, y, cz-1);
-        // LightData lightData = (skyLight << 4) | light;
         unsigned int data = 0xF0;
         if(cz <= 0) {
             Chunk *c = World::getChunk(pos.x, pos.y-chunkW);
@@ -450,16 +288,11 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
     }
     
     if(adj & 4) {
-        // LightData light = getLight(cx-1, y, cz);
-        // LightData skyLight = getSkyLight(cx-1, y, cz);
-        // LightData lightData = (skyLight << 4) | light;
         unsigned int data = 0xF0;
         if(cx == 0) {
             Chunk *c = World::getChunk(pos.x-chunkW, pos.y);
-            if(c != nullptr) {
-                // printf("(%d, %d [%d %d %d]) -> (%d, %d [%d %d %d])\n", pos.x, pos.y, cx, y, cz, pos.x-1, pos.y, chunkW-1, y, cz);
+            if(c != nullptr)
                 data = c->getLightData(chunkW-1, y, cz);
-            }
         } else
             data = getLightData(cx-1, y, cz);
         data |= BlockOrientation::WEST << 8;
@@ -473,9 +306,6 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
     }
     
     if(adj & 1) {
-        // LightData light = getLight(cx, y+1, cz);
-        // LightData skyLight = getSkyLight(cx, y+1, cz);
-        // LightData lightData = (skyLight << 4) | light;
         unsigned int data;
         if(y >= chunkH)
             data = 0xF0;
@@ -492,9 +322,6 @@ void Chunk::generateCubeMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTex
     }
     
     if(adj & 2) {
-        // LightData light = getLight(cx, y-1, cz);
-        // LightData skyLight = getSkyLight(cx, y-1, cz);
-        // LightData lightData = (skyLight << 4) | light;
         unsigned int data;
         if(y == 0)
             data = 0x00;
@@ -522,9 +349,6 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
         tex.front.h *= 15.f/16.f;
         tex.back.h *= 15.f/16.f;
         h = 15.f/16.f;
-        // LightData light = getLight(cx, y+1, cz);
-        // LightData skyLight = getSkyLight(cx, y+1, cz);
-        // unsigned int data = (skyLight << 4) | light;
         unsigned int data = getLightData(cx, y+1, cz);
         data |= BlockOrientation::UP << 8;
         generateQuadMesh(mesh,
@@ -537,9 +361,6 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
     }
     
     if(adj & 16) {
-        // LightData light = getLight(cx, y, cz+1);
-        // LightData skyLight = getSkyLight(cx, y, cz+1);
-        // unsigned int data = (skyLight << 4) | light;
         unsigned int data = getLightData(cx, y, cz+1);
         data |= BlockOrientation::SOUTH << 8;
         generateQuadMesh(mesh,
@@ -552,9 +373,6 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
     }
     
     if(adj & 8) {
-        // LightData light = getLight(cx+1, y, cz);
-        // LightData skyLight = getSkyLight(cx+1, y, cz);
-        // unsigned int data = (skyLight << 4) | light;
         unsigned int data = getLightData(cx+1, y, cz);
         data |= BlockOrientation::EAST << 8;
         generateQuadMesh(mesh,
@@ -567,9 +385,6 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
     }
     
     if(adj & 32) {
-        // LightData light = getLight(cx, y, cz-1);
-        // LightData skyLight = getSkyLight(cx, y, cz-1);
-        // unsigned int data = (skyLight << 4) | light;
         unsigned int data = getLightData(cx, y, cz-1);
         data |= BlockOrientation::NORTH << 8;
         generateQuadMesh(mesh,
@@ -582,9 +397,6 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
     }
     
     if(adj & 4) {
-        // LightData light = getLight(cx-1, y, cz);
-        // LightData skyLight = getSkyLight(cx-1, y, cz);
-        // unsigned int data = (skyLight << 4) | light;
         unsigned int data = getLightData(cx-1, y, cz);
         data |= BlockOrientation::WEST << 8;
         generateQuadMesh(mesh,
@@ -598,9 +410,6 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
     
     
     if(adj & 2) {
-        // LightData light = getLight(cx, y-1, cz);
-        // LightData skyLight = getSkyLight(cx, y-1, cz);
-        // unsigned int data = (skyLight << 4) | light;
         unsigned int data = getLightData(cx, y-1, cz);
         data |= BlockOrientation::DOWN << 8;
         generateQuadMesh(mesh,
@@ -613,12 +422,9 @@ void Chunk::generateLiquidMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockT
     }
 }
 
-void Chunk::generateTorchMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTexture tex, unsigned char adj) {
+void Chunk::generateTorchMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTexture tex) {
     float x = pos.x + cx;
     float z = pos.y + cz;
-    // LightData light = getLight(cx, y, cz);
-    // LightData skyLight = getSkyLight(cx, y, cz);
-    // unsigned int data = (skyLight << 4) | light;
     unsigned int data = getLightData(cx, y, cz);
     
     data &= 0x0FF;
@@ -674,13 +480,10 @@ void Chunk::generateTorchMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTe
     // No bottom on torches
 }
 
-void Chunk::generateCrossMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTexture tex, unsigned char adj) {
+void Chunk::generateCrossMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTexture tex) {
     float x = pos.x + cx;
     float z = pos.y + cz;
     float off = glm::sqrt(2.f) / 3.5f;
-    // LightData light = getLight(cx, y, cz);
-    // LightData skyLight = getSkyLight(cx, y, cz);
-    // LightData lightData = (skyLight << 4) | light;
     unsigned int data = getLightData(cx, y, cz);
     data |= BlockOrientation::NORTH << 8;
     generateQuadMesh(mesh,
@@ -700,19 +503,41 @@ void Chunk::generateCrossMesh(Mesh<Vertex> &mesh, int cx, int y, int cz, BlockTe
     DebugStats::triCount += 1;
 }
 
-bool transparentVisible(BlockID id, BlockID other) {
+bool Chunk::transparentVisible(BlockID id, BlockID other) {
     return other != id && Blocks::getBlockFromID(other).transparent;
 }
 
-bool opaqueVisible(BlockID other) {
+bool Chunk::opaqueVisible(BlockID other) {
     return Blocks::getBlockFromID(other).transparent;
+}
+
+unsigned char Chunk::transparentVisible(BlockID id, SurroundingBlocks s) {
+    unsigned char adj;
+    adj = transparentVisible(id, s.top);
+    adj |= transparentVisible(id, s.bottom) << 1;
+    adj |= transparentVisible(id, s.left) << 2;
+    adj |= transparentVisible(id, s.right) << 3;
+    adj |= transparentVisible(id, s.front) << 4;
+    adj |= transparentVisible(id, s.back) << 5;
+    return adj;
+}
+
+unsigned char Chunk::opaqueVisible(SurroundingBlocks s) {
+    unsigned char adj;
+    adj =  opaqueVisible(s.top);
+    adj |= opaqueVisible(s.bottom) << 1;
+    adj |= opaqueVisible(s.left) << 2;
+    adj |= opaqueVisible(s.right) << 3;
+    adj |= opaqueVisible(s.front) << 4;
+    adj |= opaqueVisible(s.back) << 5;
+    return adj;
 }
 
 int Chunk::findMaxY() {
     BlockID id;
     for(int y = chunkH-1; y >= 0; y--)
         for(int x = 0; x < chunkW; x++) {
-            memset(light[y][x], 0, chunkL);
+            memset(light[y][x], 0, sizeof(LightData) * chunkL);
             for(int z = 0; z < chunkL; z++) {
                 id = blocks[y][x][z].id;
                 if(id != Blocks::AIR_BLOCK && id != Blocks::NULL_BLOCK)
@@ -751,7 +576,7 @@ void Chunk::findMaxMin() {
 void Chunk::clearLighting() {
     for(int y = minY; y < maxY; y++)
         for(int x = 0; x < chunkW; x++)
-            memset(light[y][x], 0, chunkL);
+            memset(light[y][x], 0, sizeof(LightData) * chunkL);
 }
 
 void Chunk::recalculateLighting() {
@@ -759,7 +584,7 @@ void Chunk::recalculateLighting() {
     std::vector<Light> lights;
     for(int y = minY; y < maxY; y++)
         for(int x = 0; x < chunkW; x++) {
-            memset(light[y][x], 0, chunkL);
+            memset(light[y][x], 0, sizeof(LightData) * chunkL);
             for(int z = 0; z < chunkL; z++) {
                 b = Blocks::getBlockFromID(blocks[y][x][z].id);
                 if(b.lightEmit > 0)
@@ -772,111 +597,93 @@ void Chunk::recalculateLighting() {
         calculateLighting(p.pos.x, p.pos.y, p.pos.z, p.val);
 }
 
-// void Chunk::recalculateLightingQuick() {
-//     Block b;
-//     std::vector<Light> lights;
-//     for(int y = minY; y < maxY; y++)
-//         for(int x = 0; x < chunkW; x++) {
-//             memset(light[y][x], 0, chunkL);
-//             for(int z = 0; z < chunkL; z++) {
-//                 b = Blocks::getBlockFromID(blocks[y][x][z].id);
-//                 if(b.lightEmit > 0)
-//                     lights.push_back({{x, y, z}, b.lightEmit});
+// void Chunk::recalculateBleedLighting() {
+//     AdjChunks adj = World::getAdjacentChunks(pos);
+//     if(rightDirty) {
+//         Chunk *r = adj.right;
+//         if(r != nullptr) {
+//             for(int y = 0; y < chunkH; y++) {
+//                 for(int z = 0; z < chunkW; z++) {
+//                     BlockID b = r->blocks[y][0][z].id;
+//                     LightData data = r->light[y][0][z];
+//                     LightData s = data >> 4;
+//                     LightData l = data & 0xF;
+//                     LightData lb = 1;
+//                     if(b != Blocks::AIR_BLOCK)
+//                         lb = Blocks::getBlockFromID(b).lightBlocking;
+//                     if(s != 0)
+//                         calculateSkyLighting(chunkW-1, y, z, s - lb);
+//                     if(l != 0)
+//                         calculateLighting(chunkW-1, y, z, l - lb);
+//                 }
 //             }
 //         }
-//     calculateSkyLightingQuick(0, maxY, 0, 15);
-    
-//     for(const auto &p : lights)
-//         calculateLightingQuick(p.pos.x, p.pos.y, p.pos.z, p.val);
+//         rightDirty = false;
+//     }
+//     if(leftDirty) {
+//         Chunk *left = adj.left;
+//         if(left != nullptr) {
+//             for(int y = 0; y < chunkH; y++) {
+//                 for(int z = 0; z < chunkW; z++) {
+//                     BlockID b = left->blocks[y][chunkW-1][z].id;
+//                     LightData data = left->light[y][chunkW-1][z];
+//                     LightData s = data >> 4;
+//                     LightData l = data & 0xF;
+//                     LightData lb = 1;
+//                     if(b != Blocks::AIR_BLOCK)
+//                         lb = Blocks::getBlockFromID(b).lightBlocking;
+//                     if(s != 0)
+//                         calculateSkyLighting(0, y, z, s - lb);
+//                     if(l != 0)
+//                         calculateLighting(0, y, z, l - lb);
+//                 }
+//             }
+//         }
+//         leftDirty = false;
+//     }
+//     if(frontDirty) {
+//         Chunk *f = adj.front;
+//         if(f != nullptr) {
+//             for(int y = 0; y < chunkH; y++) {
+//                 for(int x = 0; x < chunkW; x++) {
+//                     BlockID b = f->blocks[y][x][0].id;
+//                     LightData data = f->light[y][x][0];
+//                     LightData s = data >> 4;
+//                     LightData l = data & 0xF;
+//                     LightData lb = 1;
+//                     if(b != Blocks::AIR_BLOCK)
+//                         lb = Blocks::getBlockFromID(b).lightBlocking;
+//                     if(s != 0)
+//                         calculateSkyLighting(x, y, chunkW-1, s - lb);
+//                     if(l != 0)
+//                         calculateLighting(x, y, chunkW-1, l - lb);
+//                 }
+//             }
+//         }
+//         frontDirty = false;
+//     }
+//     if(backDirty) {
+//         Chunk *back = adj.back;
+//         if(back != nullptr) {
+//             for(int y = 0; y < chunkH; y++) {
+//                 for(int x = 0; x < chunkW; x++) {
+//                     BlockID b = back->blocks[y][x][chunkW-1].id;
+//                     LightData data = back->light[y][x][chunkW-1];
+//                     LightData s = data >> 4;
+//                     LightData l = data & 0xF;
+//                     LightData lb = 1;
+//                     if(b != Blocks::AIR_BLOCK)
+//                         lb = Blocks::getBlockFromID(b).lightBlocking;
+//                     if(s != 0)
+//                         calculateSkyLighting(x, y, 0, s - lb);
+//                     if(l != 0)
+//                         calculateLighting(x, y, 0, l - lb);
+//                 }
+//             }
+//         }
+//         backDirty = false;
+//     }
 // }
-
-void Chunk::recalculateBleedLighting() {
-    AdjChunks adj = World::getAdjacentChunks(pos);
-    if(rightDirty) {
-        Chunk *r = adj.right;
-        if(r != nullptr) {
-            for(int y = 0; y < chunkH; y++) {
-                for(int z = 0; z < chunkW; z++) {
-                    BlockID b = r->blocks[y][0][z].id;
-                    LightData data = r->light[y][0][z];
-                    LightData s = data >> 4;
-                    LightData l = data & 0xF;
-                    LightData lb = 1;
-                    if(b != Blocks::AIR_BLOCK)
-                        lb = Blocks::getBlockFromID(b).lightBlocking;
-                    if(s != 0)
-                        calculateSkyLighting(chunkW-1, y, z, s - lb);
-                    if(l != 0)
-                        calculateLighting(chunkW-1, y, z, l - lb);
-                }
-            }
-        }
-        rightDirty = false;
-    }
-    if(leftDirty) {
-        Chunk *left = adj.left;
-        if(left != nullptr) {
-            for(int y = 0; y < chunkH; y++) {
-                for(int z = 0; z < chunkW; z++) {
-                    BlockID b = left->blocks[y][chunkW-1][z].id;
-                    LightData data = left->light[y][chunkW-1][z];
-                    LightData s = data >> 4;
-                    LightData l = data & 0xF;
-                    LightData lb = 1;
-                    if(b != Blocks::AIR_BLOCK)
-                        lb = Blocks::getBlockFromID(b).lightBlocking;
-                    if(s != 0)
-                        calculateSkyLighting(0, y, z, s - lb);
-                    if(l != 0)
-                        calculateLighting(0, y, z, l - lb);
-                }
-            }
-        }
-        leftDirty = false;
-    }
-    if(frontDirty) {
-        Chunk *f = adj.front;
-        if(f != nullptr) {
-            for(int y = 0; y < chunkH; y++) {
-                for(int x = 0; x < chunkW; x++) {
-                    BlockID b = f->blocks[y][x][0].id;
-                    LightData data = f->light[y][x][0];
-                    LightData s = data >> 4;
-                    LightData l = data & 0xF;
-                    LightData lb = 1;
-                    if(b != Blocks::AIR_BLOCK)
-                        lb = Blocks::getBlockFromID(b).lightBlocking;
-                    if(s != 0)
-                        calculateSkyLighting(x, y, chunkW-1, s - lb);
-                    if(l != 0)
-                        calculateLighting(x, y, chunkW-1, l - lb);
-                }
-            }
-        }
-        frontDirty = false;
-    }
-    if(backDirty) {
-        Chunk *back = adj.back;
-        if(back != nullptr) {
-            for(int y = 0; y < chunkH; y++) {
-                for(int x = 0; x < chunkW; x++) {
-                    BlockID b = back->blocks[y][x][chunkW-1].id;
-                    LightData data = back->light[y][x][chunkW-1];
-                    LightData s = data >> 4;
-                    LightData l = data & 0xF;
-                    LightData lb = 1;
-                    if(b != Blocks::AIR_BLOCK)
-                        lb = Blocks::getBlockFromID(b).lightBlocking;
-                    if(s != 0)
-                        calculateSkyLighting(x, y, 0, s - lb);
-                    if(l != 0)
-                        calculateLighting(x, y, 0, l - lb);
-                }
-            }
-        }
-        backDirty = false;
-    }
-}
 
 void Chunk::recalculateFullBleedLighting() {
     AdjChunks adj = World::getAdjacentChunks(pos);
@@ -898,7 +705,6 @@ void Chunk::recalculateFullBleedLighting() {
             }
         }
     }
-    rightDirty = false;
     Chunk *left = adj.left;
     if(left != nullptr) {
         for(int y = 0; y < chunkH; y++) {
@@ -917,7 +723,6 @@ void Chunk::recalculateFullBleedLighting() {
             }
         }
     }
-    leftDirty = false;
     Chunk *f = adj.front;
     if(f != nullptr) {
         for(int y = 0; y < chunkH; y++) {
@@ -936,7 +741,6 @@ void Chunk::recalculateFullBleedLighting() {
             }
         }
     }
-    frontDirty = false;
     Chunk *back = adj.back;
     if(back != nullptr) {
         for(int y = 0; y < chunkH; y++) {
@@ -955,54 +759,25 @@ void Chunk::recalculateFullBleedLighting() {
             }
         }
     }
-    backDirty = false;
 }
 
-// void Chunk::fakeRecalculateLighting(LightData ***buffer) {
-//     Block b;
-//     std::vector<Light> lights;
-//     for(int y = minY; y < maxY; y++)
-//         for(int x = 0; x < chunkW; x++) {
-//             memset(buffer[y][x], 0, chunkL);
-//             for(int z = 0; z < chunkL; z++) {
-//                 b = Blocks::getBlockFromID(blocks[y][x][z].id);
-//                 if(b.lightEmit > 0)
-//                     lights.push_back({{x, y, z}, b.lightEmit});
-//             }
-//         }
-//     calculateSkyLighting(buffer, 0, maxY, 0, 15);
-    
-//     for(const auto &p : lights)
-//         calculateLighting(buffer, p.pos.x, p.pos.y, p.pos.z, p.val);
-// }
-
-void Chunk::recalculateSurroundingLighting() {
-    // LightData buffer[chunkH][chunkW][chunkL];
-    
-    // Chunk *t = World::getChunk(pos.x, pos.y - chunkW);
-    // Chunk *l = World::getChunk(pos.x - chunkW, pos.y);
-    // Chunk *r = World::getChunk(pos.x + chunkW, pos.y);
-    // Chunk *b = World::getChunk(pos.x, pos.y - chunkW);
-    // if(t) {
-        
-    // }
-        // tl->fakeRecalculateLighting(buffer);
-    // if(t)
-    //     t->fakeRecalculateLighting(buffer);
-    // if(tr)
-    //     tr->fakeRecalculateLighting(buffer);
-    // if(l)
-    //     l->fakeRecalculateLighting(buffer);
-    // if(r)
-    //     r->fakeRecalculateLighting(buffer);
-    // if(bl)
-    //     bl->fakeRecalculateLighting(buffer);
-    // if(b)
-    //     b->fakeRecalculateLighting(buffer);
-    // if(br)
-    //     br->fakeRecalculateLighting(buffer);
-    
-    dirty = true;
+SurroundingBlocks Chunk::getAdjacentBlocks(AdjChunks &chunks, const int x, const int y, const int z) {
+    SurroundingBlocks s;
+    s.top = ( y == chunkH-1 ) ? Blocks::NULL_BLOCK : blocks[y+1][x][z].id;
+    s.bottom = (y != 0 ? blocks[y-1][x][z].id : Blocks::NULL_BLOCK);
+    s.left = (( x == 0 )
+            ? (chunks.left ? chunks.left->blocks[y][chunkW-1][z].id : Blocks::NULL_BLOCK)
+            : blocks[y][x-1][z].id);
+    s.right = (( x == chunkW-1 )
+            ? (chunks.right ? chunks.right->blocks[y][0][z].id : Blocks::NULL_BLOCK)
+            : blocks[y][x+1][z].id);
+    s.front = (( z == chunkL-1 )
+            ? (chunks.front ? chunks.front->blocks[y][x][0].id : Blocks::NULL_BLOCK)
+            : blocks[y][x][z+1].id);
+    s.back = (( z == 0 )
+            ? (chunks.back ? chunks.back->blocks[y][x][chunkL-1].id : Blocks::NULL_BLOCK)
+            : blocks[y][x][z-1].id);
+    return s;
 }
 
 // TODO: Either create a vector of Lights that contains all the lights that spread past the edge of the chunk, or
@@ -1025,6 +800,7 @@ void Chunk::rebuildMesh() {
                     continue;
                 
                 b = Blocks::getBlockFromID(blocks[y][x][z].id);
+                SurroundingBlocks s = getAdjacentBlocks(chunks, x, y, z);
                 
                 // 0bTBLRFB
                 unsigned char adj = 0;
@@ -1034,22 +810,7 @@ void Chunk::rebuildMesh() {
                             generateCubeMesh(mesh, x, y, z, b.tex, 0xFF);
                         else if(b.transparent) {
                     case LIQUID:
-                            adj = ( y == chunkH-1 ) || transparentVisible(id, blocks[y+1][x][z].id);
-                            adj |= (y != 0 && transparentVisible(id, blocks[y-1][x][z].id)) << 1;
-                            adj |= (( x == 0 )
-                                ? chunks.left && transparentVisible(id, chunks.left->blocks[y][chunkW-1][z].id)
-                                : transparentVisible(id, blocks[y][x-1][z].id)) << 2;
-                            adj |= (( x == chunkW-1 )
-                                ? chunks.right && transparentVisible(id, chunks.right->blocks[y][0][z].id)
-                                : transparentVisible(id, blocks[y][x+1][z].id)) << 3;
-                            adj |= (( z == chunkL-1 )
-                                ? chunks.front && transparentVisible(id, chunks.front->blocks[y][x][0].id)
-                                : transparentVisible(id, blocks[y][x][z+1].id)) << 4;
-                            adj |= (( z == 0 )
-                                ? chunks.back && transparentVisible(id, chunks.back->blocks[y][x][chunkL-1].id)
-                                : transparentVisible(id, blocks[y][x][z-1].id)) << 5;
-                            
-                            if(adj) {
+                            if((adj = transparentVisible(id, s))) {
                                 if(b.render == LIQUID)
                                     generateLiquidMesh(waterMesh, x, y, z, b.tex, adj);
                                 else
@@ -1057,30 +818,15 @@ void Chunk::rebuildMesh() {
                             }
                             break;
                         } else {
-                            adj = (y == chunkH-1 || opaqueVisible(blocks[y+1][x][z].id));
-                            adj |= (y != 0 && opaqueVisible(blocks[y-1][x][z].id)) << 1;
-                            adj |= (x == 0
-                                ? chunks.left && opaqueVisible(chunks.left->blocks[y][chunkW-1][z].id)
-                                : opaqueVisible(blocks[y][x-1][z].id)) << 2;
-                            adj |= (x == chunkW-1
-                                ? chunks.right && opaqueVisible(chunks.right->blocks[y][0][z].id)
-                                : opaqueVisible(blocks[y][x+1][z].id)) << 3;
-                            adj |= (z == chunkL-1
-                                ? chunks.front && opaqueVisible(chunks.front->blocks[y][x][0].id)
-                                : opaqueVisible(blocks[y][x][z+1].id)) << 4;
-                            adj |= (z == 0
-                                ? chunks.back && opaqueVisible(chunks.back->blocks[y][x][chunkL-1].id)
-                                : opaqueVisible(blocks[y][x][z-1].id)) << 5;
-                            
-                            if(adj)
+                            if((adj = opaqueVisible(s)))
                                 generateCubeMesh(mesh, x, y, z, b.tex, adj);
                         }
                         break;
                     case TORCH:
-                        generateTorchMesh(mesh, x, y, z, b.tex, adj);
+                        generateTorchMesh(mesh, x, y, z, b.tex);
                         break;
                     case CROSS:
-                        generateCrossMesh(waterMesh, x, y, z, b.tex, adj);
+                        generateCrossMesh(waterMesh, x, y, z, b.tex);
                         break;
                     default:
                         fprintf(stderr, "Unknown mesh type: value = %d", b.render);
@@ -1109,24 +855,18 @@ bool Chunk::operator<(const Chunk& other) const {
 LightData Chunk::getLight(int x, int y, int z) {
     if(x < 0)
         return 0;
-        // x = 0;
     else if(x >= Chunk::chunkW)
         return 0;
-        // x = Chunk::chunkW-1;
     
     if(z < 0)
         return 0;
-        // z = 0;
     else if(z >= Chunk::chunkL)
         return 0;
-        // z = Chunk::chunkL-1;
     
     if(y < 0)
         return 0;
-        // y = 0;
     else if(y >= Chunk::chunkH)
         return 0;
-        // y = Chunk::chunkH-1;
     
     return light[y][x][z] & 0xF;
 }

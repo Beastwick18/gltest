@@ -23,6 +23,12 @@ namespace CameraConfig {
     extern float orthoZoom;
     extern bool ortho;
     extern float guiScale;
+    extern float fogStart;
+    extern float fogEnd;
+    extern glm::vec3 fogColor;
+    extern int fogEqn;
+    extern float fogDensity;
+    extern bool fogEnabled;
     
     // Set the fov (in degrees)
     void setFov(float fov);

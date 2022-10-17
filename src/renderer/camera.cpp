@@ -27,6 +27,12 @@ namespace CameraConfig {
     float orthoZoom = 50.f;
     bool ortho = false;
     float guiScale = 20.f;
+    float fogStart = 40.f;
+    float fogEnd = 80.f;
+    glm::vec3 fogColor(.85f, .85f, 1.f);
+    int fogEqn = 2;
+    float fogDensity = 0.015f;
+    bool fogEnabled = true;
     
     void setFov(float fov) {
         CameraConfig::fov = fov;

@@ -104,6 +104,13 @@ void BatchScene3D::render() {
         Renderer::regularShader->setUniformMat4f(Renderer::viewUniform, Renderer::camera->getView());
         Renderer::regularShader->setUniformMat4f(Renderer::projUniform, Renderer::camera->getProjection());
         Renderer::regularShader->setUniform1i(Renderer::texUniform, Renderer::frame);
+        
+        Renderer::regularShader->setUniform1f(Renderer::fogDensityUniform, CameraConfig::fogDensity);
+        Renderer::regularShader->setUniform1f(Renderer::fogStartUniform, CameraConfig::fogStart);
+        Renderer::regularShader->setUniform1f(Renderer::fogEndUniform, CameraConfig::fogEnd);
+        Renderer::regularShader->setUniform1i(Renderer::fogEquationUniform, CameraConfig::fogEqn);
+        Renderer::regularShader->setUniform1i(Renderer::fogEnabledUniform, CameraConfig::fogEnabled);
+        Renderer::regularShader->setUniform3f(Renderer::fogColorUniform, CameraConfig::fogColor);
         for(const auto &[_, c] : World::chunks)
             if(c.getStatus() == ChunkStatus::SHOWING) {
                 DebugStats::chunksRenderedCount++;
@@ -123,6 +130,13 @@ void BatchScene3D::render() {
         Renderer::transparentShader->setUniformMat4f(Renderer::wViewUniform, Renderer::camera->getView());
         Renderer::transparentShader->setUniformMat4f(Renderer::wProjUniform, Renderer::camera->getProjection());
         Renderer::transparentShader->setUniform1i(Renderer::wTexUniform, Renderer::frame);
+        
+        Renderer::transparentShader->setUniform1f(Renderer::wFogDensityUniform, CameraConfig::fogDensity);
+        Renderer::transparentShader->setUniform1f(Renderer::wFogStartUniform, CameraConfig::fogStart);
+        Renderer::transparentShader->setUniform1f(Renderer::wFogEndUniform, CameraConfig::fogEnd);
+        Renderer::transparentShader->setUniform1i(Renderer::wFogEquationUniform, CameraConfig::fogEqn);
+        Renderer::transparentShader->setUniform1i(Renderer::wFogEnabledUniform, CameraConfig::fogEnabled);
+        Renderer::transparentShader->setUniform3f(Renderer::wFogColorUniform, CameraConfig::fogColor);
         for(const auto &[_, c] : World::chunks)
             if(c.getStatus() == ChunkStatus::SHOWING)
                 Renderer::transparentBatch.flushMesh(c.getWaterMesh());
@@ -212,6 +226,14 @@ void BatchScene3D::guiRender() {
         ImGui::SliderInt("Block Reach", &CameraConfig::blockReach, 0.f, 100.f);
         ImGui::SliderInt("Render Distance", &renderDistance, 0, 10);
         ImGui::SliderFloat("Ortho Zoom", &CameraConfig::orthoZoom, 0.f, 500.f);
+        ImGui::SliderFloat("Fog Start", &CameraConfig::fogStart, 0.f, 100.f);
+        if(CameraConfig::fogEnd < CameraConfig::fogStart)
+            CameraConfig::fogEnd = CameraConfig::fogStart;
+        ImGui::SliderFloat("Fog End", &CameraConfig::fogEnd, CameraConfig::fogStart, 120.f);
+        ImGui::SliderFloat("Fog Density", &CameraConfig::fogDensity, 0.f, 0.2f);
+        ImGui::SliderFloat3("Fog Color", glm::value_ptr(CameraConfig::fogColor), 0.f, 1.f);
+        ImGui::SliderInt("Fog Eqn", &CameraConfig::fogEqn, 0, 2);
+        ImGui::Checkbox("Enable fog", &CameraConfig::fogEnabled);
         
         ImGui::Checkbox("Wire mesh", &wiremeshToggle);
         ImGui::Checkbox("Ortho", &CameraConfig::ortho);
@@ -233,6 +255,10 @@ bool underwater = false;
 float oldG = CameraConfig::gravity;
 float oldJ = CameraConfig::jumpVelocity;
 float oldM = CameraConfig::cameraSpeed;
+
+int oldEqn;
+float oldDensity;
+glm::vec3 oldColor;
 void BatchScene3D::update(double deltaTime) {
     c->update(deltaTime);
     f->update(c->getProjection() * c->getView());
@@ -246,6 +272,25 @@ void BatchScene3D::update(double deltaTime) {
             c.show();
         else
             c.hide();
+    }
+    
+    
+    // Underwater fog effect
+    if(World::getBlock(glm::floor(CameraConfig::cameraPos)) == Blocks::WATER) {
+        if(!underwater) {
+            oldColor = CameraConfig::fogColor;
+            oldDensity = CameraConfig::fogDensity;
+            oldEqn = CameraConfig::fogEqn;
+            CameraConfig::fogColor = glm::vec3{.1f, .1f, .9f};
+            CameraConfig::fogDensity = .2f;
+            CameraConfig::fogEqn = 1;
+            underwater = true;
+        }
+    } else if(underwater) {
+        CameraConfig::fogColor = oldColor;
+        CameraConfig::fogDensity = oldDensity;
+        CameraConfig::fogEqn = oldEqn;
+        underwater = false;
     }
     
     // Make player stand on terrain (this is stupid)
