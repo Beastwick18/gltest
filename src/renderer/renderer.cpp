@@ -569,7 +569,9 @@ namespace Renderer {
         for(auto &c : World::chunks) {
             if(c.second.isDirty()) {
                 // c.second.recalculateBleedLighting();
-                c.second.fullRebuildMesh();
+                // c.second.fullRebuildMesh();
+                c.second.recalculateFullBleedLighting();
+                c.second.rebuildMesh();
                 c.second.setDirty(false);
                 break;
             }
