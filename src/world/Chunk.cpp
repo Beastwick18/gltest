@@ -195,45 +195,40 @@ void Chunk::calculateSkyLighting(int x, int y, int z, LightData prev, bool *modi
         return;
     
     if(x < 0) {
-        Chunk *left = World::getChunk(pos.x-1, pos.y);
-        if(left) {
+        if(Chunk *left = World::getChunk(pos.x-1, pos.y); left) {
             bool m = false;
             left->calculateSkyLighting(chunkW-1, y, z, prev, &m, left->lightBleed);
-            if(m)
+            if(m) {
                 left->setDirty(true);
+            }
+            
         }
         return;
     }
     
     if(x >= chunkW) {
-        Chunk *right = World::getChunk(pos.x+1, pos.y);
-        if(right) {
+        if(Chunk *right = World::getChunk(pos.x+1, pos.y); right) {
             bool m = false;
             right->calculateSkyLighting(0, y, z, prev, &m, right->lightBleed);
-            if(m)
-                right->setDirty(true);
+            if(m) right->setDirty(true);
         }
         return;
     }
     
     if(z < 0) {
-        Chunk *back = World::getChunk(pos.x, pos.y-1);
-        if(back) {
+        if(Chunk *back = World::getChunk(pos.x, pos.y-1); back) {
             bool m = false;
             back->calculateSkyLighting(x, y, chunkW-1, prev, &m, back->lightBleed);
-            if(m)
-                back->setDirty(true);
+            if(m) back->setDirty(true);
         }
         return;
     }
     
     if(z >= chunkW) {
-        Chunk *front = World::getChunk(pos.x, pos.y+1);
-        if(front) {
+        if(Chunk *front = World::getChunk(pos.x, pos.y+1); front) {
             bool m = false;
             front->calculateSkyLighting(x, y, 0, prev, &m, front->lightBleed);
-            if(m)
-                front->setDirty(true);
+            if(m) front->setDirty(true);
         }
         return;
     }
@@ -264,45 +259,37 @@ void Chunk::calculateLighting(int x, int y, int z, LightData prev, bool *modifie
         return;
     
     if(x < 0) {
-        Chunk *left = World::getChunk(pos.x-1, pos.y);
-        if(left) {
+        if(Chunk *left = World::getChunk(pos.x-1, pos.y); left) {
             bool m = false;
             left->calculateLighting(chunkW-1, y, z, prev, &m, left->lightBleed);
-            if(m)
-                left->setDirty(true);
+            if(m) left->setDirty(true);
         }
         return;
     }
     
     if(x >= chunkW) {
-        Chunk *right = World::getChunk(pos.x+1, pos.y);
-        if(right) {
+        if(Chunk *right = World::getChunk(pos.x+1, pos.y); right) {
             bool m = false;
             right->calculateLighting(0, y, z, prev, &m, right->lightBleed);
-            if(m)
-                right->setDirty(true);
+            if(m) right->setDirty(true);
         }
         return;
     }
     
     if(z < 0) {
-        Chunk *back = World::getChunk(pos.x, pos.y-1);
-        if(back) {
+        if(Chunk *back = World::getChunk(pos.x, pos.y-1); back) {
             bool m = false;
             back->calculateLighting(x, y, chunkW-1, prev, &m, back->lightBleed);
-            if(m)
-                back->setDirty(true);
+            if(m) back->setDirty(true);
         }
         return;
     }
     
     if(z >= chunkW) {
-        Chunk *front = World::getChunk(pos.x, pos.y+1);
-        if(front) {
+        if(Chunk *front = World::getChunk(pos.x, pos.y+1); front) {
             bool m = false;
             front->calculateLighting(x, y, 0, prev, &m, front->lightBleed);
-            if(m)
-                front->setDirty(true);
+            if(m) front->setDirty(true);
         }
         return;
     }
@@ -665,6 +652,9 @@ int Chunk::findMinY() {
 
 void Chunk::fullRebuildMesh() {
     findMaxMin();
+    for(Chunk *c : World::getAllSurroundingChunks(pos)) {
+        c->clearBleedLighting();
+    }
     recalculateLighting();
     recalculateFullBleedLighting();
     rebuildMesh();

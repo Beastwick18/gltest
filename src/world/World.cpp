@@ -151,13 +151,13 @@ namespace World {
         int rx = x - pos.x;
         int rz = z - pos.y;
         chunk->addBlock(id, rx, y, rz);
-        auto l = getAllSurroundingChunks(pos);
-        for(auto &c : l) {
+        // auto l = getAllSurroundingChunks(pos);
+        // for(auto &c : l) {
             // c->clearLighting();
-            c->setDirty(true);
+            // c->setDirty(true);
             // c->findMaxMin();
             // c->recalculateLighting();
-        }
+        // }
         // chunk->findMaxMin();
         // chunk->recalculateLighting();
         
