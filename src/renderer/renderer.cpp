@@ -570,8 +570,8 @@ namespace Renderer {
             if(c.second.isDirty()) {
                 // c.second.recalculateBleedLighting();
                 // c.second.fullRebuildMesh();
-                printf("Rebuild\n");
-                c.second.clearBleedLighting();
+                // printf("Rebuild\n");
+                // c.second.clearBleedLighting();
                 c.second.recalculateFullBleedLighting();
                 c.second.rebuildMesh();
                 c.second.setDirty(false);

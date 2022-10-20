@@ -698,11 +698,12 @@ void Chunk::recalculateLighting() {
 }
 
 void Chunk::recalculateFullBleedLighting() {
-    for(int y = 0; y < chunkH; y++) {
-        for(int x = 0; x < chunkW; x++) {
-            memset(lightBleed[y][x], 0, sizeof(LightData) * chunkW);
-        }
-    }
+    // for(int y = 0; y < chunkH; y++) {
+    //     for(int x = 0; x < chunkW; x++) {
+    //         memset(lightBleed[y][x], 0, sizeof(LightData) * chunkW);
+    //     }
+    // }
+    // clearBleedLighting();
     AdjChunks adj = World::getAdjacentChunks(pos);
     if(Chunk *right = adj.right; right != nullptr) {
         for(int y = 0; y < chunkH; y++) {
@@ -715,9 +716,9 @@ void Chunk::recalculateFullBleedLighting() {
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
-                    calculateSkyLighting(chunkW-1, y, z, s - lb, NULL, lightBleed);
+                    calculateSkyLighting(chunkW-1, y, z, s - lb, NULL, light);
                 if(l != 0)
-                    calculateLighting(chunkW-1, y, z, l - lb, NULL, lightBleed);
+                    calculateLighting(chunkW-1, y, z, l - lb, NULL, light);
             }
         }
     }
@@ -732,9 +733,9 @@ void Chunk::recalculateFullBleedLighting() {
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
-                    calculateSkyLighting(0, y, z, s - lb, NULL, lightBleed);
+                    calculateSkyLighting(0, y, z, s - lb, NULL, light);
                 if(l != 0)
-                    calculateLighting(0, y, z, l - lb, NULL, lightBleed);
+                    calculateLighting(0, y, z, l - lb, NULL, light);
             }
         }
     }
@@ -749,9 +750,9 @@ void Chunk::recalculateFullBleedLighting() {
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
-                    calculateSkyLighting(x, y, chunkW-1, s - lb, NULL, lightBleed);
+                    calculateSkyLighting(x, y, chunkW-1, s - lb, NULL, light);
                 if(l != 0)
-                    calculateLighting(x, y, chunkW-1, l - lb, NULL, lightBleed);
+                    calculateLighting(x, y, chunkW-1, l - lb, NULL, light);
             }
         }
     }
@@ -766,9 +767,9 @@ void Chunk::recalculateFullBleedLighting() {
                 if(b != Blocks::AIR_BLOCK)
                     lb = Blocks::getBlockFromID(b).lightBlocking;
                 if(s != 0)
-                    calculateSkyLighting(x, y, 0, s - lb, NULL, lightBleed);
+                    calculateSkyLighting(x, y, 0, s - lb, NULL, light);
                 if(l != 0)
-                    calculateLighting(x, y, 0, l - lb, NULL, lightBleed);
+                    calculateLighting(x, y, 0, l - lb, NULL, light);
             }
         }
     }
